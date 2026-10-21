@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, Check, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Play, Sparkles, Check, RotateCcw, CheckCircle2, Eye, Copy, X } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -8,6 +8,7 @@ import { HighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror
 import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
 import { HeartbeatDot } from './HeartbeatDot';
+import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
 
 // Vibrant, high-contrast SQL Syntax Highlighting Theme (Vivid Keywords, Emerald Strings, Amber Functions)
 const sqlHighlightStyle = HighlightStyle.define([
@@ -83,8 +84,40 @@ export const SqlEditor = () => {
 
   const [isExecuting, setIsExecuting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
+  const [inspectingRow, setInspectingRow] = useState<ResultRow | null>(null);
   const [editingCell, setEditingCell] = useState<{ id: number; field: keyof ResultRow } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 2500);
+  };
+
+  const handleDuplicateRow = (r: ResultRow) => {
+    const maxId = results.reduce((max, cur) => Math.max(max, cur.id), 500);
+    const newId = maxId + 1;
+    const newRow: ResultRow = {
+      ...r,
+      id: newId,
+      email: `copy_${r.email}`,
+      isDirty: true,
+      dirtyFields: { email: true, total_orders: true, total_spend: true },
+    };
+    setResults([newRow, ...results]);
+    setSelectedRowIds(new Set([newId]));
+    showToast(`✨ Duplicated row #${r.id} as #${newId}`);
+  };
+
+  const handleDeleteRows = (rowsToDelete: ResultRow[]) => {
+    const idsToDelete = new Set(rowsToDelete.map((r) => r.id));
+    setResults(results.filter((r) => !idsToDelete.has(r.id)));
+    setSelectedRowIds(new Set());
+    showToast(`🗑️ Deleted ${rowsToDelete.length} row(s)`);
+  };
 
   const [results, setResults] = useState<ResultRow[]>([
     { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
@@ -319,95 +352,123 @@ ORDER BY total_spend DESC LIMIT 50;`;
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {results.map((r, index) => (
-              <tr
-                key={r.id}
-                className={`transition ${
-                  r.isDirty ? 'bg-amber-950/20 hover:bg-amber-950/30 border-l-4 border-l-amber-400' : 'hover:bg-slate-800/40'
-                }`}
-              >
-                <td className="p-2.5 border-r border-slate-800 text-slate-500 text-center select-none font-bold">
-                  {index + 1}
-                  {r.isDirty && <span className="text-amber-400 ml-0.5">*</span>}
-                </td>
+            {results.map((r, index) => {
+              const isSelected = selectedRowIds.has(r.id);
 
-                <td className="p-2.5 border-r border-slate-800 text-sky-400 font-semibold">
-                  {r.id}
-                </td>
-
-                {/* Email (Inline Editable) */}
-                <td
-                  onDoubleClick={() => startEditing(r.id, 'email', r.email)}
-                  className={`p-2.5 border-r border-slate-800 cursor-pointer ${
-                    r.dirtyFields?.email ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-200'
+              return (
+                <tr
+                  key={r.id}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) {
+                      const next = new Set(selectedRowIds);
+                      if (next.has(r.id)) next.delete(r.id);
+                      else next.add(r.id);
+                      setSelectedRowIds(next);
+                    } else if (e.shiftKey) {
+                      const allIds = results.map((row) => row.id);
+                      setSelectedRowIds(new Set(allIds));
+                    } else {
+                      setSelectedRowIds(new Set([r.id]));
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!selectedRowIds.has(r.id)) {
+                      setSelectedRowIds(new Set([r.id]));
+                    }
+                    setContextMenuPos({ x: e.clientX, y: e.clientY });
+                  }}
+                  className={`transition cursor-pointer select-none ${
+                    isSelected
+                      ? 'bg-sky-500/20 text-sky-100 ring-1 ring-sky-500/60 shadow-sm'
+                      : r.isDirty
+                      ? 'bg-amber-950/20 hover:bg-amber-950/30 border-l-4 border-l-amber-400'
+                      : 'hover:bg-slate-800/40'
                   }`}
                 >
-                  {editingCell?.id === r.id && editingCell.field === 'email' ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onBlur={saveEditing}
-                      onKeyDown={handleKeyDown}
-                      className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                    />
-                  ) : (
-                    <span>{r.email}</span>
-                  )}
-                </td>
+                  <td className="p-2.5 border-r border-slate-800 text-slate-500 text-center select-none font-bold">
+                    {index + 1}
+                    {r.isDirty && <span className="text-amber-400 ml-0.5">*</span>}
+                  </td>
 
-                {/* Total Orders (Inline Editable) */}
-                <td
-                  onDoubleClick={() => startEditing(r.id, 'total_orders', r.total_orders)}
-                  className={`p-2.5 border-r border-slate-800 cursor-pointer ${
-                    r.dirtyFields?.total_orders ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-300'
-                  }`}
-                >
-                  {editingCell?.id === r.id && editingCell.field === 'total_orders' ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onBlur={saveEditing}
-                      onKeyDown={handleKeyDown}
-                      className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                    />
-                  ) : (
-                    <span>{r.total_orders}</span>
-                  )}
-                </td>
+                  <td className="p-2.5 border-r border-slate-800 text-sky-400 font-semibold">
+                    {r.id}
+                  </td>
 
-                {/* Total Spend (Inline Editable) */}
-                <td
-                  onDoubleClick={() => startEditing(r.id, 'total_spend', r.total_spend)}
-                  className={`p-2.5 cursor-pointer font-semibold ${
-                    r.dirtyFields?.total_spend ? 'bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/80' : 'text-emerald-400'
-                  }`}
-                >
-                  {editingCell?.id === r.id && editingCell.field === 'total_spend' ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      step="0.01"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onBlur={saveEditing}
-                      onKeyDown={handleKeyDown}
-                      className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                    />
-                  ) : (
-                    <span>${typeof r.total_spend === 'number' ? r.total_spend.toFixed(2) : r.total_spend}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  {/* Email (Inline Editable) */}
+                  <td
+                    onDoubleClick={() => startEditing(r.id, 'email', r.email)}
+                    className={`p-2.5 border-r border-slate-800 cursor-pointer ${
+                      r.dirtyFields?.email ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-200'
+                    }`}
+                  >
+                    {editingCell?.id === r.id && editingCell.field === 'email' ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={saveEditing}
+                        onKeyDown={handleKeyDown}
+                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
+                      />
+                    ) : (
+                      <span>{r.email}</span>
+                    )}
+                  </td>
+
+                  {/* Total Orders (Inline Editable) */}
+                  <td
+                    onDoubleClick={() => startEditing(r.id, 'total_orders', r.total_orders)}
+                    className={`p-2.5 border-r border-slate-800 cursor-pointer ${
+                      r.dirtyFields?.total_orders ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-300'
+                    }`}
+                  >
+                    {editingCell?.id === r.id && editingCell.field === 'total_orders' ? (
+                      <input
+                        autoFocus
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={saveEditing}
+                        onKeyDown={handleKeyDown}
+                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
+                      />
+                    ) : (
+                      <span>{r.total_orders}</span>
+                    )}
+                  </td>
+
+                  {/* Total Spend (Inline Editable) */}
+                  <td
+                    onDoubleClick={() => startEditing(r.id, 'total_spend', r.total_spend)}
+                    className={`p-2.5 cursor-pointer font-semibold ${
+                      r.dirtyFields?.total_spend ? 'bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/80' : 'text-emerald-400'
+                    }`}
+                  >
+                    {editingCell?.id === r.id && editingCell.field === 'total_spend' ? (
+                      <input
+                        autoFocus
+                        type="number"
+                        step="0.01"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={saveEditing}
+                        onKeyDown={handleKeyDown}
+                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
+                      />
+                    ) : (
+                      <span>${typeof r.total_spend === 'number' ? r.total_spend.toFixed(2) : r.total_spend}</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* TablePlus-Style Transaction Bar for Result Edits */}
+      {/* Floating Transaction Bar for Result Edits */}
       {dirtyCount > 0 && (
         <div className="h-11 bg-amber-500/15 border-t border-amber-500/40 px-4 flex items-center justify-between select-none z-30 shadow-lg backdrop-blur-md flex-shrink-0">
           <div className="flex items-center space-x-2">
@@ -437,6 +498,70 @@ ORDER BY total_spend DESC LIMIT 50;`;
               <span>Commit Edits (⌘S)</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Right-Click Context Menu */}
+      <TableContextMenu
+        position={contextMenuPos}
+        selectedRows={results.filter((r) => selectedRowIds.has(r.id))}
+        tableName="users"
+        onClose={() => setContextMenuPos(null)}
+        onDuplicateRow={handleDuplicateRow}
+        onDeleteRows={handleDeleteRows}
+        onQuickLook={(row) => setInspectingRow(row)}
+        onToast={showToast}
+      />
+
+      {/* Quick Look Inspector Dialog */}
+      {inspectingRow && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10 flex flex-col animate-in zoom-in-95 duration-100">
+            <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between select-none">
+              <div className="flex items-center space-x-2">
+                <Eye className="w-4 h-4 text-sky-400" />
+                <span className="text-xs font-bold text-slate-100">Quick Look Inspector — Row #{inspectingRow.id}</span>
+              </div>
+              <button
+                onClick={() => setInspectingRow(null)}
+                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-sky-300 bg-slate-950 select-text">
+              <pre>{JSON.stringify(inspectingRow, null, 2)}</pre>
+            </div>
+            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between select-none">
+              <span className="text-[11px] text-slate-500 font-mono">Format: JSON Object</span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(inspectingRow, null, 2));
+                    showToast('📋 Copied row JSON to clipboard!');
+                  }}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 active:scale-95"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy JSON</span>
+                </button>
+                <button
+                  onClick={() => setInspectingRow(null)}
+                  className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition active:scale-95"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification Pill */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 border border-sky-500/40 shadow-2xl rounded-xl px-4 py-2.5 text-xs text-sky-200 flex items-center space-x-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150 backdrop-blur-xl ring-1 ring-white/10">
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span className="font-semibold">{toastMessage}</span>
         </div>
       )}
 

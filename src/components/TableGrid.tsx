@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { ExternalLink, Plus, Trash2, Check, RotateCcw, FileCode, CheckCircle2, Columns } from 'lucide-react';
+import { ExternalLink, Plus, Trash2, Check, RotateCcw, FileCode, CheckCircle2, Columns, Eye, Copy, X } from 'lucide-react';
 import { GridRow } from '../types';
 import { HeartbeatDot } from './HeartbeatDot';
+import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
 
 export const TableGrid = () => {
   const {
@@ -15,12 +16,34 @@ export const TableGrid = () => {
     pendingEditsCount,
     setSqlDiffModalOpen,
     setActiveTab,
+    selectedTable,
   } = useAppStore();
 
   const [filterText, setFilterText] = useState("status = 'pending' AND total_amount > 50");
   const [editingCell, setEditingCell] = useState<{ id: number; field: keyof GridRow } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
+  const [inspectingRow, setInspectingRow] = useState<GridRow | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 2500);
+  };
+
+  const handleDuplicateRow = (r: GridRow) => {
+    insertRow();
+    showToast(`✨ Duplicated row #${r.id}`);
+  };
+
+  const handleDeleteRows = (rowsToDelete: GridRow[]) => {
+    rowsToDelete.forEach((r) => deleteRow(r.id));
+    setSelectedRowIds(new Set());
+    showToast(`🗑️ Marked ${rowsToDelete.length} row(s) for deletion`);
+  };
 
   const startEditing = (id: number, field: keyof GridRow, currentValue: any) => {
     // Prevent editing the primary key directly or complex JSON
@@ -171,6 +194,7 @@ export const TableGrid = () => {
               const isInserted = row.rowState === 'inserted';
               const isDeleted = row.rowState === 'deleted';
               const isModified = row.rowState === 'modified';
+              const isSelected = selectedRowIds.has(row.id);
 
               let rowClass = 'hover:bg-slate-800/40';
               if (isInserted) rowClass = 'bg-emerald-950/20 hover:bg-emerald-950/30 border-l-4 border-l-emerald-400';
@@ -178,7 +202,34 @@ export const TableGrid = () => {
               else if (isModified || row.isDirty) rowClass = 'bg-amber-950/20 hover:bg-amber-950/30 border-l-4 border-l-amber-400';
 
               return (
-                <tr key={row.id} className={`group transition ${rowClass}`}>
+                <tr
+                  key={row.id}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) {
+                      const next = new Set(selectedRowIds);
+                      if (next.has(row.id)) next.delete(row.id);
+                      else next.add(row.id);
+                      setSelectedRowIds(next);
+                    } else if (e.shiftKey) {
+                      const allIds = rows.map((r) => r.id);
+                      setSelectedRowIds(new Set(allIds));
+                    } else {
+                      setSelectedRowIds(new Set([row.id]));
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!selectedRowIds.has(row.id)) {
+                      setSelectedRowIds(new Set([row.id]));
+                    }
+                    setContextMenuPos({ x: e.clientX, y: e.clientY });
+                  }}
+                  className={`group transition cursor-pointer select-none ${
+                    isSelected
+                      ? 'bg-sky-500/20 text-sky-100 ring-1 ring-sky-500/60 shadow-sm'
+                      : rowClass
+                  }`}
+                >
                   
                   {/* Row Index */}
                   <td className="px-3 py-2 border-r border-slate-800/60 text-slate-500 text-center select-none font-bold text-[11px]">
@@ -397,6 +448,70 @@ export const TableGrid = () => {
           <span>PostgreSQL 16.2</span>
         </div>
       </div>
+
+      {/* Right-Click Context Menu */}
+      <TableContextMenu
+        position={contextMenuPos}
+        selectedRows={rows.filter((r) => selectedRowIds.has(r.id))}
+        tableName={selectedTable}
+        onClose={() => setContextMenuPos(null)}
+        onDuplicateRow={handleDuplicateRow}
+        onDeleteRows={handleDeleteRows}
+        onQuickLook={(row) => setInspectingRow(row)}
+        onToast={showToast}
+      />
+
+      {/* Quick Look Inspector Dialog */}
+      {inspectingRow && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10 flex flex-col animate-in zoom-in-95 duration-100">
+            <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between select-none">
+              <div className="flex items-center space-x-2">
+                <Eye className="w-4 h-4 text-sky-400" />
+                <span className="text-xs font-bold text-slate-100">Quick Look Inspector — {selectedTable} #{inspectingRow.id}</span>
+              </div>
+              <button
+                onClick={() => setInspectingRow(null)}
+                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-sky-300 bg-slate-950 select-text">
+              <pre>{JSON.stringify(inspectingRow, null, 2)}</pre>
+            </div>
+            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between select-none">
+              <span className="text-[11px] text-slate-500 font-mono">Format: JSON Object</span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(inspectingRow, null, 2));
+                    showToast('📋 Copied row JSON to clipboard!');
+                  }}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 active:scale-95"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy JSON</span>
+                </button>
+                <button
+                  onClick={() => setInspectingRow(null)}
+                  className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition active:scale-95"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification Pill */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 border border-sky-500/40 shadow-2xl rounded-xl px-4 py-2.5 text-xs text-sky-200 flex items-center space-x-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150 backdrop-blur-xl ring-1 ring-white/10">
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span className="font-semibold">{toastMessage}</span>
+        </div>
+      )}
 
     </div>
   );
