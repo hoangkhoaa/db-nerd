@@ -18,6 +18,27 @@
     background-color: rgba(37, 99, 235, 0.5);
     color: #ffffff;
   }
+
+  /* Global Interactive Cursor Rules (TablePlus / macOS native behavior) */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  summary {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:disabled,
+  select:disabled {
+    cursor: not-allowed !important;
+  }
 }
 
 .drag-region {
@@ -26,6 +47,32 @@
 
 .no-drag {
   -webkit-app-region: no-drag;
+}
+
+/* Ensure no-drag buttons and actions in macOS titlebar always show pointer cursor */
+.no-drag:not(:disabled),
+button.no-drag:not(:disabled) {
+  cursor: pointer !important;
+}
+
+/* Interactive elements with cursor-pointer class */
+.cursor-pointer,
+[class*="cursor-pointer"] {
+  cursor: pointer !important;
+}
+
+/* Text editing elements maintain text cursor */
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="number"],
+textarea,
+pre.select-text,
+code.select-text,
+.cm-content,
+[contenteditable="true"] {
+  cursor: text !important;
+  user-select: text !important;
 }
 
 /* ==========================================================================
