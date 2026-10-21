@@ -4,10 +4,87 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { sql, PostgreSQL } from '@codemirror/lang-sql';
+import {
+  autocompletion,
+  completionKeymap,
+  closeBrackets,
+  closeBracketsKeymap,
+  CompletionContext,
+  CompletionResult,
+} from '@codemirror/autocomplete';
 import { HighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
+import { TABLE_SCHEMAS } from '../data/schemas';
 import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
+
+// Build rich SQL Schema with column types, primary key badges, and descriptions for autocompletion
+const buildSqlSchema = () => {
+  const schema: Record<string, any[]> = {};
+  Object.entries(TABLE_SCHEMAS).forEach(([tbl, info]) => {
+    schema[tbl] = info.columns.map((c) => ({
+      label: c.name,
+      type: c.isPrimaryKey ? 'keyword' : 'property',
+      detail: `${c.type}${c.isPrimaryKey ? ' (PK)' : c.isForeignKey ? ' (FK)' : ''}`,
+      info: c.comment || (c.defaultValue ? `Default: ${c.defaultValue}` : undefined),
+      boost: c.isPrimaryKey ? 99 : 50,
+    }));
+  });
+  return schema;
+};
+
+const SQL_SCHEMA = buildSqlSchema();
+
+// Dynamic alias resolver: e.g. "FROM users u" or "FROM users AS u" -> u resolves to users
+function getTableForAlias(docText: string, aliasOrName: string): string | null {
+  if (SQL_SCHEMA[aliasOrName]) return aliasOrName;
+  const regex = new RegExp(`(?:FROM|JOIN)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+(?:AS\\s+)?${aliasOrName}\\b`, 'i');
+  const match = docText.match(regex);
+  if (match && SQL_SCHEMA[match[1]]) {
+    return match[1];
+  }
+  return null;
+}
+
+// Custom autocomplete provider for table.column navigation and FROM/JOIN table suggestions
+function customDotAndTableCompletion(context: CompletionContext): CompletionResult | null {
+  const line = context.state.doc.lineAt(context.pos);
+  const textBefore = line.text.slice(0, context.pos - line.from);
+
+  // 1. Triggered on typing after a dot: e.g. users. or u. or tuple. or goose_db_version.
+  const dotMatch = textBefore.match(/([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z0-9_]*)$/);
+  if (dotMatch) {
+    const [_, tableOrAlias, prefix] = dotMatch;
+    const fullDoc = context.state.doc.toString();
+    const actualTable = getTableForAlias(fullDoc, tableOrAlias);
+
+    if (actualTable && SQL_SCHEMA[actualTable]) {
+      return {
+        from: context.pos - prefix.length,
+        options: SQL_SCHEMA[actualTable],
+        validFor: /^[a-zA-Z0-9_]*$/,
+      };
+    }
+  }
+
+  // 2. Triggered on FROM / JOIN / INTO clause to suggest table names
+  const fromJoinMatch = textBefore.match(/(?:FROM|JOIN|INTO|UPDATE)\s+([a-zA-Z0-9_]*)$/i);
+  if (fromJoinMatch) {
+    const prefix = fromJoinMatch[1];
+    const tableOptions = Object.keys(SQL_SCHEMA).map((tbl) => ({
+      label: tbl,
+      type: 'type',
+      detail: 'table',
+      boost: 90,
+    }));
+    return {
+      from: context.pos - prefix.length,
+      options: tableOptions,
+    };
+  }
+
+  return null;
+}
 
 // Vibrant, high-contrast SQL Syntax Highlighting Theme (Vivid Keywords, Emerald Strings, Amber Functions)
 const sqlHighlightStyle = HighlightStyle.define([
@@ -62,12 +139,71 @@ const sqlEditorTheme = EditorView.theme(
     '.cm-scroller': {
       overflow: 'auto',
     },
+    /* Autocomplete Tooltip Dropdown (TablePlus / VS Code style) */
+    '.cm-tooltip': {
+      backgroundColor: '#0f172a !important',
+      border: '1px solid #334155 !important',
+      borderRadius: '8px !important',
+      boxShadow: '0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) !important',
+      overflow: 'hidden !important',
+      zIndex: '100 !important',
+    },
+    '.cm-tooltip.cm-tooltip-autocomplete': {
+      '& > ul': {
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontSize: '12px',
+        maxHeight: '260px',
+        minWidth: '240px',
+        padding: '4px',
+      },
+      '& > ul > li': {
+        padding: '5px 8px',
+        borderRadius: '5px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        color: '#e2e8f0',
+        cursor: 'pointer',
+      },
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#1e293b !important',
+        color: '#38bdf8 !important',
+      },
+      '& > ul > li:hover': {
+        backgroundColor: '#1e293b80',
+      },
+    },
+    '.cm-completionLabel': {
+      fontWeight: '600',
+      color: '#f8fafc',
+    },
+    '.cm-completionDetail': {
+      marginLeft: 'auto',
+      paddingLeft: '12px',
+      color: '#94a3b8',
+      fontSize: '11px',
+      fontStyle: 'normal',
+      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+    },
+    '.cm-completionInfo': {
+      backgroundColor: '#090d16',
+      borderLeft: '1px solid #334155',
+      padding: '8px 12px',
+      color: '#cbd5e1',
+      fontSize: '11px',
+      maxWidth: '300px',
+    },
+    '.cm-completionIcon': {
+      width: '14px',
+      opacity: '0.8',
+      marginRight: '2px',
+    },
   },
   { dark: true }
 );
 
 export const SqlEditor: React.FC = () => {
-  const { activeTabId, sqlTabStates, setSqlTabQuery, runSqlQuery } = useAppStore();
+  const { activeTabId, sqlTabStates, setSqlTabQuery, runSqlQuery, selectedTable } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -104,7 +240,7 @@ export const SqlEditor: React.FC = () => {
     showToast(`⚡ Query executed in 1.4ms!`);
   };
 
-  // Initialize CodeMirror 6 with SQL language and syntax highlighting
+  // Initialize CodeMirror 6 with SQL language, schema completion, and syntax highlighting
   useEffect(() => {
     if (!editorRef.current) return;
 
@@ -116,7 +252,20 @@ export const SqlEditor: React.FC = () => {
         highlightActiveLine(),
         history(),
         bracketMatching(),
-        sql({ dialect: PostgreSQL }),
+        closeBrackets(),
+        sql({
+          dialect: PostgreSQL,
+          schema: SQL_SCHEMA,
+          defaultTable: selectedTable || 'users',
+          upperCaseKeywords: true,
+        }),
+        PostgreSQL.language.data.of({
+          autocomplete: customDotAndTableCompletion,
+        }),
+        autocompletion({
+          activateOnTyping: true,
+          maxRenderedOptions: 30,
+        }),
         syntaxHighlighting(sqlHighlightStyle),
         sqlEditorTheme,
         EditorView.updateListener.of((update) => {
@@ -132,6 +281,8 @@ export const SqlEditor: React.FC = () => {
               return true;
             },
           },
+          ...completionKeymap,
+          ...closeBracketsKeymap,
           ...defaultKeymap,
           ...historyKeymap,
         ]),
@@ -148,7 +299,7 @@ export const SqlEditor: React.FC = () => {
     return () => {
       view.destroy();
     };
-  }, [activeTabId]);
+  }, [activeTabId, selectedTable]);
 
   const handleFormat = () => {
     if (!viewRef.current) return;
