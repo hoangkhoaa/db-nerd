@@ -12,6 +12,7 @@ import {
   CompletionContext,
   CompletionResult,
 } from '@codemirror/autocomplete';
+import { highlightSelectionMatches } from '@codemirror/search';
 import { HighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
@@ -120,8 +121,28 @@ const sqlEditorTheme = EditorView.theme(
       borderLeftColor: '#38bdf8',
       borderLeftWidth: '2px',
     },
-    '&.cm-focused .cm-selectionBackground, ::selection': {
-      backgroundColor: '#1e293b !important',
+    /* High-contrast Native macOS / TablePlus Selection Highlight */
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
+      backgroundColor: 'rgba(37, 99, 235, 0.45) !important',
+    },
+    '.cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'rgba(37, 99, 235, 0.45) !important',
+    },
+    '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'rgba(37, 99, 235, 0.45) !important',
+    },
+    '::selection, .cm-content ::selection': {
+      backgroundColor: 'rgba(37, 99, 235, 0.55) !important',
+      color: '#ffffff !important',
+    },
+    '&:not(.cm-focused) .cm-selectionBackground': {
+      backgroundColor: 'rgba(37, 99, 235, 0.22) !important',
+    },
+    /* Word match highlight on double-click */
+    '.cm-selectionMatch': {
+      backgroundColor: 'rgba(56, 189, 248, 0.25) !important',
+      outline: '1px solid rgba(56, 189, 248, 0.6) !important',
+      borderRadius: '2px',
     },
     '.cm-gutters': {
       backgroundColor: '#020617',
@@ -253,6 +274,7 @@ export const SqlEditor: React.FC = () => {
         history(),
         bracketMatching(),
         closeBrackets(),
+        highlightSelectionMatches(),
         sql({
           dialect: PostgreSQL,
           schema: SQL_SCHEMA,

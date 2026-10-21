@@ -13,6 +13,11 @@
     background-color: #0b0f17;
     color: #f1f5f9;
   }
+
+  ::selection {
+    background-color: rgba(37, 99, 235, 0.5);
+    color: #ffffff;
+  }
 }
 
 .drag-region {
