@@ -61,7 +61,7 @@ export const Titlebar = () => {
           <img 
             src="/app-icon.png" 
             alt="db-nerd" 
-            className="w-6 h-6 rounded-md shadow-sm border border-slate-700/60 object-cover" 
+            className="w-7 h-7 object-contain drop-shadow" 
           />
           <span className="font-extrabold text-xs tracking-tight text-slate-100 font-mono">db-nerd</span>
         </div>
