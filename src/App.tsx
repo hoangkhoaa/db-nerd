@@ -12,7 +12,7 @@ import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2 } from 'lucide-react';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2 } from 'lucide-react';
 import './App.css';
 
 export function App() {
@@ -34,6 +34,8 @@ export function App() {
     setSqlDiffModalOpen,
     commitTransaction,
     rollbackTransaction,
+    toastMessage,
+    reloadData,
   } = useAppStore();
 
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -47,15 +49,14 @@ export function App() {
         toggleSidebar();
       }
       // ⌘I: Toggle Right Inspector
-      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'i' || e.key === 'I')) {
         e.preventDefault();
         useAppStore.getState().toggleRightInspector();
       }
-      // ⌘R: Reload Current Table
-      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+      // ⌘R: Reload Data (Table or Query)
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
-        const { setSelectedTable, selectedTable } = useAppStore.getState();
-        setSelectedTable(selectedTable);
+        reloadData();
       }
       // ⌘O: Open Database Switcher
       if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
@@ -335,6 +336,14 @@ export function App() {
         {/* Right Inspector Panel */}
         <RightInspector />
       </div>
+
+      {/* Global Floating Toast */}
+      {toastMessage && (
+        <div className="fixed top-14 right-6 z-50 bg-emerald-500 text-slate-950 font-bold px-3.5 py-2 rounded-xl shadow-2xl flex items-center space-x-2 text-xs border border-emerald-400/40 animate-in fade-in slide-in-from-top-3 duration-150 pointer-events-none select-none">
+          <CheckCircle2 className="w-4 h-4 text-slate-950 flex-shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Global Modals */}
       <ConnectionModal />

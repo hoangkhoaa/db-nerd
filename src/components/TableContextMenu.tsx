@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Copy, Check, FileText, Code, Database, Table as TableIcon, Trash2, CopyPlus, Eye } from 'lucide-react';
+import { ChevronRight, Copy, Check, FileText, Code, Database, Table as TableIcon, Trash2, CopyPlus, Eye, RefreshCw } from 'lucide-react';
+import { useAppStore } from '../stores/useAppStore';
 
 export interface ContextMenuPosition {
   x: number;
@@ -246,6 +247,21 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
           <span className="text-[10px] text-slate-500 group-hover:text-sky-200 font-mono">⌘↩</span>
         </button>
       )}
+
+      {/* Refresh Data */}
+      <button
+        onClick={() => {
+          useAppStore.getState().reloadData();
+          onClose();
+        }}
+        className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group"
+      >
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
+          <span>Refresh</span>
+        </div>
+        <span className="text-[10px] text-slate-500 group-hover:text-sky-200 font-mono">⌘R</span>
+      </button>
 
       {/* Duplicate Row */}
       {onDuplicateRow && selectedRows[0] && (

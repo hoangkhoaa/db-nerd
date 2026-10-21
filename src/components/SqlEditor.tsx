@@ -304,6 +304,13 @@ export const SqlEditor: React.FC = () => {
               return true;
             },
           },
+          {
+            key: 'Mod-r',
+            run: () => {
+              handleRun();
+              return true;
+            },
+          },
           ...completionKeymap,
           ...closeBracketsKeymap,
           ...defaultKeymap,

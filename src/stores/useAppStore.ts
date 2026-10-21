@@ -100,6 +100,11 @@ interface AppState {
   killProcess: (pid: number) => void;
 
   history: QueryHistoryItem[];
+
+  isReloading: boolean;
+  toastMessage: string | null;
+  showToast: (msg: string) => void;
+  reloadData: () => void;
 }
 
 const INITIAL_ROWS: GridRow[] = [
@@ -720,6 +725,46 @@ export const useAppStore = create<AppState>((set, get) => ({
       originalRows: JSON.parse(JSON.stringify(targetRows)),
       pendingEditsCount: 0,
     });
+  },
+
+  isReloading: false,
+  toastMessage: null,
+  showToast: (msg: string) => {
+    set({ toastMessage: msg });
+    setTimeout(() => {
+      set((state) => (state.toastMessage === msg ? { toastMessage: null } : {}));
+    }, 2500);
+  },
+  reloadData: () => {
+    const { activeTabId, tabs, selectedTable, sqlTabStates, runSqlQuery, showToast } = get();
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+
+    set({ isReloading: true });
+
+    if (activeTab?.type === 'sql') {
+      runSqlQuery(activeTabId);
+      const rowsCount = sqlTabStates[activeTabId]?.results?.length || 0;
+      showToast(`⚡ Query re-executed in 1.4ms (${rowsCount} rows)`);
+    } else {
+      let targetRows = INITIAL_ROWS;
+      if (selectedTable === 'goose_db_version') targetRows = GOOSE_ROWS;
+      else if (selectedTable === 'tuple') targetRows = TUPLE_ROWS;
+
+      const duration = +(Math.random() * 0.8 + 0.8).toFixed(1);
+
+      set({
+        selectedRowData: null,
+        rows: JSON.parse(JSON.stringify(targetRows)),
+        originalRows: JSON.parse(JSON.stringify(targetRows)),
+        pendingEditsCount: 0,
+      });
+
+      showToast(`⚡ Refreshed table '${selectedTable}' (${targetRows.length} records • ${duration}ms)`);
+    }
+
+    setTimeout(() => {
+      set({ isReloading: false });
+    }, 250);
   },
 
   isSidebarOpen: true,

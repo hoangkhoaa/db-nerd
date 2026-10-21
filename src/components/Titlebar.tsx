@@ -30,6 +30,8 @@ export const Titlebar = () => {
     isFilterBarOpen,
     toggleFilterBar,
     openNewQueryTab,
+    isReloading,
+    reloadData,
   } = useAppStore();
 
   const handleCommit = () => {
@@ -188,14 +190,13 @@ export const Titlebar = () => {
           </div>
         ) : (
           <button
-            onClick={() => {
-              const { setSelectedTable, selectedTable } = useAppStore.getState();
-              setSelectedTable(selectedTable);
-            }}
-            className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95"
-            title="Reload Table Data & Schema (⌘R)"
+            onClick={reloadData}
+            className={`no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 ${
+              isReloading ? 'text-sky-400 border-sky-500/50 bg-sky-950/30' : ''
+            }`}
+            title="Reload Data & Schema (⌘R)"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin text-sky-400' : ''}`} />
           </button>
         )}
 
