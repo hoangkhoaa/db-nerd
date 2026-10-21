@@ -462,13 +462,13 @@ export const TableGrid: React.FC = () => {
 
               <div className="flex items-center space-x-0.5 pl-1">
                 <button
-                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40"
+                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
                   disabled
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40"
+                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
                   disabled
                 >
                   <ChevronRight className="w-3.5 h-3.5" />

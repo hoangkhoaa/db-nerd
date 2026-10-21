@@ -288,7 +288,7 @@ export const Sidebar = () => {
                     <span>{h.timestamp.replace('Today at ', '')}</span>
                   </div>
                 </div>
-                <div className="font-mono text-[11px] text-slate-300 line-clamp-2 leading-relaxed bg-slate-950/60 p-1.5 rounded border border-slate-850">
+                <div className="font-mono text-[11px] text-slate-300 line-clamp-2 leading-relaxed bg-slate-950/60 p-1.5 rounded border border-slate-800/80">
                   {h.sql}
                 </div>
               </div>
