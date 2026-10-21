@@ -7,6 +7,7 @@ export const Titlebar = () => {
   const {
     activeConnection,
     setConnectionModalOpen,
+    setDatabaseModalOpen,
     setHistoryModalOpen,
     pendingEditsCount,
     selectedTable,
@@ -103,14 +104,23 @@ export const Titlebar = () => {
         </button>
       </div>
 
-      {/* Center: Breadcrumb */}
-      <div className="flex items-center space-x-2 text-xs pointer-events-none">
-        <div className="flex items-center space-x-1 text-slate-400">
-          <Database className="w-3.5 h-3.5 text-slate-500" />
-          <span>public</span>
-        </div>
+      {/* Center: Interactive Database Switcher & Table */}
+      <div className="flex items-center space-x-2 text-xs pointer-events-auto">
+        <button
+          onClick={() => setDatabaseModalOpen(true)}
+          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-slate-200 hover:text-white transition group shadow-sm active:scale-95"
+          title="Open & Switch Database (⌘O)"
+        >
+          <Database className="w-3.5 h-3.5 text-sky-400 fill-sky-400/20 group-hover:scale-110 transition-transform" />
+          <span className="font-bold text-sky-200">{activeConnection.database || 'default'}</span>
+          <kbd className="px-1 py-0.2 bg-slate-950 border border-slate-700/80 rounded text-[9px] font-mono text-slate-400 group-hover:text-slate-200 ml-0.5">
+            ⌘O
+          </kbd>
+        </button>
+
         <span className="text-slate-600">/</span>
-        <div className="flex items-center space-x-1.5 px-2.5 py-0.5 bg-sky-500/10 border border-sky-500/30 rounded-md text-sky-300 font-semibold shadow-sm">
+
+        <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-sky-500/10 border border-sky-500/30 rounded-lg text-sky-300 font-semibold shadow-sm">
           <span>{selectedTable}</span>
         </div>
       </div>

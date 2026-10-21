@@ -6,6 +6,7 @@ import { TableGrid } from './components/TableGrid';
 import { SqlEditor } from './components/SqlEditor';
 import { Observability } from './components/Observability';
 import { ConnectionModal } from './components/ConnectionModal';
+import { OpenDatabaseModal } from './components/OpenDatabaseModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
@@ -24,6 +25,7 @@ export function App() {
     isTransactionOpen,
     pendingEditsCount,
     setConnectionModalOpen,
+    setDatabaseModalOpen,
     setHistoryModalOpen,
     setSqlDiffModalOpen,
     commitTransaction,
@@ -32,6 +34,11 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ⌘O: Open Database Switcher
+      if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+        e.preventDefault();
+        setDatabaseModalOpen(true);
+      }
       // ⌘T: New SQL Query Tab
       if ((e.metaKey || e.ctrlKey) && e.key === 't') {
         e.preventDefault();
@@ -224,6 +231,7 @@ export function App() {
 
       {/* Global Modals */}
       <ConnectionModal />
+      <OpenDatabaseModal />
       <QueryHistoryModal />
       <SqlDiffModal />
 

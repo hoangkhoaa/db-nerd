@@ -17,6 +17,7 @@ export interface ConnectionProfile {
   host: string;
   port: number;
   database: string;
+  databases?: string[];
   username: string;
   password?: string;
   useSsh?: boolean;

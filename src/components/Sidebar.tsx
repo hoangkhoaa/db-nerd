@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { Search, Table, ChevronRight, Plus } from 'lucide-react';
+import { Search, Table, ChevronRight, Plus, Database } from 'lucide-react';
 import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
 
 const COLOR_MAP: Record<string, { text: string; dot: string; border: string; bg: string }> = {
@@ -38,6 +38,7 @@ export const Sidebar = () => {
     activeConnection,
     switchActiveConnection,
     setConnectionModalOpen,
+    setDatabaseModalOpen,
   } = useAppStore();
 
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -175,6 +176,24 @@ export const Sidebar = () => {
                               >
                                 <div className="overflow-hidden">
                                   <div className="ml-3 pl-2 border-l border-slate-800 space-y-0.5 pt-0.5">
+                                    {/* Active Database Switcher Pill */}
+                                    <div
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDatabaseModalOpen(true);
+                                      }}
+                                      className="flex items-center justify-between px-2 py-1 rounded bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-sky-300 font-mono text-[11px] cursor-pointer transition group/db shadow-sm mb-1.5 active:scale-95"
+                                      title="Open / Choose Database (⌘O)"
+                                    >
+                                      <div className="flex items-center space-x-1.5 truncate">
+                                        <Database className="w-3 h-3 text-sky-400 fill-sky-400/20 flex-shrink-0" />
+                                        <span className="truncate font-semibold">{conn.database || 'postgres'}</span>
+                                      </div>
+                                      <span className="text-[9px] px-1 bg-slate-950 border border-slate-700 rounded text-slate-400 group-hover/db:text-sky-200">
+                                        ⌘O
+                                      </span>
+                                    </div>
+
                                     {filteredTables.map((tbl) => (
                                       <div
                                         key={tbl.name}

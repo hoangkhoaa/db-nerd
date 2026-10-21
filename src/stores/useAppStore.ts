@@ -29,6 +29,11 @@ interface AppState {
   activeConnection: ConnectionProfile;
   setActiveConnection: (conn: ConnectionProfile) => void;
 
+  isDatabaseModalOpen: boolean;
+  setDatabaseModalOpen: (open: boolean) => void;
+  switchActiveDatabase: (dbName: string) => void;
+  createDatabase: (dbName: string) => void;
+
   isConnectionModalOpen: boolean;
   setConnectionModalOpen: (open: boolean) => void;
 
@@ -153,6 +158,24 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     host: 'aurora-cluster.eu-west-1.rds.amazonaws.com',
     port: 5432,
     database: 'ecom_prod_db',
+    databases: [
+      'ecom_prod_db',
+      'ada',
+      'ada_openfga',
+      'agl_login',
+      'airbyte',
+      'airflow',
+      'airflow_eks',
+      'amcflow',
+      'apsproddb',
+      'beacon',
+      'catalog_service',
+      'coder',
+      'committed_units_temp',
+      'commonproddb',
+      'controllership_duy_nguyen',
+      'postgres',
+    ],
     username: 'app_master',
     password: '••••••••••••',
     useSsh: true,
@@ -169,6 +192,7 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     host: 'xy12345.us-east-1.snowflakecomputing.com',
     port: 443,
     database: 'ANALYTICS_PROD',
+    databases: ['ANALYTICS_PROD', 'RAW_DWH', 'REPORTING', 'SNOWFLAKE'],
     username: 'dwh_engineer',
     password: '••••••••••••',
     accountIdentifier: 'xy12345.us-east-1',
@@ -185,6 +209,7 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     host: 'redis-cluster.prod.cache.amazonaws.com',
     port: 6379,
     database: '0',
+    databases: ['0', '1', '2', '3', '4', '5'],
     username: 'default',
     password: '',
     active: false,
@@ -199,6 +224,14 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     host: '10.128.0.4',
     port: 3306,
     database: 'staging_main',
+    databases: [
+      'staging_main',
+      'staging_auth',
+      'staging_orders',
+      'staging_analytics',
+      'mysql',
+      'sys',
+    ],
     username: 'staging_admin',
     password: '••••••••••••',
     useSsh: false,
@@ -214,6 +247,12 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     host: 'localhost',
     port: 5432,
     database: 'postgres',
+    databases: [
+      'postgres',
+      'local_dev',
+      'test_db',
+      'benchmark_db',
+    ],
     username: 'postgres',
     password: '',
     useSsh: false,
@@ -425,6 +464,45 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeConnection: { ...conn, active: true },
       appMode: nextAppMode,
     }));
+  },
+
+  isDatabaseModalOpen: false,
+  setDatabaseModalOpen: (open) => set({ isDatabaseModalOpen: open }),
+
+  switchActiveDatabase: (dbName) => {
+    const { activeConnection, connections } = get();
+    const nextConn = { ...activeConnection, database: dbName };
+    const nextConnections = connections.map((c) =>
+      c.id === activeConnection.id ? { ...c, database: dbName } : c
+    );
+    set({
+      activeConnection: nextConn,
+      connections: nextConnections,
+      isDatabaseModalOpen: false,
+    });
+  },
+
+  createDatabase: (dbName) => {
+    const { activeConnection, connections } = get();
+    const currentDbs = activeConnection.databases || [activeConnection.database];
+    const cleanName = dbName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    if (!cleanName) return;
+
+    if (currentDbs.includes(cleanName)) {
+      get().switchActiveDatabase(cleanName);
+      return;
+    }
+
+    const nextDbs = [...currentDbs, cleanName];
+    const nextConn = { ...activeConnection, database: cleanName, databases: nextDbs };
+    const nextConnections = connections.map((c) =>
+      c.id === activeConnection.id ? { ...c, database: cleanName, databases: nextDbs } : c
+    );
+    set({
+      activeConnection: nextConn,
+      connections: nextConnections,
+      isDatabaseModalOpen: false,
+    });
   },
 
   isConnectionModalOpen: false,
