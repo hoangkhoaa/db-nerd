@@ -29,8 +29,18 @@ export const Titlebar = () => {
       data-tauri-drag-region
       className="h-12 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 pl-20 flex items-center justify-between select-none z-30 flex-shrink-0"
     >
-      {/* Left: Active Connection Badge + Quick Find */}
+      {/* Left: App Logo + Active Connection Badge + Quick Find */}
       <div className="flex items-center space-x-3">
+        {/* App Logo Branding */}
+        <div className="flex items-center space-x-2 pr-2 border-r border-slate-800/80">
+          <img 
+            src="/app-icon.png" 
+            alt="db-nerd" 
+            className="w-6 h-6 rounded-md shadow-sm border border-slate-700/60 object-cover" 
+          />
+          <span className="font-extrabold text-xs tracking-tight text-slate-100 font-mono">db-nerd</span>
+        </div>
+
         {/* Connection Switcher Button */}
         <button
           onClick={() => setConnectionModalOpen(true)}
