@@ -19,6 +19,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { TABLE_SCHEMAS } from '../data/schemas';
 import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
+import { format as formatSql } from 'sql-formatter';
 
 // Build rich SQL Schema with column types, primary key badges, and descriptions for autocompletion
 const buildSqlSchema = () => {
@@ -225,7 +226,7 @@ const sqlEditorTheme = EditorView.theme(
 );
 
 export const SqlEditor: React.FC = () => {
-  const { activeTabId, sqlTabStates, setSqlTabQuery, runSqlQuery, selectedTable } = useAppStore();
+  const { activeTabId, sqlTabStates, setSqlTabQuery, runSqlQuery, selectedTable, activeConnection } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -260,6 +261,92 @@ export const SqlEditor: React.FC = () => {
     const currentCode = viewRef.current.state.doc.toString();
     runSqlQuery(activeTabId, currentCode);
     showToast(`⚡ Query executed in 1.4ms!`);
+  };
+
+  const handleFormat = () => {
+    if (!viewRef.current) return;
+    const view = viewRef.current;
+    const { from, to } = view.state.selection.main;
+    const hasSelection = from !== to;
+    const textToFormat = hasSelection
+      ? view.state.sliceDoc(from, to)
+      : view.state.doc.toString();
+
+    if (!textToFormat.trim()) {
+      showToast('⚠️ No SQL text to format');
+      return;
+    }
+
+    const engine = activeConnection?.engine || 'postgres';
+    const dialect =
+      engine === 'postgres'
+        ? 'postgresql'
+        : engine === 'mysql'
+        ? 'mysql'
+        : engine === 'snowflake'
+        ? 'snowflake'
+        : 'sql';
+
+    try {
+      const formatted = formatSql(textToFormat, {
+        language: dialect as any,
+        keywordCase: 'upper',
+        dataTypeCase: 'upper',
+        functionCase: 'upper',
+        linesBetweenQueries: 2,
+        indentStyle: 'standard',
+        tabWidth: 2,
+        useTabs: false,
+      });
+
+      if (hasSelection) {
+        view.dispatch({
+          changes: { from, to, insert: formatted },
+          selection: { anchor: from, head: from + formatted.length },
+        });
+        setSqlTabQuery(activeTabId, view.state.doc.toString());
+        showToast('✨ Formatted Selected SQL');
+      } else {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: formatted },
+          selection: { anchor: Math.min(from, formatted.length) },
+        });
+        setSqlTabQuery(activeTabId, formatted);
+        showToast('✨ Formatted Full SQL Query');
+      }
+    } catch (err) {
+      console.warn('SQL format dialect error, trying generic sql:', err);
+      try {
+        const fallbackFormatted = formatSql(textToFormat, {
+          language: 'sql',
+          keywordCase: 'upper',
+          dataTypeCase: 'upper',
+          functionCase: 'upper',
+          linesBetweenQueries: 2,
+          indentStyle: 'standard',
+          tabWidth: 2,
+          useTabs: false,
+        });
+
+        if (hasSelection) {
+          view.dispatch({
+            changes: { from, to, insert: fallbackFormatted },
+            selection: { anchor: from, head: from + fallbackFormatted.length },
+          });
+          setSqlTabQuery(activeTabId, view.state.doc.toString());
+          showToast('✨ Formatted Selected SQL');
+        } else {
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: fallbackFormatted },
+            selection: { anchor: Math.min(from, fallbackFormatted.length) },
+          });
+          setSqlTabQuery(activeTabId, fallbackFormatted);
+          showToast('✨ Formatted Full SQL Query');
+        }
+      } catch (fallbackErr) {
+        showToast('⚠️ SQL syntax error: check quotes or parentheses');
+      }
+    }
   };
 
   // Initialize CodeMirror 6 with SQL language, schema completion, and syntax highlighting
@@ -311,6 +398,20 @@ export const SqlEditor: React.FC = () => {
               return true;
             },
           },
+          {
+            key: 'Alt-Shift-f',
+            run: () => {
+              handleFormat();
+              return true;
+            },
+          },
+          {
+            key: 'Mod-Shift-f',
+            run: () => {
+              handleFormat();
+              return true;
+            },
+          },
           ...completionKeymap,
           ...closeBracketsKeymap,
           ...defaultKeymap,
@@ -330,26 +431,6 @@ export const SqlEditor: React.FC = () => {
       view.destroy();
     };
   }, [activeTabId, selectedTable]);
-
-  const handleFormat = () => {
-    if (!viewRef.current) return;
-    const currentText = viewRef.current.state.doc.toString();
-    const keywords = [
-      'select', 'from', 'where', 'left join', 'join', 'group by', 'order by',
-      'limit', 'as', 'count', 'sum', 'avg', 'desc', 'asc', 'on', 'and', 'or',
-    ];
-    let formatted = currentText;
-    keywords.forEach((kw) => {
-      const reg = new RegExp(`\\b${kw}\\b`, 'gi');
-      formatted = formatted.replace(reg, kw.toUpperCase());
-    });
-
-    viewRef.current.dispatch({
-      changes: { from: 0, to: currentText.length, insert: formatted },
-    });
-    setSqlTabQuery(activeTabId, formatted);
-    showToast('✨ Formatted SQL Query');
-  };
 
   const columns = tabState.columns.length > 0
     ? tabState.columns
@@ -381,11 +462,12 @@ export const SqlEditor: React.FC = () => {
 
           <button
             onClick={handleFormat}
-            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium"
-            title="Auto-format SQL keywords to uppercase"
+            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium cursor-pointer active:scale-95"
+            title="Beautify SQL Query or Selected Block (⇧⌥F / ⇧⌘F)"
           >
             <Sparkles className="w-3.5 h-3.5 text-sky-400" />
             <span>Format</span>
+            <kbd className="px-1.5 py-0.2 bg-slate-800/80 border border-slate-700 rounded text-[9px] font-mono text-slate-400">⇧⌥F</kbd>
           </button>
         </div>
 

@@ -36,7 +36,7 @@ export const SqlDiffModal = () => {
           </div>
           <button
             onClick={() => setSqlDiffModalOpen(false)}
-            className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
+            className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -48,7 +48,7 @@ export const SqlDiffModal = () => {
             <span>Generated atomic transaction statements ready to execute:</span>
             <button
               onClick={handleCopy}
-              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-semibold flex items-center space-x-1"
+              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-semibold flex items-center space-x-1 cursor-pointer active:scale-95"
             >
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               <span>{copied ? 'Copied' : 'Copy SQL'}</span>
@@ -69,13 +69,13 @@ export const SqlDiffModal = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setSqlDiffModalOpen(false)}
-              className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition"
+              className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleCommitNow}
-              className="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs rounded-xl transition flex items-center space-x-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
+              className="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs rounded-xl transition flex items-center space-x-1.5 shadow-md shadow-emerald-500/20 active:scale-95 cursor-pointer"
             >
               <Play className="w-3 h-3 fill-current" />
               <span>Commit Now (⌘S)</span>
