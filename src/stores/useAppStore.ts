@@ -72,6 +72,12 @@ interface AppState {
   structureSearchColumn: string;
   setStructureSearchColumn: (val: string) => void;
 
+  selectedStructureColumn: any | null;
+  setSelectedStructureColumn: (col: any | null) => void;
+
+  inspectorWidth: 'normal' | 'expanded';
+  toggleInspectorWidth: () => void;
+
   originalRows: GridRow[];
   rows: GridRow[];
   updateCell: (id: number, field: keyof GridRow, value: any) => void;
@@ -591,6 +597,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   structureSearchColumn: '',
   setStructureSearchColumn: (val) => set({ structureSearchColumn: val }),
+
+  selectedStructureColumn: null,
+  setSelectedStructureColumn: (col) => set({ selectedStructureColumn: col }),
+
+  inspectorWidth: 'normal',
+  toggleInspectorWidth: () =>
+    set((state) => ({
+      inspectorWidth: state.inspectorWidth === 'normal' ? 'expanded' : 'normal',
+    })),
 
   originalRows: JSON.parse(JSON.stringify(INITIAL_ROWS)),
   rows: JSON.parse(JSON.stringify(INITIAL_ROWS)),

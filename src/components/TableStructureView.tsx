@@ -21,7 +21,13 @@ const DATA_TYPES = [
 ];
 
 export const TableStructureView: React.FC = () => {
-  const { selectedTable, structureSearchColumn, setStructureSearchColumn } = useAppStore();
+  const {
+    selectedTable,
+    structureSearchColumn,
+    setStructureSearchColumn,
+    selectedStructureColumn,
+    setSelectedStructureColumn,
+  } = useAppStore();
   const schemaInfo = getTableSchema(selectedTable);
 
   const [columns, setColumns] = useState<ColumnDefinition[]>(schemaInfo.columns);
@@ -31,6 +37,9 @@ export const TableStructureView: React.FC = () => {
   React.useEffect(() => {
     setColumns(schemaInfo.columns);
     setTableNameInput(selectedTable);
+    if (schemaInfo.columns.length > 0) {
+      setSelectedStructureColumn(schemaInfo.columns[0]);
+    }
   }, [selectedTable]);
 
   const primaryKeyCol = columns.find((c) => c.isPrimaryKey)?.name || 'id';
@@ -110,13 +119,19 @@ export const TableStructureView: React.FC = () => {
           {/* Table Body */}
           <tbody className="divide-y divide-slate-800/40 text-[11px]">
             {filteredColumns.map((col, idx) => {
+              const isSelected = selectedStructureColumn?.name === col.name;
               const isEven = idx % 2 === 0;
 
               return (
                 <tr
                   key={col.name + idx}
-                  className={`hover:bg-slate-800/40 transition-colors ${
-                    isEven ? 'bg-slate-900/40' : 'bg-slate-950/60'
+                  onClick={() => setSelectedStructureColumn(col)}
+                  className={`cursor-pointer transition-colors ${
+                    isSelected
+                      ? 'bg-sky-500/20 text-white font-semibold shadow-inner border-l-2 border-l-sky-400'
+                      : isEven
+                      ? 'bg-slate-900/40 hover:bg-slate-800/40 text-slate-200'
+                      : 'bg-slate-950/60 hover:bg-slate-800/40 text-slate-200'
                   }`}
                 >
                   {/* # Index */}
