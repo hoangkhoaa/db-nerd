@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@glideapps/glide-data-grid/dist/index.css";
+
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background-color: #0b0f17;
+    color: #f1f5f9;
+  }
+}

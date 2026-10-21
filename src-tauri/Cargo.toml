@@ -1,0 +1,41 @@
+[package]
+name = "db-nerd"
+version = "0.1.0"
+description = "A fast, lightweight, native-feel database client for developers"
+authors = ["Khoa Nguyen"]
+edition = "2021"
+
+[lib]
+name = "db_nerd_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+
+# Database Drivers
+sqlx = { version = "0.8", features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "mysql",
+    "sqlite",
+    "chrono",
+    "uuid"
+] }
+
+async-trait = "0.1"
+thiserror = "2.0"
+anyhow = "1.0"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
