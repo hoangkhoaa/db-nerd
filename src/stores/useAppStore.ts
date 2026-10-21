@@ -57,6 +57,10 @@ interface AppState {
   selectedTable: string;
   setSelectedTable: (tbl: string) => void;
 
+  isSidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+
   isRightInspectorOpen: boolean;
   setRightInspectorOpen: (open: boolean) => void;
   toggleRightInspector: () => void;
@@ -221,13 +225,13 @@ const INITIAL_GROUPS: ConnectionGroup[] = [
 const INITIAL_CONNECTIONS: ConnectionProfile[] = [
   {
     id: 'conn-1',
-    name: 'prod-postgres-main',
-    groupId: 'group-prod',
+    name: 'Notification Service',
+    groupId: 'group-local',
     engine: 'postgres',
-    env: 'prod',
+    env: 'local',
     host: 'aurora-cluster.eu-west-1.rds.amazonaws.com',
     port: 5432,
-    database: 'ecom_prod_db',
+    database: 'ada_openfga',
     databases: [
       'ecom_prod_db',
       'ada',
@@ -333,8 +337,8 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
 
 export const useAppStore = create<AppState>((set, get) => ({
   tabs: DEFAULT_TABS,
-  activeTabId: 'tab-sql-1',
-  activeTab: 'sql',
+  activeTabId: 'tab-grid-tuple',
+  activeTab: 'grid',
 
   setActiveTabId: (id) => {
     const { tabs } = get();
@@ -549,29 +553,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openTableSchemaTab: (tableName) => {
-    const { tabs } = get();
-    const existing = tabs.find((t) => t.type === 'schema' && t.tableName === tableName);
-    if (existing) {
-      set({
-        activeTabId: existing.id,
-        activeTab: 'schema',
-        selectedTable: tableName,
-      });
-    } else {
-      const newTab: TabItem = {
-        id: `tab-schema-${tableName}`,
-        type: 'schema',
-        title: `${tableName} [Structure & DDL]`,
-        tableName,
-        canClose: true,
-      };
-      set({
-        tabs: [...tabs, newTab],
-        activeTabId: newTab.id,
-        activeTab: 'schema',
-        selectedTable: tableName,
-      });
-    }
+    get().openTableGridTab(tableName);
+    set({ tableViewMode: 'structure' });
   },
 
   closeTab: (id) => {
@@ -725,7 +708,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingEditsCount: 1,
   resetPending: () => set({ pendingEditsCount: 0, isTransactionOpen: false }),
 
-  selectedTable: 'user_orders',
+  selectedTable: 'tuple',
   setSelectedTable: (tbl) => {
     let targetRows = INITIAL_ROWS;
     if (tbl === 'goose_db_version') targetRows = GOOSE_ROWS;
@@ -739,6 +722,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  isSidebarOpen: true,
+  setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+
   isRightInspectorOpen: true,
   setRightInspectorOpen: (open) => set({ isRightInspectorOpen: open }),
   toggleRightInspector: () => set((state) => ({ isRightInspectorOpen: !state.isRightInspectorOpen })),
@@ -749,11 +736,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   tableViewMode: 'data',
   setTableViewMode: (mode) => set({ tableViewMode: mode }),
 
-  isFilterBarOpen: true,
+  isFilterBarOpen: false,
   toggleFilterBar: () => set((state) => ({ isFilterBarOpen: !state.isFilterBarOpen })),
-  filterWhereText: "status = 'pending' AND total_amount > 50",
+  filterWhereText: "object_type = 'connector_tool'",
   setFilterWhereText: (val) => set({ filterWhereText: val }),
-  filterOrderByText: "id DESC",
+  filterOrderByText: "inserted_at DESC",
   setFilterOrderByText: (val) => set({ filterOrderByText: val }),
 
   structureSearchColumn: '',
@@ -768,8 +755,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       inspectorWidth: state.inspectorWidth === 'normal' ? 'expanded' : 'normal',
     })),
 
-  originalRows: JSON.parse(JSON.stringify(INITIAL_ROWS)),
-  rows: JSON.parse(JSON.stringify(INITIAL_ROWS)),
+  originalRows: JSON.parse(JSON.stringify(TUPLE_ROWS)),
+  rows: JSON.parse(JSON.stringify(TUPLE_ROWS)),
 
   updateCell: (id, field, value) => {
     const { rows, originalRows, selectedTable } = get();

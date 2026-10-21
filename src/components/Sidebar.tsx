@@ -1,308 +1,326 @@
 import { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { Search, Table, ChevronRight, Plus, Database } from 'lucide-react';
-import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
+import {
+  Search,
+  Table as TableIcon,
+  ChevronRight,
+  ChevronDown,
+  Plus,
+  Terminal,
+  Clock,
+  SlidersHorizontal,
+  CheckCircle2,
+} from 'lucide-react';
 
-const COLOR_MAP: Record<string, { text: string; dot: string; border: string; bg: string }> = {
-  rose: { text: 'text-rose-400', dot: 'bg-rose-500', border: 'border-rose-500/30', bg: 'bg-rose-500/20' },
-  amber: { text: 'text-amber-400', dot: 'bg-amber-500', border: 'border-amber-500/30', bg: 'bg-amber-500/20' },
-  emerald: { text: 'text-emerald-400', dot: 'bg-emerald-500', border: 'border-emerald-500/30', bg: 'bg-emerald-500/20' },
-  sky: { text: 'text-sky-400', dot: 'bg-sky-500', border: 'border-sky-500/30', bg: 'bg-sky-500/20' },
-  purple: { text: 'text-purple-400', dot: 'bg-purple-500', border: 'border-purple-500/30', bg: 'bg-purple-500/20' },
-};
+const SAVED_QUERIES = [
+  {
+    id: 'q-1',
+    title: 'Active Users by Spend',
+    desc: 'Top active users ordered by total spend',
+    sql: `SELECT u.id, u.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend\nFROM users u\nLEFT JOIN user_orders o ON o.user_id = u.id\nWHERE u.status = 'active'\nGROUP BY u.id, u.email\nORDER BY total_spend DESC LIMIT 50;`,
+  },
+  {
+    id: 'q-2',
+    title: 'Tuples by Organisation',
+    desc: 'OpenFGA tuple relationship mappings',
+    sql: `SELECT store, object_type, object_id, relation, _user\nFROM tuple\nWHERE object_type = 'connector_tool'\nORDER BY inserted_at DESC\nLIMIT 20;`,
+  },
+  {
+    id: 'q-3',
+    title: 'Goose Migrations History',
+    desc: 'Database schema migration ledger',
+    sql: `SELECT id, version_id, is_applied, tstamp\nFROM goose_db_version\nORDER BY id ASC;`,
+  },
+  {
+    id: 'q-4',
+    title: 'Process Diagnostics (pg_stat)',
+    desc: 'Active running queries and worker processes',
+    sql: `SELECT pid, usename, client_addr, state, query_start, query\nFROM pg_stat_activity\nWHERE state != 'idle'\nORDER BY query_start ASC;`,
+  },
+  {
+    id: 'q-5',
+    title: 'Reset Session Locks',
+    desc: 'Terminate idle in transaction sessions older than 5m',
+    sql: `SELECT pg_terminate_backend(pid)\nFROM pg_stat_activity\nWHERE state = 'idle in transaction'\n  AND query_start < NOW() - INTERVAL '5 minutes';`,
+  },
+];
 
-const GROUP_COLOR_MAP: Record<string, HeartbeatColor> = {
-  rose: 'red',
-  amber: 'amber',
-  emerald: 'green',
-  sky: 'sky',
-  purple: 'purple',
-};
-
-const ENGINE_EMOJI: Record<string, string> = {
-  postgres: '🐘',
-  mysql: '🐬',
-  redis: '🟥',
-  snowflake: '❄️',
-};
+const TABLES = [
+  { name: 'assertion', count: '42' },
+  { name: 'authorization_model', count: '18' },
+  { name: 'changelog', count: '1.4K' },
+  { name: 'goose_db_version', count: '6' },
+  { name: 'store', count: '120' },
+  { name: 'tuple', count: '386K' },
+  { name: 'user_orders', count: '1.2M' },
+  { name: 'users', count: '124K' },
+  { name: 'products', count: '8.4K' },
+];
 
 export const Sidebar = () => {
   const {
-    appMode,
-    setAppMode,
     selectedTable,
+    setSelectedTable,
     openTableGridTab,
-    openTableSchemaTab,
-    connectionGroups,
-    connections,
+    openNewQueryTab,
     activeConnection,
-    switchActiveConnection,
-    setConnectionModalOpen,
     setDatabaseModalOpen,
+    history,
   } = useAppStore();
 
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [sidebarTab, setSidebarTab] = useState<'items' | 'queries' | 'history'>('items');
   const [searchFilter, setSearchFilter] = useState('');
+  const [isFunctionsOpen, setIsFunctionsOpen] = useState(false);
+  const [isTablesOpen, setIsTablesOpen] = useState(true);
 
-  const toggleGroup = (groupId: string) => {
-    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
+  const filteredTables = TABLES.filter((t) =>
+    t.name.toLowerCase().includes(searchFilter.toLowerCase())
+  );
 
-  const tables = [
-    { name: 'assertion', count: '42' },
-    { name: 'authorization_model', count: '18' },
-    { name: 'changelog', count: '1.4K' },
-    { name: 'goose_db_version', count: '6' },
-    { name: 'store', count: '120' },
-    { name: 'tuple', count: '386K' },
-    { name: 'user_orders', count: '1.2M', active: true },
-    { name: 'users', count: '124K' },
-    { name: 'products', count: '8.4K' },
-  ];
+  const filteredQueries = SAVED_QUERIES.filter(
+    (q) =>
+      q.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      q.desc.toLowerCase().includes(searchFilter.toLowerCase())
+  );
 
-  const filteredTables = tables.filter((t) => t.name.toLowerCase().includes(searchFilter.toLowerCase()));
+  const filteredHistory = history.filter((h) =>
+    h.sql.toLowerCase().includes(searchFilter.toLowerCase())
+  );
 
   return (
-    <aside className="w-64 bg-slate-950/60 border-r border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0">
+    <aside className="w-60 bg-slate-950/70 border-r border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0 font-sans">
       
-      {/* Top Filter & Mode Switcher */}
-      <div className="p-3 border-b border-slate-800/80 space-y-2">
-        {/* Mode Switcher */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-slate-800 text-[11px] font-semibold">
+      {/* Top Section: Segmented Switcher & Search */}
+      <div className="flex-shrink-0 border-b border-slate-800/80 p-2 space-y-2">
+        {/* TablePlus Style 3-Segment Switcher (Items | Queries | History) */}
+        <div className="grid grid-cols-3 gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 text-[11px] font-semibold">
           <button
-            onClick={() => setAppMode('sql')}
-            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center gap-1 ${
-              appMode === 'sql' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setSidebarTab('items')}
+            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+              sidebarTab === 'items'
+                ? 'bg-slate-800 text-slate-100 shadow-xs font-bold'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>SQL</span>
+            Items
           </button>
           <button
-            onClick={() => setAppMode('redis')}
-            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center gap-1 ${
-              appMode === 'redis' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setSidebarTab('queries')}
+            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+              sidebarTab === 'queries'
+                ? 'bg-slate-800 text-slate-100 shadow-xs font-bold'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>Redis</span>
-            <HeartbeatDot color="red" size="xs" showWave={false} />
+            Queries
           </button>
           <button
-            onClick={() => setAppMode('snowflake')}
-            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center gap-1 ${
-              appMode === 'snowflake' ? 'bg-slate-800 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setSidebarTab('history')}
+            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+              sidebarTab === 'history'
+                ? 'bg-slate-800 text-slate-100 shadow-xs font-bold'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>Snowflake</span>
+            History
           </button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search tables (⌘P)..."
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full bg-slate-900/90 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors pl-7 font-sans"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2.5" />
+        {/* Search Input Bar */}
+        <div className="flex items-center space-x-1">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder={
+                sidebarTab === 'items'
+                  ? 'Search for item...'
+                  : sidebarTab === 'queries'
+                  ? 'Search queries...'
+                  : 'Search history...'
+              }
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="w-full bg-slate-900/80 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors pl-6 font-sans"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-1.5 top-1.5" />
+          </div>
+          <button
+            className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/80 rounded transition"
+            title="Filter preferences"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
-      {/* Tree Content */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-3 text-xs">
-        {appMode === 'sql' && (
-          <div className="space-y-2">
-            {connectionGroups.map((group) => {
-              const groupConns = connections.filter((c) => c.groupId === group.id);
-              const isCollapsed = !!collapsedGroups[group.id];
-              const colorInfo = COLOR_MAP[group.color] || COLOR_MAP.rose;
-              const dotColor = GROUP_COLOR_MAP[group.color] || 'red';
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-1 text-xs">
+        
+        {/* Tab 1: Database Items (Functions & Tables) */}
+        {sidebarTab === 'items' && (
+          <div className="space-y-1">
+            {/* Functions Group */}
+            <div>
+              <div
+                onClick={() => setIsFunctionsOpen(!isFunctionsOpen)}
+                className="flex items-center space-x-1 px-1.5 py-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 cursor-pointer rounded hover:bg-slate-900/50 transition-colors"
+              >
+                <ChevronRight
+                  className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                    isFunctionsOpen ? 'rotate-90' : 'rotate-0'
+                  }`}
+                />
+                <span>Functions</span>
+              </div>
+              {isFunctionsOpen && (
+                <div className="ml-4 pl-2 border-l border-slate-800/80 py-1 text-[11px] text-slate-500 italic">
+                  No user functions defined
+                </div>
+              )}
+            </div>
 
-              return (
-                <div key={group.id} className="space-y-1">
-                  {/* Group Header with smooth rotating chevron */}
-                  <div
-                    onClick={() => toggleGroup(group.id)}
-                    className={`flex items-center justify-between px-2 py-1.5 text-[11px] font-bold ${colorInfo.text} uppercase tracking-wider cursor-pointer hover:bg-slate-900/60 rounded-lg transition-all duration-150 active:scale-[0.99] group`}
-                  >
-                    <div className="flex items-center space-x-1.5 truncate">
-                      <ChevronRight
-                        className={`w-3.5 h-3.5 transition-transform duration-200 ease-out flex-shrink-0 ${
-                          isCollapsed ? 'rotate-0' : 'rotate-90'
-                        }`}
-                      />
-                      <HeartbeatDot color={dotColor} size="xs" showWave={false} />
-                      <span className="truncate">{group.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <span className={`px-1.5 py-0.2 ${colorInfo.bg} rounded text-[9px] font-mono`}>
-                        {group.tag}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Smooth Accordion Container for Group Connections */}
-                  <div
-                    className={`grid transition-[grid-template-rows,opacity] duration-240 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                      isCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+            {/* Tables Group */}
+            <div>
+              <div
+                onClick={() => setIsTablesOpen(!isTablesOpen)}
+                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-slate-100 cursor-pointer rounded hover:bg-slate-900/50 transition-colors"
+              >
+                <div className="flex items-center space-x-1">
+                  <ChevronRight
+                    className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                      isTablesOpen ? 'rotate-90' : 'rotate-0'
                     }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className={`ml-2 pl-2 border-l ${colorInfo.border} space-y-1 pt-1`}>
-                        {groupConns.map((conn) => {
-                          const isConnActive = activeConnection.id === conn.id;
+                  />
+                  <span>Tables</span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-mono pr-1">{filteredTables.length}</span>
+              </div>
 
-                          return (
-                            <div key={conn.id} className="space-y-1">
-                              <div
-                                onClick={() => switchActiveConnection(conn.id)}
-                                className={`flex items-center justify-between px-2 py-1 rounded-lg cursor-pointer transition-all duration-150 ${
-                                  isConnActive
-                                    ? 'bg-slate-800/90 text-slate-100 font-semibold shadow-sm border border-slate-700/40'
-                                    : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-                                }`}
-                              >
-                                <div className="flex items-center space-x-1.5 truncate">
-                                  <span>{ENGINE_EMOJI[conn.engine] || '🐘'}</span>
-                                  <span className="truncate">{conn.name}</span>
-                                </div>
-                                {isConnActive && (
-                                  <HeartbeatDot color="green" size="xs" showWave={true} />
-                                )}
-                              </div>
+              {/* Table List (TablePlus Style) */}
+              {isTablesOpen && (
+                <div className="space-y-0.5 pt-0.5">
+                  {filteredTables.map((tbl) => {
+                    const isSelected = selectedTable === tbl.name;
 
-                              {/* Tables for Active Connection with smooth collapse */}
-                              <div
-                                className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-                                  isConnActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                                }`}
-                              >
-                                <div className="overflow-hidden">
-                                  <div className="ml-3 pl-2 border-l border-slate-800 space-y-0.5 pt-0.5">
-                                    {/* Active Database Switcher Pill */}
-                                    <div
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDatabaseModalOpen(true);
-                                      }}
-                                      className="flex items-center justify-between px-2 py-1 rounded bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-sky-300 font-mono text-[11px] cursor-pointer transition group/db shadow-sm mb-1.5 active:scale-95"
-                                      title="Open / Choose Database (⌘O)"
-                                    >
-                                      <div className="flex items-center space-x-1.5 truncate">
-                                        <Database className="w-3 h-3 text-sky-400 fill-sky-400/20 flex-shrink-0" />
-                                        <span className="truncate font-semibold">{conn.database || 'postgres'}</span>
-                                      </div>
-                                      <span className="text-[9px] px-1 bg-slate-950 border border-slate-700 rounded text-slate-400 group-hover/db:text-sky-200">
-                                        ⌘O
-                                      </span>
-                                    </div>
-
-                                    {filteredTables.map((tbl) => (
-                                      <div
-                                        key={tbl.name}
-                                        onClick={() => openTableGridTab(tbl.name)}
-                                        className={`flex items-center justify-between px-2 py-1 rounded-lg cursor-pointer transition-all duration-150 group ${
-                                          selectedTable === tbl.name
-                                            ? 'bg-sky-500/15 text-sky-300 font-semibold border border-sky-500/30 shadow-sm'
-                                            : 'hover:bg-slate-800/60 text-slate-300 font-medium'
-                                        }`}
-                                      >
-                                        <div className="flex items-center space-x-2 truncate">
-                                          <Table className={`w-3.5 h-3.5 transition-colors ${selectedTable === tbl.name ? 'text-sky-400' : 'text-slate-500'}`} />
-                                          <span className="truncate">{tbl.name}</span>
-                                        </div>
-                                        <div className="flex items-center space-x-1">
-                                          <span className="text-[10px] text-slate-500 font-mono group-hover:hidden">{tbl.count}</span>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openTableSchemaTab(tbl.name);
-                                            }}
-                                            className="hidden group-hover:inline-block px-1.5 py-0.2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-[9px] font-mono border border-indigo-500/30 transition-all duration-100 active:scale-95"
-                                            title="Open Schema / DDL"
-                                          >
-                                            DDL
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                    return (
+                      <div
+                        key={tbl.name}
+                        onClick={() => {
+                          setSelectedTable(tbl.name);
+                          openTableGridTab(tbl.name);
+                        }}
+                        className={`flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group ${
+                          isSelected
+                            ? 'bg-slate-800/90 text-slate-100 font-semibold shadow-xs'
+                            : 'hover:bg-slate-900/70 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2 truncate">
+                          <TableIcon
+                            className={`w-3.5 h-3.5 flex-shrink-0 ${
+                              isSelected ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-400'
+                            }`}
+                          />
+                          <span className="truncate">{tbl.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono flex-shrink-0">
+                          {tbl.count}
+                        </span>
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Saved Queries */}
+        {sidebarTab === 'queries' && (
+          <div className="space-y-1">
+            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Saved Queries ({filteredQueries.length})
+            </div>
+            {filteredQueries.map((q) => (
+              <div
+                key={q.id}
+                onClick={() => openNewQueryTab(q.sql)}
+                className="p-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/90 border border-slate-800/60 hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
+                title="Click to open query in new SQL tab"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5 truncate">
+                    <Terminal className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0" />
+                    <span className="text-xs font-bold text-slate-200 group-hover:text-white truncate">
+                      {q.title}
+                    </span>
+                  </div>
+                  <span className="text-[9px] px-1 py-0.2 bg-slate-950 border border-slate-800 rounded text-slate-500 font-mono">
+                    SQL
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 truncate">{q.desc}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tab 3: Execution History */}
+        {sidebarTab === 'history' && (
+          <div className="space-y-1">
+            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Recent Executions ({filteredHistory.length})
+            </div>
+            {filteredHistory.map((h) => (
+              <div
+                key={h.id}
+                onClick={() => openNewQueryTab(h.sql)}
+                className="p-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/90 border border-slate-800/60 hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
+                title="Click to open this query in SQL tab"
+              >
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                  <div className="flex items-center space-x-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span className="text-emerald-400 font-bold">{h.durationMs}ms</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    <span>{h.timestamp.replace('Today at ', '')}</span>
                   </div>
                 </div>
-              );
-            })}
-
-            {/* Quick Open Connection Manager Button */}
-            <div className="pt-2">
-              <button
-                onClick={() => setConnectionModalOpen(true)}
-                className="w-full py-1.5 px-2 bg-slate-900/60 hover:bg-slate-800 border border-dashed border-slate-700/80 rounded-lg text-slate-400 hover:text-slate-200 text-xs flex items-center justify-center space-x-1.5 transition-all duration-150 active:scale-[0.98]"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add / Manage Connections</span>
-              </button>
-            </div>
+                <div className="font-mono text-[11px] text-slate-300 line-clamp-2 leading-relaxed bg-slate-950/60 p-1.5 rounded border border-slate-850">
+                  {h.sql}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {appMode === 'redis' && (
-          <div className="space-y-2 animate-in fade-in duration-200">
-            <div className="px-2 py-1 flex items-center justify-between text-rose-300 font-bold text-[11px] uppercase">
-              <span>Redis DB 0</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-rose-500/20 rounded font-mono">1,482 keys</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-200 font-mono">
-                <span>user:1001:profile</span>
-                <span className="text-[9px] px-1 bg-blue-500/20 text-blue-300 rounded">HASH</span>
-              </div>
-              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 font-mono transition-colors">
-                <span>rate_limit:ip:127.0.0.1</span>
-                <span className="text-[9px] px-1 bg-emerald-500/20 text-emerald-300 rounded">STR</span>
-              </div>
-              <div className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 font-mono transition-colors">
-                <span>cache:cart:901</span>
-                <span className="text-[9px] px-1 bg-amber-500/20 text-amber-300 rounded">JSON</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {appMode === 'snowflake' && (
-          <div className="space-y-2 animate-in fade-in duration-200">
-            <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
-              <div className="flex items-center justify-between font-bold text-slate-200">
-                <span>❄️ ANALYTICS_WH</span>
-                <span className="text-[9px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-mono">SIZE: L</span>
-              </div>
-              <div className="text-[11px] text-slate-400 flex justify-between">
-                <span>Auto-suspend: 300s</span>
-                <span className="font-mono text-sky-400">4 Credits/hr</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Footer Status with organic heartbeat light */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/80 text-[11px] text-slate-400 flex items-center justify-between">
-        <div className="flex items-center space-x-2 truncate">
-          <HeartbeatDot color="green" size="sm" showWave={true} />
-          <span className="font-medium text-slate-300 truncate">
-            {activeConnection.useSsh && activeConnection.sshHost
-              ? `${activeConnection.sshHost} (SSH)`
-              : activeConnection.host || 'localhost'}
+      {/* Footer Section: Add Item & Database/Schema Selector Dropdown */}
+      <div className="h-9 px-2 border-t border-slate-800/80 bg-slate-950/90 flex items-center justify-between text-xs text-slate-400 flex-shrink-0">
+        <button
+          onClick={() => openNewQueryTab()}
+          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-100 rounded transition"
+          title="New SQL Query (⌘E / ⌘T)"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+
+        {/* TablePlus Database & Schema Switcher Dropdown */}
+        <button
+          onClick={() => setDatabaseModalOpen(true)}
+          className="flex items-center space-x-1.5 px-2 py-0.5 hover:bg-slate-800/80 rounded text-[11px] font-mono text-slate-300 hover:text-white transition group border border-transparent hover:border-slate-700/60"
+          title="Switch Database or Schema (⌘O)"
+        >
+          <span className="font-semibold text-sky-400 truncate max-w-[120px]">
+            {activeConnection.database || 'postgres'}
           </span>
-        </div>
-        <span className="font-mono text-slate-500 flex-shrink-0">{activeConnection.latencyMs}ms</span>
+          <span className="text-slate-500">:</span>
+          <span className="text-slate-300">public</span>
+          <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-200 transition-transform" />
+        </button>
       </div>
 
     </aside>

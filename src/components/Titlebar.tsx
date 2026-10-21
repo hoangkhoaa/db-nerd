@@ -1,5 +1,15 @@
 import { useAppStore } from '../stores/useAppStore';
-import { Search, Sparkles, AlertCircle, RefreshCw, PanelRight, PanelRightClose, Terminal } from 'lucide-react';
+import {
+  Sparkles,
+  RefreshCw,
+  PanelRight,
+  PanelRightClose,
+  PanelLeft,
+  Terminal,
+  Database,
+  Filter,
+  History,
+} from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
 
@@ -15,6 +25,10 @@ export const Titlebar = () => {
     rollbackTransaction,
     isRightInspectorOpen,
     toggleRightInspector,
+    isSidebarOpen,
+    toggleSidebar,
+    isFilterBarOpen,
+    toggleFilterBar,
     openNewQueryTab,
   } = useAppStore();
 
@@ -65,64 +79,63 @@ export const Titlebar = () => {
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="drag-region h-12 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 pl-20 flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
+      className="drag-region h-11 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 pl-20 flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
     >
-      {/* Left: App Logo + Active Connection Badge + Quick Find */}
-      <div className="flex items-center space-x-2.5 pointer-events-auto">
-        {/* App Logo Branding */}
-        <div className="flex items-center space-x-2 pr-2 border-r border-slate-800/80">
-          <img 
-            src="/app-icon.png" 
-            alt="db-nerd" 
-            className="w-7 h-7 object-contain drop-shadow" 
-          />
-          <span className="font-extrabold text-xs tracking-tight text-slate-100 font-mono">db-nerd</span>
-        </div>
+      {/* Left: Window Controls spacer + Sidebar Toggle + Connection Selector + SQL Capsule + Filter Toggle */}
+      <div className="flex items-center space-x-1.5 pointer-events-auto">
+        {/* Sidebar Toggle */}
+        <button
+          onClick={toggleSidebar}
+          className={`no-drag p-1.5 rounded-lg border transition ${
+            isSidebarOpen
+              ? 'bg-slate-800 text-slate-100 border-slate-700/80 shadow-xs'
+              : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
+          }`}
+          title="Toggle Sidebar (⌘B)"
+        >
+          <PanelLeft className="w-3.5 h-3.5" />
+        </button>
 
-        {/* Connection Switcher Button */}
+        {/* Connection Switcher Pill */}
         <button
           onClick={() => setConnectionModalOpen(true)}
-          className="no-drag flex items-center space-x-1.5 px-2 py-1 bg-slate-900/90 hover:bg-slate-800/90 rounded-lg border border-slate-700/80 text-xs font-semibold transition shadow-sm group active:scale-[0.98]"
+          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 rounded-lg border border-slate-700/80 text-xs font-semibold text-slate-200 hover:text-white transition shadow-xs group active:scale-[0.98]"
+          title="Connections (⌘K)"
         >
           <HeartbeatDot 
             color={activeConnection.env === 'prod' ? 'red' : activeConnection.env === 'staging' ? 'amber' : 'green'} 
-            size="sm" 
-            showWave={true} 
+            size="xs" 
+            showWave={false} 
           />
-          <span className="text-slate-200 font-bold text-[11px] truncate max-w-[110px]">{activeConnection.name}</span>
+          <Database className="w-3 h-3 text-sky-400" />
+          <span className="font-mono text-[11px] font-bold truncate max-w-[105px]">{activeConnection.name}</span>
         </button>
 
-        {/* SQL Query Console Trigger (TablePlus Style) */}
+        {/* SQL Query Console Capsule (TablePlus Style) */}
         <button
           onClick={() => openNewQueryTab()}
-          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-xs font-bold text-sky-300 hover:text-white transition group shadow-sm active:scale-95"
+          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-xs font-bold text-sky-300 hover:text-white transition group shadow-xs active:scale-95"
           title="SQL Query (⌘E / ⌘T)"
         >
           <Terminal className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" />
           <span className="font-mono text-[11px]">SQL</span>
         </button>
 
-        {/* Command Palette Trigger */}
+        {/* Inline Filter Bar Toggle */}
         <button
-          onClick={() => setConnectionModalOpen(true)}
-          className="no-drag flex items-center space-x-1.5 px-2 py-1 bg-slate-900/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition"
+          onClick={toggleFilterBar}
+          className={`no-drag p-1.5 rounded-lg border transition ${
+            isFilterBarOpen
+              ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs'
+              : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
+          }`}
+          title="Toggle Inline Filters (WHERE / ORDER BY)"
         >
-          <Search className="w-3.5 h-3.5" />
-          <kbd className="px-1 py-0.2 bg-slate-950 border border-slate-700 rounded text-[9px] font-mono text-slate-300">⌘K</kbd>
-        </button>
-
-        {/* Query History Trigger */}
-        <button
-          onClick={() => setHistoryModalOpen(true)}
-          className="no-drag flex items-center space-x-1 px-2 py-1 bg-slate-900/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-xs text-slate-400 hover:text-slate-200 transition"
-          title="Query History (⌘H)"
-        >
-          <span className="text-[11px]">History</span>
-          <kbd className="px-1 py-0.2 bg-slate-950 border border-slate-700 rounded text-[9px] font-mono text-slate-300">⌘H</kbd>
+          <Filter className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Center: Environment Safety Pill Banner (TablePlus standard layout) */}
+      {/* Center: Environment Safety Pill Banner (TablePlus iconic layout) */}
       <div className="flex items-center space-x-2 pointer-events-auto">
         <button
           onClick={() => setDatabaseModalOpen(true)}
@@ -133,7 +146,7 @@ export const Titlebar = () => {
               ? 'bg-amber-600/90 hover:bg-amber-600 text-white shadow-amber-950/40 border border-amber-400/40'
               : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 border border-emerald-400/40'
           }`}
-          title="Click to Switch Database or Connection (⌘O)"
+          title="Click to Switch Database (⌘O)"
         >
           <span>{engineLabel}</span>
           <span className="opacity-60">:</span>
@@ -147,10 +160,10 @@ export const Titlebar = () => {
         </button>
       </div>
 
-      {/* Right: Actions, Refresh, Inspector Toggle, Commit */}
-      <div className="flex items-center space-x-2 pointer-events-auto">
-        {pendingEditsCount > 0 && (
-          <div className="flex items-center space-x-1.5">
+      {/* Right: Clean, un-cluttered actions matching TablePlus */}
+      <div className="flex items-center space-x-1.5 pointer-events-auto">
+        {pendingEditsCount > 0 ? (
+          <div className="flex items-center space-x-1.5 animate-in fade-in">
             <div className="flex items-center space-x-1 px-2 py-1 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold">
               <HeartbeatDot color="amber" size="xs" showWave={true} />
               <span>{pendingEditsCount}</span>
@@ -159,6 +172,7 @@ export const Titlebar = () => {
             <button
               onClick={handleDiscard}
               className="no-drag px-2 py-1 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+              title="Discard Uncommitted Edits (⌘Z)"
             >
               Discard
             </button>
@@ -166,32 +180,32 @@ export const Titlebar = () => {
             <button
               onClick={handleCommit}
               className="no-drag px-2.5 py-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1 shadow-md shadow-sky-500/20 active:scale-95"
+              title="Commit Changes (⌘S)"
             >
               <span>Commit</span>
               <kbd className="px-1 py-0.2 bg-slate-900/40 rounded text-[9px] font-mono text-slate-950 font-extrabold">⌘S</kbd>
             </button>
           </div>
+        ) : (
+          <button
+            onClick={() => {
+              const { setSelectedTable, selectedTable } = useAppStore.getState();
+              setSelectedTable(selectedTable);
+            }}
+            className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95"
+            title="Reload Table Data & Schema (⌘R)"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
         )}
 
-        {/* Safe Mode Alert Badge */}
+        {/* History Modal Trigger */}
         <button
-          onClick={() => alert("🛡️ Safe Mode is Active.\nAuto-commit is disabled. All modifications require explicit transaction commit (⌘S).")}
-          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-amber-400 rounded-lg transition"
-          title="Safe Mode: Transaction Isolation Active"
+          onClick={() => setHistoryModalOpen(true)}
+          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95"
+          title="Query History (⌘H)"
         >
-          <AlertCircle className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Reload Table */}
-        <button
-          onClick={() => {
-            const { setSelectedTable, selectedTable } = useAppStore.getState();
-            setSelectedTable(selectedTable);
-          }}
-          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95"
-          title="Reload Table Data & Schema (⌘R)"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <History className="w-3.5 h-3.5" />
         </button>
 
         {/* Toggle Right Inspector */}
@@ -199,7 +213,7 @@ export const Titlebar = () => {
           onClick={toggleRightInspector}
           className={`no-drag p-1.5 border rounded-lg transition active:scale-95 ${
             isRightInspectorOpen
-              ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-sm'
+              ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
               : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700/70 text-slate-400 hover:text-slate-200'
           }`}
           title="Toggle Right Inspector Panel (⌘I)"
@@ -207,14 +221,15 @@ export const Titlebar = () => {
           {isRightInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
         </button>
 
-        <div className="h-4 w-[1px] bg-slate-800 mx-0.5"></div>
+        <div className="h-4 w-[1px] bg-slate-800 mx-0.5" />
 
+        {/* AI Assistant */}
         <button 
           onClick={() => alert("✨ AI Assistant (MCP) connected via localhost:4080\nReady for natural language queries!")}
-          className="no-drag px-2 py-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold flex items-center space-x-1 transition"
+          className="no-drag p-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 hover:text-purple-100 rounded-lg transition active:scale-95"
+          title="AI Assistant (MCP)"
         >
           <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          <span>AI</span>
         </button>
       </div>
     </header>
