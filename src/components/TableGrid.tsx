@@ -1,31 +1,62 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { ExternalLink, Plus, Trash2, Check, RotateCcw, FileCode, CheckCircle2, Columns, Eye, Copy, X } from 'lucide-react';
+import { getTableSchema } from '../data/schemas';
+import {
+  ExternalLink,
+  Plus,
+  FileCode,
+  CheckCircle2,
+  Columns as ColumnsIcon,
+  Eye,
+  Copy,
+  X,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Zap,
+} from 'lucide-react';
 import { GridRow } from '../types';
-import { HeartbeatDot } from './HeartbeatDot';
 import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
+import { TableStructureView } from './TableStructureView';
+import { TableIndexesView } from './TableIndexesView';
 
-export const TableGrid = () => {
+export const TableGrid: React.FC = () => {
   const {
     rows,
     updateCell,
     insertRow,
     deleteRow,
-    rollbackTransaction,
-    commitTransaction,
-    pendingEditsCount,
-    setSqlDiffModalOpen,
-    setActiveTab,
     selectedTable,
+    selectedRowData,
+    setSelectedRowData,
+    tableViewMode,
+    setTableViewMode,
+    isFilterBarOpen,
+    toggleFilterBar,
+    filterWhereText,
+    setFilterWhereText,
+    filterOrderByText,
+    setFilterOrderByText,
   } = useAppStore();
 
-  const [filterText, setFilterText] = useState("status = 'pending' AND total_amount > 50");
-  const [editingCell, setEditingCell] = useState<{ id: number; field: keyof GridRow } | null>(null);
+  const schemaInfo = getTableSchema(selectedTable);
+
+  const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
   const [inspectingRow, setInspectingRow] = useState<GridRow | null>(null);
+  const [isDdlModalOpen, setIsDdlModalOpen] = useState(false);
+  const [isColumnsModalOpen, setIsColumnsModalOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    new Set(schemaInfo.columns.map((c) => c.name))
+  );
+
+  // Sync visible columns when selectedTable changes
+  React.useEffect(() => {
+    setVisibleColumns(new Set(schemaInfo.columns.map((c) => c.name)));
+  }, [selectedTable]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -42,25 +73,49 @@ export const TableGrid = () => {
   const handleDeleteRows = (rowsToDelete: GridRow[]) => {
     rowsToDelete.forEach((r) => deleteRow(r.id));
     setSelectedRowIds(new Set());
+    if (selectedRowData && rowsToDelete.some((r) => r.id === selectedRowData.id)) {
+      setSelectedRowData(null);
+    }
     showToast(`🗑️ Marked ${rowsToDelete.length} row(s) for deletion`);
   };
 
-  const startEditing = (id: number, field: keyof GridRow, currentValue: any) => {
+  const handleRowClick = (row: GridRow, e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      setSelectedRowIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(row.id)) next.delete(row.id);
+        else next.add(row.id);
+        return next;
+      });
+    } else {
+      setSelectedRowIds(new Set([row.id]));
+    }
+    setSelectedRowData(row);
+  };
+
+  const startEditing = (id: number, field: string, currentValue: any) => {
     // Prevent editing the primary key directly or complex JSON
-    if (field === 'id') return;
+    if (field === 'id' && schemaInfo.columns.find((c) => c.name === 'id')?.isPrimaryKey) return;
     setEditingCell({ id, field });
-    setEditValue(typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue));
+    setEditValue(typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue ?? ''));
   };
 
   const saveEditing = () => {
     if (!editingCell) return;
     const { id, field } = editingCell;
     let finalVal: any = editValue;
-    if (field === 'total_amount' || field === 'user_id') {
+    if (field === 'total_amount' || field === 'user_id' || field === 'version_id') {
       const num = Number(editValue);
       if (!isNaN(num)) finalVal = num;
+    } else if (editValue === 'true' || editValue === 'TRUE') {
+      finalVal = true;
+    } else if (editValue === 'false' || editValue === 'FALSE') {
+      finalVal = false;
     }
-    updateCell(id, field, finalVal);
+    updateCell(id, field as keyof GridRow, finalVal);
+    if (selectedRowData && selectedRowData.id === id) {
+      setSelectedRowData({ ...selectedRowData, [field]: finalVal });
+    }
     setEditingCell(null);
   };
 
@@ -72,21 +127,23 @@ export const TableGrid = () => {
     }
   };
 
-  const handleCommit = () => {
-    const res = commitTransaction();
-    setToastMessage(`Committed ${res.count} change(s) in 1.4ms! Transaction closed.`);
-    setTimeout(() => setToastMessage(null), 3000);
+  const toggleColumnVisibility = (colName: string) => {
+    setVisibleColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(colName)) {
+        if (next.size > 1) next.delete(colName);
+      } else {
+        next.add(colName);
+      }
+      return next;
+    });
   };
 
-  const handleRollback = () => {
-    rollbackTransaction();
-    setToastMessage('Transaction rolled back. All changes reverted.');
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const activeCols = schemaInfo.columns.filter((c) => visibleColumns.has(c.name));
+  const emptyRowsCount = Math.max(0, 20 - rows.length);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-900/60 overflow-hidden relative">
-      
       {/* Toast Notification */}
       {toastMessage && (
         <div className="absolute top-12 right-6 z-40 bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
@@ -95,359 +152,417 @@ export const TableGrid = () => {
         </div>
       )}
 
-      {/* Filter / WHERE Bar + Table Toolbar */}
-      <div className="bg-slate-950/50 border-b border-slate-800/80 px-4 py-2 flex items-center justify-between text-xs select-none">
-        
-        {/* Left Filter Expression */}
-        <div className="flex items-center space-x-2 flex-1 max-w-xl">
-          <span className="px-1.5 py-0.5 bg-purple-500/15 text-purple-300 border border-purple-500/30 rounded font-mono font-bold text-[10px]">
-            WHERE
-          </span>
-          <input
-            type="text"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            className="flex-1 bg-slate-900 border border-slate-700/60 rounded px-2.5 py-1 text-slate-200 font-mono text-[11px] focus:outline-none focus:border-sky-500"
-          />
-          <span className="px-1.5 py-0.5 bg-blue-500/15 text-blue-300 border border-blue-500/30 rounded font-mono font-bold text-[10px]">
-            ORDER BY
-          </span>
-          <span className="font-mono text-slate-300 text-[11px]">id DESC</span>
-        </div>
-
-        {/* Right Row & Schema Operations */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setActiveTab('schema')}
-            className="px-2.5 py-1 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95"
-            title="Inspect Table Schema, Column Types, Indexes & DDL"
-          >
-            <Columns className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Structure & DDL</span>
-          </button>
-
-          <button
-            onClick={insertRow}
-            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95"
-            title="Insert new row (+)"
-          >
-            <Plus className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Insert Row</span>
-          </button>
-        </div>
-
-      </div>
-
-      {/* Data Grid Table (TablePlus Style) */}
-      <div className="flex-1 overflow-auto bg-slate-900/80 text-xs font-mono select-text">
-        <table className="w-full border-collapse">
-          {/* Header */}
-          <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-20 border-b border-slate-800 text-slate-400 select-none shadow-sm">
-            <tr className="text-left font-semibold">
-              <th className="w-12 px-3 py-2.5 border-r border-slate-800/80 text-center text-slate-600">#</th>
-              <th className="w-24 px-3 py-2.5 border-r border-slate-800/80">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-200 font-bold">id</span>
-                  <span className="text-[9px] px-1 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded font-bold">PK</span>
-                </div>
-              </th>
-              <th className="w-48 px-3 py-2.5 border-r border-slate-800/80">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-200 font-bold">customer_name</span>
-                  <span className="text-[9px] text-slate-500">varchar</span>
-                </div>
-              </th>
-              <th className="w-36 px-3 py-2.5 border-r border-slate-800/80">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-200 font-bold">user_id</span>
-                  <span className="text-[9px] px-1.5 py-0.2 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded font-bold flex items-center gap-0.5">
-                    <span>FK</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </span>
-                </div>
-              </th>
-              <th className="w-36 px-3 py-2.5 border-r border-slate-800/80">
-                <span className="text-slate-200 font-bold">product_sku</span>
-              </th>
-              <th className="w-60 px-3 py-2.5 border-r border-slate-800/80">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-200 font-bold">order_details</span>
-                  <span className="text-[9px] px-1.5 py-0.2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded font-bold font-mono">&#123; &#125; JSON</span>
-                </div>
-              </th>
-              <th className="w-32 px-3 py-2.5 border-r border-slate-800/80">
-                <span className="text-slate-200 font-bold">total_amount</span>
-              </th>
-              <th className="w-44 px-3 py-2.5 border-r border-slate-800/80">
-                <span className="text-slate-200 font-bold">created_at</span>
-              </th>
-              <th className="w-36 px-3 py-2.5 border-r border-slate-800/80">
-                <span className="text-slate-200 font-bold">status</span>
-              </th>
-              <th className="w-16 px-2 py-2.5 text-center">Action</th>
-            </tr>
-          </thead>
-
-          {/* Rows */}
-          <tbody className="divide-y divide-slate-800/50">
-            {rows.map((row, index) => {
-              const isInserted = row.rowState === 'inserted';
-              const isDeleted = row.rowState === 'deleted';
-              const isModified = row.rowState === 'modified';
-              const isSelected = selectedRowIds.has(row.id);
-
-              let rowClass = 'hover:bg-slate-800/40';
-              if (isInserted) rowClass = 'bg-emerald-950/20 hover:bg-emerald-950/30 border-l-4 border-l-emerald-400';
-              else if (isDeleted) rowClass = 'bg-rose-950/20 hover:bg-rose-950/30 line-through opacity-60 border-l-4 border-l-rose-500';
-              else if (isModified || row.isDirty) rowClass = 'bg-amber-950/20 hover:bg-amber-950/30 border-l-4 border-l-amber-400';
-
-              return (
-                <tr
-                  key={row.id}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey) {
-                      const next = new Set(selectedRowIds);
-                      if (next.has(row.id)) next.delete(row.id);
-                      else next.add(row.id);
-                      setSelectedRowIds(next);
-                    } else if (e.shiftKey) {
-                      const allIds = rows.map((r) => r.id);
-                      setSelectedRowIds(new Set(allIds));
-                    } else {
-                      setSelectedRowIds(new Set([row.id]));
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    if (!selectedRowIds.has(row.id)) {
-                      setSelectedRowIds(new Set([row.id]));
-                    }
-                    setContextMenuPos({ x: e.clientX, y: e.clientY });
-                  }}
-                  className={`group transition cursor-pointer select-none ${
-                    isSelected
-                      ? 'bg-sky-500/20 text-sky-100 ring-1 ring-sky-500/60 shadow-sm'
-                      : rowClass
-                  }`}
-                >
-                  
-                  {/* Row Index */}
-                  <td className="px-3 py-2 border-r border-slate-800/60 text-slate-500 text-center select-none font-bold text-[11px]">
-                    {index + 1}
-                    {row.isDirty && <span className="text-amber-400 font-bold ml-0.5">*</span>}
-                  </td>
-
-                  {/* ID (PK) */}
-                  <td className="px-3 py-2 border-r border-slate-800/60 text-sky-400 font-semibold">
-                    {row.id}
-                  </td>
-
-                  {/* Customer Name (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(row.id, 'customer_name', row.customer_name)}
-                    className={`px-3 py-1.5 border-r border-slate-800/60 cursor-pointer relative ${
-                      row.dirtyFields?.customer_name ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80 inset-0' : 'text-slate-200'
-                    }`}
-                  >
-                    {editingCell?.id === row.id && editingCell.field === 'customer_name' ? (
-                      <input
-                        autoFocus
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span className="block truncate">{row.customer_name}</span>
-                    )}
-                  </td>
-
-                  {/* User ID (FK Navigation Pill) */}
-                  <td
-                    onDoubleClick={() => startEditing(row.id, 'user_id', row.user_id)}
-                    className={`px-3 py-1.5 border-r border-slate-800/60 ${
-                      row.dirtyFields?.user_id ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : ''
-                    }`}
-                  >
-                    {editingCell?.id === row.id && editingCell.field === 'user_id' ? (
-                      <input
-                        autoFocus
-                        type="number"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <button 
-                        onClick={() => alert(`🔗 Foreign Key Jump: Loading table 'users' WHERE id = ${row.user_id}`)}
-                        className="px-2 py-0.5 bg-sky-500/10 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 rounded-md font-mono text-[11px] flex items-center space-x-1.5 transition"
-                      >
-                        <span>🔗</span>
-                        <span>{row.user_id}</span>
-                      </button>
-                    )}
-                  </td>
-
-                  {/* SKU (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(row.id, 'product_sku', row.product_sku)}
-                    className={`px-3 py-1.5 border-r border-slate-800/60 cursor-pointer ${
-                      row.dirtyFields?.product_sku ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-300'
-                    }`}
-                  >
-                    {editingCell?.id === row.id && editingCell.field === 'product_sku' ? (
-                      <input
-                        autoFocus
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span className="block truncate">{row.product_sku}</span>
-                    )}
-                  </td>
-
-                  {/* JSON Preview */}
-                  <td 
-                    onClick={() => alert(`JSON Inspector (Double-click any cell to edit):\n\n${JSON.stringify(row.order_details, null, 2)}`)}
-                    className="px-3 py-2 border-r border-slate-800/60 text-slate-400 hover:text-slate-200 cursor-pointer"
-                  >
-                    <span className="text-purple-400 font-medium">&#123;</span> {JSON.stringify(row.order_details).slice(0, 30)}... <span className="text-purple-400 font-medium">&#125;</span>
-                  </td>
-
-                  {/* Total Amount (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(row.id, 'total_amount', row.total_amount)}
-                    className={`px-3 py-1.5 border-r border-slate-800/60 cursor-pointer font-semibold ${
-                      row.dirtyFields?.total_amount ? 'bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/80' : 'text-emerald-400'
-                    }`}
-                  >
-                    {editingCell?.id === row.id && editingCell.field === 'total_amount' ? (
-                      <input
-                        autoFocus
-                        type="number"
-                        step="0.01"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span>${typeof row.total_amount === 'number' ? row.total_amount.toFixed(2) : row.total_amount}</span>
-                    )}
-                  </td>
-
-                  {/* Created At */}
-                  <td className="px-3 py-2 border-r border-slate-800/60 text-slate-400 select-none">
-                    {row.created_at}
-                  </td>
-
-                  {/* Status (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(row.id, 'status', row.status)}
-                    className={`px-3 py-1.5 border-r border-slate-800/60 cursor-pointer ${
-                      row.dirtyFields?.status ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-200'
-                    }`}
-                  >
-                    {editingCell?.id === row.id && editingCell.field === 'status' ? (
-                      <input
-                        autoFocus
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800/80 border border-slate-700/60 font-mono text-[11px]">
-                        {row.status}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Action Delete */}
-                  <td className="px-2 py-1.5 text-center">
-                    <button
-                      onClick={() => deleteRow(row.id)}
-                      className="p-1 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 rounded transition"
-                      title={isDeleted ? "Undo delete" : "Mark row for deletion"}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* TablePlus-Style Floating Transaction Commit Bar */}
-      {pendingEditsCount > 0 && (
-        <div className="h-11 bg-amber-500/15 border-t border-amber-500/40 px-4 flex items-center justify-between select-none z-30 shadow-lg backdrop-blur-md">
-          <div className="flex items-center space-x-2">
-            <HeartbeatDot color="amber" size="sm" showWave={true} />
-            <span className="text-xs font-bold text-amber-300">
-              {pendingEditsCount} uncommitted change{pendingEditsCount > 1 ? 's' : ''} in active transaction
+      {/* Top Inline Filter Bar (TablePlus style: WHERE ... ORDER BY ...) */}
+      {tableViewMode === 'data' && isFilterBarOpen && (
+        <div className="bg-slate-950/70 border-b border-slate-800/80 px-4 py-2 flex items-center justify-between text-xs select-none flex-shrink-0 animate-in fade-in duration-100">
+          <div className="flex items-center space-x-2 flex-1 max-w-2xl font-mono text-[11px]">
+            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded font-bold text-[10px]">
+              WHERE
             </span>
-            <span className="text-[11px] text-amber-200/70 hidden sm:inline">• Double-click any cell to edit</span>
+            <input
+              type="text"
+              value={filterWhereText}
+              onChange={(e) => setFilterWhereText(e.target.value)}
+              placeholder="e.g. status = 'pending' AND total_amount > 50"
+              className="flex-1 bg-slate-900 border border-slate-700/70 rounded px-2.5 py-1 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            />
+            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/40 rounded font-bold text-[10px]">
+              ORDER BY
+            </span>
+            <input
+              type="text"
+              value={filterOrderByText}
+              onChange={(e) => setFilterOrderByText(e.target.value)}
+              placeholder="e.g. id DESC"
+              className="w-28 bg-slate-900 border border-slate-700/70 rounded px-2 py-1 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            />
+            <button
+              onClick={() => showToast('⚡ Filter applied in 1.2ms (4 records returned)')}
+              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded text-[11px] font-sans font-semibold transition active:scale-95 flex items-center space-x-1"
+            >
+              <Zap className="w-3 h-3" />
+              <span>Run</span>
+            </button>
+            <button
+              onClick={() => {
+                setFilterWhereText('');
+                setFilterOrderByText('');
+                showToast('Filter cleared');
+              }}
+              className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition"
+              title="Clear Filter"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setSqlDiffModalOpen(true)}
-              className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold flex items-center space-x-1 transition active:scale-95"
-            >
-              <FileCode className="w-3.5 h-3.5" />
-              <span>Preview SQL</span>
-            </button>
-
-            <button
-              onClick={handleRollback}
-              className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1 transition active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Discard (⌘Z)</span>
-            </button>
-
-            <button
-              onClick={handleCommit}
-              className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-amber-500/20 active:scale-95"
-            >
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Commit Changes (⌘S)</span>
-            </button>
+          <div className="flex items-center space-x-2 font-mono text-[11px] text-slate-400">
+            <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+              <span>⚡ 1.2ms</span>
+            </span>
           </div>
         </div>
       )}
 
-      {/* Grid Footer Bar */}
-      <div className="h-7 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between text-[11px] text-slate-400 select-none flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <span>{rows.length} rows</span>
-          <span>•</span>
-          <span>Double-click any cell to edit inline</span>
-          <span>•</span>
-          <span>Latency: <strong className="text-slate-200 font-mono">1.8ms</strong></span>
-          <span>•</span>
-          <span className="text-emerald-400 font-bold">120 FPS</span>
+      {/* Main Workspace Mode View */}
+      {tableViewMode === 'structure' ? (
+        <TableStructureView />
+      ) : tableViewMode === 'index' ? (
+        <TableIndexesView />
+      ) : (
+        /* DATA GRID VIEW (TablePlus Canvas style) */
+        <div className="flex-1 overflow-auto bg-slate-950/80 text-xs font-mono select-text">
+          <table className="w-full border-collapse">
+            {/* Header */}
+            <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800 text-slate-400 select-none shadow-sm text-[11px]">
+              <tr className="text-left font-semibold">
+                <th className="w-12 px-3 py-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
+                {activeCols.map((col) => (
+                  <th key={col.name} className="px-3 py-2 border-r border-slate-800/80 min-w-[140px]">
+                    <div className="flex items-center justify-between space-x-2">
+                      <div className="flex items-center space-x-1.5 truncate">
+                        <span className="text-slate-200 font-bold truncate">{col.name}</span>
+                        {col.isPrimaryKey && (
+                          <span className="text-[9px] px-1 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-bold">
+                            PK
+                          </span>
+                        )}
+                        {col.isForeignKey && (
+                          <span className="text-[9px] px-1.5 py-0.2 bg-sky-500/20 text-sky-300 border border-sky-500/40 rounded font-bold flex items-center gap-0.5">
+                            <span>FK</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-sans">{col.type}</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            {/* Rows */}
+            <tbody className="divide-y divide-slate-800/40 text-[11px]">
+              {rows.map((row, index) => {
+                const isSelected = selectedRowIds.has(row.id) || (selectedRowData && selectedRowData.id === row.id);
+                const isEven = index % 2 === 0;
+
+                return (
+                  <tr
+                    key={row.id ?? index}
+                    onClick={(e) => handleRowClick(row, e)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenuPos({ x: e.clientX, y: e.clientY });
+                      setSelectedRowData(row);
+                    }}
+                    className={`cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-sky-600/30 text-white font-medium shadow-inner'
+                        : isEven
+                        ? 'bg-slate-900/40 hover:bg-slate-800/50 text-slate-200'
+                        : 'bg-slate-950/60 hover:bg-slate-800/50 text-slate-200'
+                    }`}
+                  >
+                    {/* Row Index */}
+                    <td className="px-3 py-1.5 border-r border-slate-800/60 text-center text-slate-500 select-none">
+                      {index + 1}
+                    </td>
+
+                    {/* Columns */}
+                    {activeCols.map((col) => {
+                      const val = row[col.name];
+                      const isEditing = editingCell?.id === row.id && editingCell?.field === col.name;
+                      const isDirty = row.dirtyFields?.[col.name];
+
+                      return (
+                        <td
+                          key={col.name}
+                          onDoubleClick={() => startEditing(row.id, col.name, val)}
+                          className={`px-3 py-1.5 border-r border-slate-800/60 relative truncate max-w-xs ${
+                            isDirty ? 'bg-amber-500/15' : ''
+                          }`}
+                        >
+                          {/* Dirty indicator dot */}
+                          {isDirty && (
+                            <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                          )}
+
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={saveEditing}
+                              onKeyDown={handleKeyDown}
+                              autoFocus
+                              className="w-full bg-slate-900 border border-sky-500 rounded px-1.5 py-0.5 text-slate-100 font-mono text-[11px] focus:outline-none"
+                            />
+                          ) : val === null || val === undefined ? (
+                            <span className="text-slate-500 italic">NULL</span>
+                          ) : typeof val === 'boolean' ? (
+                            <span className={val ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                              {val ? 'TRUE' : 'FALSE'}
+                            </span>
+                          ) : typeof val === 'object' ? (
+                            <span className="text-sky-300 truncate block">
+                              {JSON.stringify(val)}
+                            </span>
+                          ) : col.name === 'total_amount' ? (
+                            <span className="text-emerald-300 font-semibold">${Number(val).toFixed(2)}</span>
+                          ) : (
+                            <span className="truncate block">{String(val)}</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+
+              {/* Zebra Empty Rows (matching TablePlus aesthetic) */}
+              {Array.from({ length: emptyRowsCount }).map((_, i) => {
+                const rowNum = rows.length + i + 1;
+                const isEven = (rows.length + i) % 2 === 0;
+
+                return (
+                  <tr
+                    key={`empty-${i}`}
+                    className={`h-7 ${isEven ? 'bg-slate-900/40' : 'bg-slate-950/60'}`}
+                  >
+                    <td className="px-3 py-1 border-r border-slate-800/40 text-center text-slate-700 select-none">
+                      {rowNum}
+                    </td>
+                    {activeCols.map((col) => (
+                      <td key={col.name} className="px-3 py-1 border-r border-slate-800/40" />
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="flex items-center space-x-2 text-slate-500 font-mono text-[10px]">
-          <span>RAM: 46.8MB</span>
-          <span>•</span>
-          <span>PostgreSQL 16.2</span>
+      )}
+
+      {/* BOTTOM CONTROL BAR (TablePlus Standard Footer Toolbar) */}
+      <div className="h-9 bg-slate-950 border-t border-slate-800/90 px-3 flex items-center justify-between text-xs font-sans select-none flex-shrink-0 z-20">
+        {/* Left Segment: [Data] [Structure] [Index] + Mode Actions */}
+        <div className="flex items-center space-x-2">
+          {/* View Mode Switcher Pills */}
+          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px] font-semibold">
+            <button
+              onClick={() => setTableViewMode('data')}
+              className={`px-2.5 py-0.5 rounded-md transition-all duration-100 ${
+                tableViewMode === 'data'
+                  ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Data
+            </button>
+            <button
+              onClick={() => setTableViewMode('structure')}
+              className={`px-2.5 py-0.5 rounded-md transition-all duration-100 ${
+                tableViewMode === 'structure'
+                  ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Structure
+            </button>
+            <button
+              onClick={() => setTableViewMode('index')}
+              className={`px-2.5 py-0.5 rounded-md transition-all duration-100 ${
+                tableViewMode === 'index'
+                  ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Index
+            </button>
+          </div>
+
+          <div className="h-3.5 w-[1px] bg-slate-800 mx-0.5" />
+
+          {/* Mode-specific Buttons */}
+          {tableViewMode === 'data' ? (
+            <button
+              onClick={insertRow}
+              className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+              title="Insert new row (+)"
+            >
+              <Plus className="w-3 h-3 text-emerald-400" />
+              <span>Row</span>
+            </button>
+          ) : tableViewMode === 'structure' ? (
+            <div className="flex items-center space-x-1.5">
+              <button
+                onClick={() => {
+                  showToast('Added column column_new to structure');
+                }}
+                className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+              >
+                <Plus className="w-3 h-3 text-sky-400" />
+                <span>Column</span>
+              </button>
+              <button
+                onClick={() => showToast('Table Triggers: 0 triggers defined')}
+                className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-md text-[11px] font-semibold transition"
+              >
+                Triggers
+              </button>
+              <button
+                onClick={() => setIsDdlModalOpen(true)}
+                className="px-2 py-0.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+              >
+                <FileCode className="w-3 h-3 text-indigo-400" />
+                <span>DDL</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => showToast('Opened create index wizard')}
+              className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+            >
+              <Plus className="w-3 h-3 text-amber-400" />
+              <span>Index</span>
+            </button>
+          )}
+        </div>
+
+        {/* Center: Row Counter / Stats */}
+        <div className="text-[11px] text-slate-400 font-mono select-none">
+          {tableViewMode === 'data' ? (
+            selectedRowData || selectedRowIds.size > 0 ? (
+              <span className="text-sky-300 font-semibold">{`${selectedRowIds.size || 1} of ${rows.length} rows selected`}</span>
+            ) : (
+              <span>{`1-${rows.length} of ${rows.length} rows`}</span>
+            )
+          ) : tableViewMode === 'structure' ? (
+            <span>{`${schemaInfo.columns.length} columns, ${schemaInfo.indexes.length} indexes`}</span>
+          ) : (
+            <span>{`${schemaInfo.indexes.length} indexes, ${schemaInfo.foreignKeys.length} foreign keys`}</span>
+          )}
+        </div>
+
+        {/* Right: Filters toggle, Columns picker, Pagination */}
+        <div className="flex items-center space-x-1.5">
+          {tableViewMode === 'data' && (
+            <>
+              <button
+                onClick={toggleFilterBar}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition flex items-center space-x-1 active:scale-95 ${
+                  isFilterBarOpen
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                    : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+                title="Toggle WHERE / ORDER BY filter bar"
+              >
+                <Filter className="w-3 h-3" />
+                <span>Filters</span>
+              </button>
+
+              <button
+                onClick={() => setIsColumnsModalOpen(!isColumnsModalOpen)}
+                className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-md text-[11px] font-semibold transition flex items-center space-x-1"
+                title="Choose visible columns"
+              >
+                <ColumnsIcon className="w-3 h-3" />
+                <span>Columns</span>
+              </button>
+
+              <div className="flex items-center space-x-0.5 pl-1">
+                <button
+                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40"
+                  disabled
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40"
+                  disabled
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Columns Visibility Popup */}
+      {isColumnsModalOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setIsColumnsModalOpen(false)}
+        >
+          <div
+            className="absolute bottom-11 right-12 w-48 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50 text-xs font-sans animate-in zoom-in-95 duration-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="font-bold text-slate-200 px-2 py-1 border-b border-slate-800 text-[11px]">
+              Toggle Columns
+            </div>
+            <div className="max-h-48 overflow-y-auto py-1 space-y-0.5">
+              {schemaInfo.columns.map((col) => {
+                const isVis = visibleColumns.has(col.name);
+                return (
+                  <label
+                    key={col.name}
+                    className="flex items-center space-x-2 px-2 py-1 hover:bg-slate-800 rounded cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isVis}
+                      onChange={() => toggleColumnVisibility(col.name)}
+                      className="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0"
+                    />
+                    <span className="truncate text-slate-300 font-mono text-[11px]">{col.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Raw DDL Modal */}
+      {isDdlModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100"
+          onClick={() => setIsDdlModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-100">DDL — {selectedTable}</span>
+              <button
+                onClick={() => setIsDdlModalOpen(false)}
+                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <pre className="p-4 bg-slate-950 text-emerald-400 font-mono text-xs max-h-96 overflow-auto select-text">
+              {schemaInfo.ddl}
+            </pre>
+            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-end space-x-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(schemaInfo.ddl);
+                  showToast('Copied DDL script!');
+                  setIsDdlModalOpen(false);
+                }}
+                className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition"
+              >
+                Copy DDL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Right-Click Context Menu */}
       <TableContextMenu
@@ -468,13 +583,15 @@ export const TableGrid = () => {
             <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between select-none">
               <div className="flex items-center space-x-2">
                 <Eye className="w-4 h-4 text-sky-400" />
-                <span className="text-xs font-bold text-slate-100">Quick Look Inspector — {selectedTable} #{inspectingRow.id}</span>
+                <span className="text-xs font-bold text-slate-100">
+                  Quick Look Inspector — {selectedTable} #{inspectingRow.id}
+                </span>
               </div>
               <button
                 onClick={() => setInspectingRow(null)}
                 className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-sky-300 bg-slate-950 select-text">
@@ -504,15 +621,6 @@ export const TableGrid = () => {
           </div>
         </div>
       )}
-
-      {/* Toast Notification Pill */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 border border-sky-500/40 shadow-2xl rounded-xl px-4 py-2.5 text-xs text-sky-200 flex items-center space-x-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150 backdrop-blur-xl ring-1 ring-white/10">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span className="font-semibold">{toastMessage}</span>
-        </div>
-      )}
-
     </div>
   );
 };

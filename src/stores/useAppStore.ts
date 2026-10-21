@@ -52,6 +52,26 @@ interface AppState {
   selectedTable: string;
   setSelectedTable: (tbl: string) => void;
 
+  isRightInspectorOpen: boolean;
+  setRightInspectorOpen: (open: boolean) => void;
+  toggleRightInspector: () => void;
+
+  selectedRowData: any | null;
+  setSelectedRowData: (row: any | null) => void;
+
+  tableViewMode: 'data' | 'structure' | 'index';
+  setTableViewMode: (mode: 'data' | 'structure' | 'index') => void;
+
+  isFilterBarOpen: boolean;
+  toggleFilterBar: () => void;
+  filterWhereText: string;
+  setFilterWhereText: (val: string) => void;
+  filterOrderByText: string;
+  setFilterOrderByText: (val: string) => void;
+
+  structureSearchColumn: string;
+  setStructureSearchColumn: (val: string) => void;
+
   originalRows: GridRow[];
   rows: GridRow[];
   updateCell: (id: number, field: keyof GridRow, value: any) => void;
@@ -133,6 +153,24 @@ const INITIAL_ROWS: GridRow[] = [
     dirtyFields: {},
     rowState: 'clean',
   },
+];
+
+const GOOSE_ROWS: GridRow[] = [
+  { id: 1, version_id: 0, is_applied: true, tstamp: '2026-09-20 11:05:42.760469', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 2, version_id: 1, is_applied: true, tstamp: '2026-09-20 11:05:42.791719', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 3, version_id: 2, is_applied: true, tstamp: '2026-09-20 11:05:42.919323', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 4, version_id: 3, is_applied: true, tstamp: '2026-09-20 11:05:42.934156', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 5, version_id: 4, is_applied: true, tstamp: '2026-09-20 11:05:42.975246', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 6, version_id: 5, is_applied: true, tstamp: '2026-09-20 11:05:42.985788', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+];
+
+const TUPLE_ROWS: GridRow[] = [
+  { id: 1, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2770', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2770#member', user_type: 'userset', ulid: '01M2Z8794GWTS8MMZKGD922YX9', inserted_at: '2026-10-21 11:20:10+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 2, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2782', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2782#member', user_type: 'userset', ulid: '01M2Z8794GWTS8MMZKGD922YXA', inserted_at: '2026-10-21 11:22:15+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 3, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2806', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2806#member', user_type: 'userset', ulid: '01M2Z8794GWTS8MMZKGD922YXB', inserted_at: '2026-10-21 11:25:30+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 4, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0da14052-e311-4305-ae60-71d157ab9587_r2770', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2770#member', user_type: 'userset', ulid: '01M2Z8794GWTS8MMZKGD922YXC', inserted_at: '2026-10-21 11:30:00+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 5, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0fde576c-344d-45d8-879b-fcf8aa1ee2f3_r2782', relation: 'everyone', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2782#active_member', user_type: 'userset', ulid: '01M5FB8XBAJQ406DP5PVW247CQ', inserted_at: '2026-10-21 13:44:07+00', condition_name: 'EMPTY', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 6, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '15453fec-4d45-4954-9dcc-923120562ec6_r2770', relation: 'organisation', _user: 'grantee:user:76adbfc3-ae54-469b', user_type: 'userset', ulid: '01M5FB8XBAJQ406DP5PVW247CR', inserted_at: '2026-10-21 13:48:00+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
 ];
 
 const DEFAULT_TABS: TabItem[] = [
@@ -521,7 +559,38 @@ export const useAppStore = create<AppState>((set, get) => ({
   resetPending: () => set({ pendingEditsCount: 0, isTransactionOpen: false }),
 
   selectedTable: 'user_orders',
-  setSelectedTable: (tbl) => set({ selectedTable: tbl }),
+  setSelectedTable: (tbl) => {
+    let targetRows = INITIAL_ROWS;
+    if (tbl === 'goose_db_version') targetRows = GOOSE_ROWS;
+    else if (tbl === 'tuple') targetRows = TUPLE_ROWS;
+    set({
+      selectedTable: tbl,
+      selectedRowData: null,
+      rows: JSON.parse(JSON.stringify(targetRows)),
+      originalRows: JSON.parse(JSON.stringify(targetRows)),
+      pendingEditsCount: 0,
+    });
+  },
+
+  isRightInspectorOpen: true,
+  setRightInspectorOpen: (open) => set({ isRightInspectorOpen: open }),
+  toggleRightInspector: () => set((state) => ({ isRightInspectorOpen: !state.isRightInspectorOpen })),
+
+  selectedRowData: null,
+  setSelectedRowData: (row) => set({ selectedRowData: row }),
+
+  tableViewMode: 'data',
+  setTableViewMode: (mode) => set({ tableViewMode: mode }),
+
+  isFilterBarOpen: true,
+  toggleFilterBar: () => set((state) => ({ isFilterBarOpen: !state.isFilterBarOpen })),
+  filterWhereText: "status = 'pending' AND total_amount > 50",
+  setFilterWhereText: (val) => set({ filterWhereText: val }),
+  filterOrderByText: "id DESC",
+  setFilterOrderByText: (val) => set({ filterOrderByText: val }),
+
+  structureSearchColumn: '',
+  setStructureSearchColumn: (val) => set({ structureSearchColumn: val }),
 
   originalRows: JSON.parse(JSON.stringify(INITIAL_ROWS)),
   rows: JSON.parse(JSON.stringify(INITIAL_ROWS)),

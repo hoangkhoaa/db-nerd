@@ -1,0 +1,238 @@
+import React, { useState } from 'react';
+import { useAppStore } from '../stores/useAppStore';
+import { getTableSchema } from '../data/schemas';
+import { Search, Key } from 'lucide-react';
+import { ColumnDefinition } from '../types';
+
+const DATA_TYPES = [
+  'int4',
+  'int8',
+  'varchar(255)',
+  'text',
+  'bool',
+  'timestamp',
+  'timestamptz',
+  'jsonb',
+  'numeric(12,2)',
+  'uuid',
+  'bytea',
+  'serial',
+  'bigserial',
+];
+
+export const TableStructureView: React.FC = () => {
+  const { selectedTable, structureSearchColumn, setStructureSearchColumn } = useAppStore();
+  const schemaInfo = getTableSchema(selectedTable);
+
+  const [columns, setColumns] = useState<ColumnDefinition[]>(schemaInfo.columns);
+  const [tableNameInput, setTableNameInput] = useState(selectedTable);
+
+  // Sync columns if selectedTable changes
+  React.useEffect(() => {
+    setColumns(schemaInfo.columns);
+    setTableNameInput(selectedTable);
+  }, [selectedTable]);
+
+  const primaryKeyCol = columns.find((c) => c.isPrimaryKey)?.name || 'id';
+
+  const filteredColumns = columns.filter((col) =>
+    col.name.toLowerCase().includes(structureSearchColumn.trim().toLowerCase())
+  );
+
+  const handleUpdateCol = (idx: number, field: keyof ColumnDefinition, val: any) => {
+    setColumns((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: val };
+      return next;
+    });
+  };
+
+  // Generate 25 zebra rows to fill viewport like TablePlus
+  const totalRowsCount = Math.max(25, filteredColumns.length);
+  const emptyRowsNeeded = Math.max(0, totalRowsCount - filteredColumns.length);
+
+  return (
+    <div className="flex-1 flex flex-col bg-slate-900/90 text-xs font-mono overflow-hidden select-none">
+      {/* Top Header: Name, Primary, Search */}
+      <div className="h-11 bg-slate-950 border-b border-slate-800/90 px-4 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center space-x-3">
+          {/* Table Name Field */}
+          <div className="flex items-center space-x-1.5 font-sans">
+            <span className="text-slate-400 font-semibold text-xs">Name</span>
+            <input
+              type="text"
+              value={tableNameInput}
+              onChange={(e) => setTableNameInput(e.target.value)}
+              className="bg-slate-900 border border-sky-500/70 rounded-md px-2.5 py-1 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 w-44 shadow-sm"
+            />
+          </div>
+
+          {/* Primary Key Badge */}
+          <div className="flex items-center space-x-1.5 font-sans">
+            <span className="text-slate-400 font-semibold text-xs">Primary</span>
+            <span className="px-2 py-0.5 bg-sky-950 border border-sky-600/60 text-sky-300 font-mono text-xs rounded-md font-semibold flex items-center space-x-1 shadow-sm">
+              <Key className="w-3 h-3 text-sky-400" />
+              <span>{primaryKeyCol}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Search for Column Input */}
+        <div className="relative font-sans">
+          <input
+            type="text"
+            placeholder="Search for column..."
+            value={structureSearchColumn}
+            onChange={(e) => setStructureSearchColumn(e.target.value)}
+            className="w-56 bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors"
+          />
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Structure Columns Grid */}
+      <div className="flex-1 overflow-auto bg-slate-950/80">
+        <table className="w-full border-collapse">
+          {/* Table Header */}
+          <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800 text-slate-400 text-left text-[11px]">
+            <tr>
+              <th className="w-12 px-3 py-2 border-r border-slate-800/80 text-center font-normal">#</th>
+              <th className="w-48 px-3 py-2 border-r border-slate-800/80 font-normal">column_name</th>
+              <th className="w-36 px-3 py-2 border-r border-slate-800/80 font-normal">data_type</th>
+              <th className="w-28 px-3 py-2 border-r border-slate-800/80 font-normal">is_nullable</th>
+              <th className="w-28 px-3 py-2 border-r border-slate-800/80 font-normal">check</th>
+              <th className="w-36 px-3 py-2 border-r border-slate-800/80 font-normal">column_default</th>
+              <th className="w-36 px-3 py-2 border-r border-slate-800/80 font-normal">foreign_key</th>
+              <th className="px-3 py-2 font-normal">comment</th>
+            </tr>
+          </thead>
+
+          {/* Table Body */}
+          <tbody className="divide-y divide-slate-800/40 text-[11px]">
+            {filteredColumns.map((col, idx) => {
+              const isEven = idx % 2 === 0;
+
+              return (
+                <tr
+                  key={col.name + idx}
+                  className={`hover:bg-slate-800/40 transition-colors ${
+                    isEven ? 'bg-slate-900/40' : 'bg-slate-950/60'
+                  }`}
+                >
+                  {/* # Index */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 text-center text-slate-500 select-none">
+                    {idx + 1}
+                  </td>
+
+                  {/* Column Name */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 font-semibold text-slate-200">
+                    <input
+                      type="text"
+                      value={col.name}
+                      onChange={(e) => handleUpdateCol(idx, 'name', e.target.value)}
+                      className="w-full bg-transparent border-0 focus:outline-none focus:bg-slate-800/60 rounded px-1 text-slate-100"
+                    />
+                  </td>
+
+                  {/* Data Type Dropdown */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 text-slate-300">
+                    <div className="flex items-center justify-between group cursor-pointer">
+                      <select
+                        value={col.type}
+                        onChange={(e) => handleUpdateCol(idx, 'type', e.target.value)}
+                        className="bg-transparent text-slate-200 focus:outline-none cursor-pointer w-full"
+                      >
+                        {DATA_TYPES.map((dt) => (
+                          <option key={dt} value={dt} className="bg-slate-900 text-slate-200">
+                            {dt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </td>
+
+                  {/* Is Nullable */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 text-slate-300">
+                    <select
+                      value={col.isNullable ? 'YES' : 'NO'}
+                      onChange={(e) => handleUpdateCol(idx, 'isNullable', e.target.value === 'YES')}
+                      className="bg-transparent text-slate-300 focus:outline-none cursor-pointer"
+                    >
+                      <option value="NO" className="bg-slate-900 text-slate-200">
+                        NO
+                      </option>
+                      <option value="YES" className="bg-slate-900 text-slate-200">
+                        YES
+                      </option>
+                    </select>
+                  </td>
+
+                  {/* Check Constraint */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 text-slate-500 italic">
+                    NULL
+                  </td>
+
+                  {/* Column Default */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 text-slate-300">
+                    <input
+                      type="text"
+                      value={col.defaultValue || 'NULL'}
+                      onChange={(e) => handleUpdateCol(idx, 'defaultValue', e.target.value)}
+                      className={`w-full bg-transparent border-0 focus:outline-none focus:bg-slate-800/60 rounded px-1 ${
+                        !col.defaultValue || col.defaultValue === 'NULL' ? 'text-slate-500 italic' : 'text-slate-200'
+                      }`}
+                    />
+                  </td>
+
+                  {/* Foreign Key */}
+                  <td className="px-3 py-1.5 border-r border-slate-800/60 text-slate-500">
+                    {col.isForeignKey ? (
+                      <span className="text-sky-400 font-semibold">{`→ ${col.foreignTable}(${col.foreignColumn})`}</span>
+                    ) : (
+                      <span className="text-slate-600">EMPTY</span>
+                    )}
+                  </td>
+
+                  {/* Comment */}
+                  <td className="px-3 py-1.5 text-slate-400 truncate">
+                    <input
+                      type="text"
+                      placeholder="Comment..."
+                      value={col.comment || ''}
+                      onChange={(e) => handleUpdateCol(idx, 'comment', e.target.value)}
+                      className="w-full bg-transparent border-0 focus:outline-none focus:bg-slate-800/60 rounded px-1 placeholder-slate-600 text-slate-400"
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Empty Zebra Striped Rows (Matching TablePlus style) */}
+            {Array.from({ length: emptyRowsNeeded }).map((_, i) => {
+              const rowNum = filteredColumns.length + i + 1;
+              const isEven = (filteredColumns.length + i) % 2 === 0;
+
+              return (
+                <tr
+                  key={`empty-${i}`}
+                  className={`h-7 ${isEven ? 'bg-slate-900/40' : 'bg-slate-950/60'}`}
+                >
+                  <td className="px-3 py-1 border-r border-slate-800/40 text-center text-slate-700 select-none">
+                    {rowNum}
+                  </td>
+                  <td className="px-3 py-1 border-r border-slate-800/40"></td>
+                  <td className="px-3 py-1 border-r border-slate-800/40"></td>
+                  <td className="px-3 py-1 border-r border-slate-800/40"></td>
+                  <td className="px-3 py-1 border-r border-slate-800/40"></td>
+                  <td className="px-3 py-1 border-r border-slate-800/40"></td>
+                  <td className="px-3 py-1 border-r border-slate-800/40"></td>
+                  <td className="px-3 py-1"></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

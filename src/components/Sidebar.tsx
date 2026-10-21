@@ -49,11 +49,15 @@ export const Sidebar = () => {
   };
 
   const tables = [
+    { name: 'assertion', count: '42' },
+    { name: 'authorization_model', count: '18' },
+    { name: 'changelog', count: '1.4K' },
+    { name: 'goose_db_version', count: '6' },
+    { name: 'store', count: '120' },
+    { name: 'tuple', count: '386K' },
     { name: 'user_orders', count: '1.2M', active: true },
-    { name: 'users', count: '124k' },
-    { name: 'order_items', count: '4.8M' },
-    { name: 'products', count: '8.4k' },
-    { name: 'audit_logs', count: '2.1M' },
+    { name: 'users', count: '124K' },
+    { name: 'products', count: '8.4K' },
   ];
 
   const filteredTables = tables.filter((t) => t.name.toLowerCase().includes(searchFilter.toLowerCase()));

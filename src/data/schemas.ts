@@ -320,6 +320,169 @@ COMMENT ON COLUMN public.user_orders.order_details IS 'Dynamic JSON payload: ite
 CREATE INDEX idx_products_category ON public.products USING btree (category_id);
 `,
   },
+
+  goose_db_version: {
+    tableName: 'goose_db_version',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '6 rows',
+    totalSize: '24 KB (Data: 8 KB, Index: 16 KB)',
+    columns: [
+      {
+        name: 'id',
+        type: 'int4',
+        isNullable: false,
+        defaultValue: undefined,
+        isPrimaryKey: true,
+        comment: '',
+      },
+      {
+        name: 'version_id',
+        type: 'int8',
+        isNullable: false,
+        defaultValue: undefined,
+        comment: '',
+      },
+      {
+        name: 'is_applied',
+        type: 'bool',
+        isNullable: false,
+        defaultValue: undefined,
+        comment: '',
+      },
+      {
+        name: 'tstamp',
+        type: 'timestamp',
+        isNullable: false,
+        defaultValue: 'now()',
+        comment: '',
+      },
+    ],
+    indexes: [
+      {
+        name: 'goose_db_version_pkey',
+        columns: ['id'],
+        type: 'BTREE',
+        isUnique: true,
+        isPrimary: true,
+        size: '16 KB',
+      },
+    ],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.goose_db_version (
+    id serial PRIMARY KEY,
+    version_id bigint NOT NULL,
+    is_applied boolean NOT NULL,
+    tstamp timestamp without time zone DEFAULT now() NOT NULL
+);
+`,
+  },
+
+  tuple: {
+    tableName: 'tuple',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '386,280 rows',
+    totalSize: '68 MB (Data: 42 MB, Index: 26 MB)',
+    columns: [
+      { name: 'store', type: 'text', isNullable: false, defaultValue: undefined, comment: 'Target datastore hash' },
+      { name: 'object_type', type: 'text', isNullable: false, defaultValue: undefined, comment: 'Entity namespace' },
+      { name: 'object_id', type: 'text', isNullable: false, defaultValue: undefined, comment: 'Entity UUID identifier' },
+      { name: 'relation', type: 'text', isNullable: false, defaultValue: undefined, comment: 'OpenFGA relation name' },
+      { name: '_user', type: 'text', isNullable: false, defaultValue: undefined, comment: 'Subject identifier or set' },
+      { name: 'user_type', type: 'text', isNullable: false, defaultValue: undefined, comment: 'userset or direct user' },
+      { name: 'ulid', type: 'text', isNullable: false, defaultValue: undefined, isPrimaryKey: true, comment: 'Chronological ULID' },
+      { name: 'inserted_at', type: 'timestamptz', isNullable: false, defaultValue: 'now()', comment: 'Insert timestamp' },
+      { name: 'condition_name', type: 'text', isNullable: true, defaultValue: undefined, comment: 'Conditional tuple name' },
+      { name: 'condition_context', type: 'bytea', isNullable: true, defaultValue: undefined, comment: 'Binary context' },
+    ],
+    indexes: [
+      { name: 'tuple_pkey', columns: ['ulid'], type: 'BTREE', isUnique: true, isPrimary: true, size: '14 MB' },
+      { name: 'idx_tuple_store_object', columns: ['store', 'object_type', 'object_id'], type: 'BTREE', isUnique: false, size: '12 MB' },
+    ],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.tuple (
+    store text NOT NULL,
+    object_type text NOT NULL,
+    object_id text NOT NULL,
+    relation text NOT NULL,
+    _user text NOT NULL,
+    user_type text NOT NULL,
+    ulid text NOT NULL PRIMARY KEY,
+    inserted_at timestamp with time zone DEFAULT now() NOT NULL,
+    condition_name text,
+    condition_context bytea
+);
+`,
+  },
+
+  assertion: {
+    tableName: 'assertion',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '42 rows',
+    totalSize: '16 KB (Data: 8 KB, Index: 8 KB)',
+    columns: [
+      { name: 'id', type: 'int4', isNullable: false, isPrimaryKey: true },
+      { name: 'store', type: 'text', isNullable: false },
+      { name: 'model_id', type: 'text', isNullable: false },
+      { name: 'assertions', type: 'jsonb', isNullable: false },
+    ],
+    indexes: [{ name: 'assertion_pkey', columns: ['id'], type: 'BTREE', isUnique: true, isPrimary: true, size: '8 KB' }],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.assertion (id serial PRIMARY KEY, store text NOT NULL, model_id text NOT NULL, assertions jsonb NOT NULL);`,
+  },
+
+  authorization_model: {
+    tableName: 'authorization_model',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '18 rows',
+    totalSize: '32 KB (Data: 16 KB, Index: 16 KB)',
+    columns: [
+      { name: 'id', type: 'text', isNullable: false, isPrimaryKey: true },
+      { name: 'store', type: 'text', isNullable: false },
+      { name: 'schema_version', type: 'text', isNullable: false },
+      { name: 'type_definitions', type: 'jsonb', isNullable: false },
+      { name: 'created_at', type: 'timestamptz', isNullable: false, defaultValue: 'now()' },
+    ],
+    indexes: [{ name: 'auth_model_pkey', columns: ['id'], type: 'BTREE', isUnique: true, isPrimary: true, size: '16 KB' }],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.authorization_model (id text PRIMARY KEY, store text NOT NULL, schema_version text NOT NULL, type_definitions jsonb NOT NULL, created_at timestamptz DEFAULT now());`,
+  },
+
+  changelog: {
+    tableName: 'changelog',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '1,420 rows',
+    totalSize: '128 KB (Data: 64 KB, Index: 64 KB)',
+    columns: [
+      { name: 'id', type: 'bigint', isNullable: false, isPrimaryKey: true },
+      { name: 'store', type: 'text', isNullable: false },
+      { name: 'operation', type: 'varchar(16)', isNullable: false },
+      { name: 'timestamp', type: 'timestamptz', isNullable: false, defaultValue: 'now()' },
+    ],
+    indexes: [{ name: 'changelog_pkey', columns: ['id'], type: 'BTREE', isUnique: true, isPrimary: true, size: '64 KB' }],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.changelog (id bigserial PRIMARY KEY, store text NOT NULL, operation varchar(16) NOT NULL, timestamp timestamptz DEFAULT now());`,
+  },
+
+  store: {
+    tableName: 'store',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '120 rows',
+    totalSize: '48 KB (Data: 24 KB, Index: 24 KB)',
+    columns: [
+      { name: 'id', type: 'text', isNullable: false, isPrimaryKey: true },
+      { name: 'name', type: 'varchar(255)', isNullable: false },
+      { name: 'created_at', type: 'timestamptz', isNullable: false, defaultValue: 'now()' },
+    ],
+    indexes: [{ name: 'store_pkey', columns: ['id'], type: 'BTREE', isUnique: true, isPrimary: true, size: '24 KB' }],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.store (id text PRIMARY KEY, name varchar(255) NOT NULL, created_at timestamptz DEFAULT now());`,
+  },
 };
 
 export const getTableSchema = (tableName: string): TableSchemaInfo => {

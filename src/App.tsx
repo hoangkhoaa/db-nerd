@@ -10,6 +10,7 @@ import { OpenDatabaseModal } from './components/OpenDatabaseModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
+import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X } from 'lucide-react';
 import './App.css';
@@ -34,6 +35,17 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ⌘I: Toggle Right Inspector
+      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+        e.preventDefault();
+        useAppStore.getState().toggleRightInspector();
+      }
+      // ⌘R: Reload Current Table
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        const { setSelectedTable, selectedTable } = useAppStore.getState();
+        setSelectedTable(selectedTable);
+      }
       // ⌘O: Open Database Switcher
       if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
         e.preventDefault();
@@ -227,6 +239,9 @@ export function App() {
           </div>
 
         </main>
+
+        {/* Right Inspector Panel */}
+        <RightInspector />
       </div>
 
       {/* Global Modals */}

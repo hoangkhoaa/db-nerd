@@ -40,13 +40,14 @@ export interface TabItem {
 
 export interface GridRow {
   id: number;
-  user_id: number;
-  customer_name: string;
-  product_sku: string;
-  order_details: Record<string, any>;
-  total_amount: number;
-  created_at: string;
-  status: string;
+  user_id?: number;
+  customer_name?: string;
+  product_sku?: string;
+  order_details?: Record<string, any>;
+  total_amount?: number;
+  created_at?: string;
+  status?: string;
+  [key: string]: any;
   isDirty?: boolean;
   dirtyFields?: Record<string, boolean>;
   rowState?: 'clean' | 'modified' | 'inserted' | 'deleted';
