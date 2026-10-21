@@ -17,18 +17,26 @@ interface AppState {
   isHistoryModalOpen: boolean;
   setHistoryModalOpen: (open: boolean) => void;
 
+  isSqlDiffModalOpen: boolean;
+  setSqlDiffModalOpen: (open: boolean) => void;
+
   isTransactionOpen: boolean;
   setTransactionOpen: (open: boolean) => void;
 
   pendingEditsCount: number;
-  incrementPending: () => void;
   resetPending: () => void;
 
   selectedTable: string;
   setSelectedTable: (tbl: string) => void;
 
+  originalRows: GridRow[];
   rows: GridRow[];
-  updateRow: (id: number, field: keyof GridRow, value: any) => void;
+  updateCell: (id: number, field: keyof GridRow, value: any) => void;
+  insertRow: () => void;
+  deleteRow: (id: number) => void;
+  rollbackTransaction: () => void;
+  commitTransaction: () => { sqlText: string; count: number };
+  getPendingSQL: () => string;
 
   processes: ProcessItem[];
   killProcess: (pid: number) => void;
@@ -36,7 +44,75 @@ interface AppState {
   history: QueryHistoryItem[];
 }
 
-export const useAppStore = create<AppState>((set) => ({
+const INITIAL_ROWS: GridRow[] = [
+  {
+    id: 1034,
+    user_id: 501,
+    customer_name: 'Alex Turner',
+    product_sku: 'SKU-8902-M',
+    order_details: { items: 3, total: 145.0, express: true },
+    total_amount: 145.0,
+    created_at: '2026-10-20 14:30:00',
+    status: 'shipped',
+    isDirty: false,
+    dirtyFields: {},
+    rowState: 'clean',
+  },
+  {
+    id: 1035,
+    user_id: 502,
+    customer_name: 'Sarah Connor',
+    product_sku: 'SKU-1239-X',
+    order_details: { items: 1, total: 89.5, reason: 'size_mismatch' },
+    total_amount: 89.5,
+    created_at: '2026-10-21 09:15:00',
+    status: 'processing_refund',
+    isDirty: true,
+    dirtyFields: { status: true },
+    rowState: 'modified',
+  },
+  {
+    id: 1036,
+    user_id: 503,
+    customer_name: 'Khoa Nguyen',
+    product_sku: 'SKU-4560-L',
+    order_details: { items: 5, total: 1200.0, vip: true },
+    total_amount: 1200.0,
+    created_at: '2026-10-21 11:00:00',
+    status: 'completed',
+    isDirty: false,
+    dirtyFields: {},
+    rowState: 'clean',
+  },
+  {
+    id: 1037,
+    user_id: 504,
+    customer_name: 'Elena Rostova',
+    product_sku: 'SKU-9901-S',
+    order_details: { items: 2, total: 340.0 },
+    total_amount: 340.0,
+    created_at: '2026-10-21 13:45:00',
+    status: 'pending',
+    isDirty: false,
+    dirtyFields: {},
+    rowState: 'clean',
+  },
+  {
+    id: 1038,
+    user_id: 505,
+    customer_name: 'Marcus Vance',
+    product_sku: 'SKU-3321-XL',
+    order_details: { items: 4, total: 580.0 },
+    total_amount: 580.0,
+    created_at: '2026-10-21 15:20:00',
+    status: 'completed',
+    isDirty: false,
+    dirtyFields: {},
+    rowState: 'clean',
+  },
+];
+
+export const useAppStore = create<AppState>((set, get) => ({
   activeTab: 'grid',
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -63,78 +139,209 @@ export const useAppStore = create<AppState>((set) => ({
   isHistoryModalOpen: false,
   setHistoryModalOpen: (open) => set({ isHistoryModalOpen: open }),
 
+  isSqlDiffModalOpen: false,
+  setSqlDiffModalOpen: (open) => set({ isSqlDiffModalOpen: open }),
+
   isTransactionOpen: true,
   setTransactionOpen: (open) => set({ isTransactionOpen: open }),
 
   pendingEditsCount: 1,
-  incrementPending: () => set((state) => ({ pendingEditsCount: state.pendingEditsCount + 1 })),
-  resetPending: () => set({ pendingEditsCount: 0 }),
+  resetPending: () => set({ pendingEditsCount: 0, isTransactionOpen: false }),
 
   selectedTable: 'user_orders',
   setSelectedTable: (tbl) => set({ selectedTable: tbl }),
 
-  rows: [
-    {
-      id: 1034,
+  originalRows: JSON.parse(JSON.stringify(INITIAL_ROWS)),
+  rows: JSON.parse(JSON.stringify(INITIAL_ROWS)),
+
+  updateCell: (id, field, value) => {
+    const { rows, originalRows, selectedTable } = get();
+    const origRow = originalRows.find((r) => r.id === id);
+
+    let castValue = value;
+    if (field === 'id' || field === 'user_id' || field === 'total_amount') {
+      const num = Number(value);
+      if (!isNaN(num)) castValue = num;
+    }
+
+    const updatedRows = rows.map((r) => {
+      if (r.id !== id) return r;
+
+      const currentDirty = { ...(r.dirtyFields || {}) };
+      const isOriginal = origRow ? JSON.stringify(origRow[field]) === JSON.stringify(castValue) : false;
+
+      if (isOriginal) {
+        delete currentDirty[field as string];
+      } else {
+        currentDirty[field as string] = true;
+      }
+
+      const hasDirtyFields = Object.keys(currentDirty).length > 0;
+      const nextRowState: GridRow['rowState'] = r.rowState === 'inserted' ? 'inserted' : hasDirtyFields ? 'modified' : 'clean';
+      return {
+        ...r,
+        [field]: castValue,
+        dirtyFields: currentDirty,
+        isDirty: hasDirtyFields || r.rowState === 'inserted' || r.rowState === 'deleted',
+        rowState: nextRowState,
+      };
+    });
+
+    // Count all dirty cells & rows
+    let dirtyCount = 0;
+    updatedRows.forEach((r) => {
+      if (r.rowState === 'inserted' || r.rowState === 'deleted') {
+        dirtyCount++;
+      } else if (r.dirtyFields) {
+        dirtyCount += Object.keys(r.dirtyFields).length;
+      }
+    });
+
+    set({
+      rows: updatedRows,
+      pendingEditsCount: dirtyCount,
+      isTransactionOpen: dirtyCount > 0,
+      selectedTable,
+    });
+  },
+
+  insertRow: () => {
+    const { rows } = get();
+    const maxId = rows.reduce((max, r) => Math.max(max, r.id), 1000);
+    const newId = maxId + 1;
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    const newRow: GridRow = {
+      id: newId,
       user_id: 501,
-      customer_name: 'Alex Turner',
-      product_sku: 'SKU-8902-M',
-      order_details: { items: 3, total: 145.0, express: true },
-      total_amount: 145.0,
-      created_at: '2026-10-20 14:30:00',
-      status: 'shipped',
-      isDirty: false,
-    },
-    {
-      id: 1035,
-      user_id: 502,
-      customer_name: 'Sarah Connor',
-      product_sku: 'SKU-1239-X',
-      order_details: { items: 1, total: 89.5, reason: 'size_mismatch' },
-      total_amount: 89.5,
-      created_at: '2026-10-21 09:15:00',
-      status: 'processing_refund',
-      isDirty: true,
-    },
-    {
-      id: 1036,
-      user_id: 503,
-      customer_name: 'Khoa Nguyen',
-      product_sku: 'SKU-4560-L',
-      order_details: { items: 5, total: 1200.0, vip: true },
-      total_amount: 1200.0,
-      created_at: '2026-10-21 11:00:00',
-      status: 'completed',
-      isDirty: false,
-    },
-    {
-      id: 1037,
-      user_id: 504,
-      customer_name: 'Elena Rostova',
-      product_sku: 'SKU-9901-S',
-      order_details: { items: 2, total: 340.0 },
-      total_amount: 340.0,
-      created_at: '2026-10-21 13:45:00',
+      customer_name: 'New Customer',
+      product_sku: 'SKU-NEW-01',
+      order_details: { items: 1, total: 50.0 },
+      total_amount: 50.0,
+      created_at: now,
       status: 'pending',
-      isDirty: false,
-    },
-    {
-      id: 1038,
-      user_id: 505,
-      customer_name: 'Marcus Vance',
-      product_sku: 'SKU-3321-XL',
-      order_details: { items: 4, total: 580.0 },
-      total_amount: 580.0,
-      created_at: '2026-10-21 15:20:00',
-      status: 'completed',
-      isDirty: false,
-    },
-  ],
-  updateRow: (id, field, value) =>
-    set((state) => ({
-      rows: state.rows.map((r) => (r.id === id ? { ...r, [field]: value, isDirty: true } : r)),
-      pendingEditsCount: state.pendingEditsCount + 1,
-    })),
+      isDirty: true,
+      dirtyFields: { id: true, customer_name: true, product_sku: true, total_amount: true, status: true },
+      rowState: 'inserted',
+    };
+
+    const nextRows = [newRow, ...rows];
+    let dirtyCount = 0;
+    nextRows.forEach((r) => {
+      if (r.rowState === 'inserted' || r.rowState === 'deleted') dirtyCount++;
+      else if (r.dirtyFields) dirtyCount += Object.keys(r.dirtyFields).length;
+    });
+
+    set({
+      rows: nextRows,
+      pendingEditsCount: dirtyCount,
+      isTransactionOpen: true,
+    });
+  },
+
+  deleteRow: (id) => {
+    const { rows } = get();
+    const nextRows = rows.map((r) => {
+      if (r.id !== id) return r;
+      const nextState: GridRow['rowState'] = r.rowState === 'deleted' ? 'clean' : 'deleted';
+      return {
+        ...r,
+        rowState: nextState,
+        isDirty: nextState === 'deleted',
+      };
+    });
+
+    let dirtyCount = 0;
+    nextRows.forEach((r) => {
+      if (r.rowState === 'inserted' || r.rowState === 'deleted') dirtyCount++;
+      else if (r.dirtyFields) dirtyCount += Object.keys(r.dirtyFields).length;
+    });
+
+    set({
+      rows: nextRows,
+      pendingEditsCount: dirtyCount,
+      isTransactionOpen: dirtyCount > 0,
+    });
+  },
+
+  rollbackTransaction: () => {
+    const { originalRows } = get();
+    set({
+      rows: JSON.parse(JSON.stringify(originalRows)),
+      pendingEditsCount: 0,
+      isTransactionOpen: false,
+    });
+  },
+
+  commitTransaction: () => {
+    const { rows, getPendingSQL, activeConnection, history } = get();
+    const sqlText = getPendingSQL();
+    const count = get().pendingEditsCount;
+
+    // Filter out rows marked as deleted
+    const committedRows = rows
+      .filter((r) => r.rowState !== 'deleted')
+      .map((r) => ({
+        ...r,
+        isDirty: false,
+        dirtyFields: {},
+        rowState: 'clean' as const,
+      }));
+
+    const now = new Date();
+    const timeStr = `Today at ${now.toTimeString().slice(0, 8)}`;
+    const newHistoryItem: QueryHistoryItem = {
+      id: `h-${Date.now()}`,
+      connectionName: activeConnection.name,
+      env: activeConnection.env,
+      sql: sqlText,
+      timestamp: timeStr,
+      durationMs: 1.4,
+      rowsAffected: count,
+      status: 'success',
+      isFavorite: false,
+    };
+
+    set({
+      rows: committedRows,
+      originalRows: JSON.parse(JSON.stringify(committedRows)),
+      pendingEditsCount: 0,
+      isTransactionOpen: false,
+      isSqlDiffModalOpen: false,
+      history: [newHistoryItem, ...history],
+    });
+
+    return { sqlText, count };
+  },
+
+  getPendingSQL: () => {
+    const { rows, selectedTable } = get();
+    const sqlStatements: string[] = [];
+
+    rows.forEach((r) => {
+      if (r.rowState === 'inserted') {
+        sqlStatements.push(
+          `INSERT INTO ${selectedTable} (id, user_id, customer_name, product_sku, total_amount, status, created_at) VALUES (${r.id}, ${r.user_id}, '${r.customer_name}', '${r.product_sku}', ${r.total_amount}, '${r.status}', '${r.created_at}');`
+        );
+      } else if (r.rowState === 'deleted') {
+        sqlStatements.push(`DELETE FROM ${selectedTable} WHERE id = ${r.id};`);
+      } else if (r.dirtyFields && Object.keys(r.dirtyFields).length > 0) {
+        const setClauses = Object.keys(r.dirtyFields).map((field) => {
+          const val = (r as any)[field];
+          if (typeof val === 'number') return `${field} = ${val}`;
+          if (typeof val === 'object') return `${field} = '${JSON.stringify(val)}'::jsonb`;
+          return `${field} = '${String(val).replace(/'/g, "''")}'`;
+        });
+        sqlStatements.push(`UPDATE ${selectedTable} SET ${setClauses.join(', ')} WHERE id = ${r.id};`);
+      }
+    });
+
+    if (sqlStatements.length === 0) {
+      return '-- No pending changes in active transaction';
+    }
+
+    return `BEGIN TRANSACTION;\n\n${sqlStatements.join('\n')}\n\nCOMMIT;`;
+  },
 
   processes: [
     {

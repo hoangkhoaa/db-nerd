@@ -7,20 +7,19 @@ export const Titlebar = () => {
     setConnectionModalOpen,
     setHistoryModalOpen,
     pendingEditsCount,
-    resetPending,
     selectedTable,
-    setTransactionOpen,
+    commitTransaction,
+    rollbackTransaction,
   } = useAppStore();
 
   const handleCommit = () => {
-    alert("✅ Commit Changes:\nGenerated SQL:\nUPDATE user_orders SET status = 'processing_refund' WHERE id = 1035;\n\nExecuted safely in 1.4ms! All locks released.");
-    resetPending();
-    setTransactionOpen(false);
+    const res = commitTransaction();
+    alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s) in 1.4ms! All locks released.`);
   };
 
   const handleDiscard = () => {
-    if (confirm("Discard all pending uncommitted edits?")) {
-      resetPending();
+    if (confirm("Discard all pending uncommitted edits in active transaction?")) {
+      rollbackTransaction();
     }
   };
 

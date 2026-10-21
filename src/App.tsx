@@ -7,7 +7,8 @@ import { SqlEditor } from './components/SqlEditor';
 import { Observability } from './components/Observability';
 import { ConnectionModal } from './components/ConnectionModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
-import { Table, Terminal, Activity } from 'lucide-react';
+import { SqlDiffModal } from './components/SqlDiffModal';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check } from 'lucide-react';
 import './App.css';
 
 export function App() {
@@ -16,27 +17,42 @@ export function App() {
     setActiveTab,
     selectedTable,
     isTransactionOpen,
-    setTransactionOpen,
+    pendingEditsCount,
     setConnectionModalOpen,
     setHistoryModalOpen,
-    resetPending,
+    setSqlDiffModalOpen,
+    commitTransaction,
+    rollbackTransaction,
   } = useAppStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ⌘K: Connection Manager
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setConnectionModalOpen(true);
       }
+      // ⌘H: Query History
       if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
         e.preventDefault();
         setHistoryModalOpen(true);
       }
+      // ⌘S: Commit Transaction
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        alert("✅ Commit: Changes committed via atomic transaction!");
-        resetPending();
-        setTransactionOpen(false);
+        if (useAppStore.getState().pendingEditsCount > 0) {
+          const res = commitTransaction();
+          alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s) in 1.4ms! All locks released.`);
+        }
+      }
+      // ⌘Z: Rollback Transaction (when not in input)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+        if (useAppStore.getState().pendingEditsCount > 0) {
+          e.preventDefault();
+          if (confirm("Rollback transaction and discard all uncommitted edits?")) {
+            rollbackTransaction();
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -49,33 +65,42 @@ export function App() {
       {/* Native macOS Titlebar */}
       <Titlebar />
 
-      {/* Transaction Alert Banner */}
-      {isTransactionOpen && (
-        <div className="h-8 bg-amber-500/15 border-b border-amber-500/30 px-4 flex items-center justify-between text-xs select-none">
+      {/* Transaction Alert Banner (TablePlus Style) */}
+      {isTransactionOpen && pendingEditsCount > 0 && (
+        <div className="h-8 bg-amber-500/15 border-b border-amber-500/40 px-4 flex items-center justify-between text-xs select-none z-20 backdrop-blur-md">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
             <span className="font-bold text-amber-300">Active Transaction Open</span>
-            <span className="text-amber-200/80">• TxID: #891024 • 1 uncommitted edit</span>
+            <span className="text-amber-200/80">
+              • TxID: #891024 • {pendingEditsCount} uncommitted edit{pendingEditsCount > 1 ? 's' : ''}
+            </span>
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => {
-                resetPending();
-                setTransactionOpen(false);
-              }}
-              className="px-2 py-0.5 hover:bg-slate-800 text-slate-300 rounded font-medium text-[11px]"
+              onClick={() => setSqlDiffModalOpen(true)}
+              className="px-2 py-0.5 hover:bg-slate-800 text-amber-300 rounded font-medium text-[11px] flex items-center space-x-1"
             >
-              Rollback (⌘Z)
+              <FileCode className="w-3 h-3" />
+              <span>Review SQL</span>
             </button>
             <button
               onClick={() => {
-                alert("Transaction committed!");
-                resetPending();
-                setTransactionOpen(false);
+                if (confirm("Rollback transaction?")) rollbackTransaction();
               }}
-              className="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-[11px]"
+              className="px-2 py-0.5 hover:bg-slate-800 text-slate-300 rounded font-medium text-[11px] flex items-center space-x-1"
             >
-              Commit (⌘S)
+              <RotateCcw className="w-3 h-3" />
+              <span>Rollback (⌘Z)</span>
+            </button>
+            <button
+              onClick={() => {
+                const res = commitTransaction();
+                alert(`✅ Transaction Committed!\n\nExecuted ${res.count} change(s) in 1.4ms.`);
+              }}
+              className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded text-[11px] flex items-center space-x-1 shadow-sm"
+            >
+              <Check className="w-3 h-3 stroke-[3]" />
+              <span>Commit (⌘S)</span>
             </button>
           </div>
         </div>
@@ -153,6 +178,7 @@ export function App() {
       {/* Global Modals */}
       <ConnectionModal />
       <QueryHistoryModal />
+      <SqlDiffModal />
 
     </div>
   );

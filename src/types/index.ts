@@ -24,6 +24,17 @@ export interface GridRow {
   created_at: string;
   status: string;
   isDirty?: boolean;
+  dirtyFields?: Record<string, boolean>;
+  rowState?: 'clean' | 'modified' | 'inserted' | 'deleted';
+}
+
+export interface PendingChange {
+  rowId: number;
+  tableName: string;
+  field: string;
+  oldValue: any;
+  newValue: any;
+  type: 'update' | 'insert' | 'delete';
 }
 
 export interface ProcessItem {
