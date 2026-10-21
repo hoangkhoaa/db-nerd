@@ -59,3 +59,45 @@ export interface QueryHistoryItem {
   errorMessage?: string;
   isFavorite: boolean;
 }
+
+export interface ColumnDefinition {
+  name: string;
+  type: string;
+  isNullable: boolean;
+  defaultValue?: string;
+  isPrimaryKey?: boolean;
+  isForeignKey?: boolean;
+  foreignTable?: string;
+  foreignColumn?: string;
+  comment?: string;
+}
+
+export interface TableIndexDefinition {
+  name: string;
+  columns: string[];
+  type: 'BTREE' | 'GIN' | 'HASH' | 'GIST';
+  isUnique: boolean;
+  isPrimary?: boolean;
+  size?: string;
+}
+
+export interface TableForeignKeyDefinition {
+  name: string;
+  column: string;
+  foreignTable: string;
+  foreignColumn: string;
+  onUpdate: string;
+  onDelete: string;
+}
+
+export interface TableSchemaInfo {
+  tableName: string;
+  schema: string;
+  engine: string;
+  rowCount: string;
+  totalSize: string;
+  columns: ColumnDefinition[];
+  indexes: TableIndexDefinition[];
+  foreignKeys: TableForeignKeyDefinition[];
+  ddl: string;
+}

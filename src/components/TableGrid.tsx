@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { ExternalLink, Plus, Trash2, Check, RotateCcw, FileCode, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, Plus, Trash2, Check, RotateCcw, FileCode, CheckCircle2, Columns } from 'lucide-react';
 import { GridRow } from '../types';
 
 export const TableGrid = () => {
@@ -13,6 +13,7 @@ export const TableGrid = () => {
     commitTransaction,
     pendingEditsCount,
     setSqlDiffModalOpen,
+    setActiveTab,
   } = useAppStore();
 
   const [filterText, setFilterText] = useState("status = 'pending' AND total_amount > 50");
@@ -90,8 +91,17 @@ export const TableGrid = () => {
           <span className="font-mono text-slate-300 text-[11px]">id DESC</span>
         </div>
 
-        {/* Right Row Operations */}
+        {/* Right Row & Schema Operations */}
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setActiveTab('schema')}
+            className="px-2.5 py-1 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95"
+            title="Inspect Table Schema, Column Types, Indexes & DDL"
+          >
+            <Columns className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Structure & DDL</span>
+          </button>
+
           <button
             onClick={insertRow}
             className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95"

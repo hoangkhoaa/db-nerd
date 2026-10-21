@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { ConnectionProfile, GridRow, ProcessItem, QueryHistoryItem } from '../types';
 
 interface AppState {
-  activeTab: 'grid' | 'sql' | 'stats';
-  setActiveTab: (tab: 'grid' | 'sql' | 'stats') => void;
+  activeTab: 'grid' | 'schema' | 'sql' | 'stats';
+  setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats') => void;
 
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;

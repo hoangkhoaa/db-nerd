@@ -8,7 +8,8 @@ import { Observability } from './components/Observability';
 import { ConnectionModal } from './components/ConnectionModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check } from 'lucide-react';
+import { TableSchemaView } from './components/TableSchemaView';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns } from 'lucide-react';
 import './App.css';
 
 export function App() {
@@ -132,6 +133,19 @@ export function App() {
                 <span>{selectedTable} [Grid]</span>
               </button>
 
+              {/* Tab: Structure & DDL */}
+              <button
+                onClick={() => setActiveTab('schema')}
+                className={`h-9 px-4 rounded-t-lg text-xs font-semibold flex items-center space-x-2 transition ${
+                  activeTab === 'schema'
+                    ? 'bg-slate-900 border-t border-x border-slate-800 text-slate-100 shadow-sm'
+                    : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Columns className="w-3.5 h-3.5 text-indigo-400" />
+                <span>{selectedTable} [Structure & DDL]</span>
+              </button>
+
               {/* Tab: SQL Studio */}
               <button
                 onClick={() => setActiveTab('sql')}
@@ -168,6 +182,7 @@ export function App() {
           {/* Tab Views */}
           <div className="flex-1 flex overflow-hidden">
             {activeTab === 'grid' && <TableGrid />}
+            {activeTab === 'schema' && <TableSchemaView />}
             {activeTab === 'sql' && <SqlEditor />}
             {activeTab === 'stats' && <Observability />}
           </div>
