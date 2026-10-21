@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState } from '../types';
 
 interface AppState {
   tabs: TabItem[];
@@ -9,6 +9,11 @@ interface AppState {
   openTableGridTab: (tableName: string) => void;
   openTableSchemaTab: (tableName: string) => void;
   closeTab: (id: string) => void;
+  renameTab: (id: string, newTitle: string) => void;
+
+  sqlTabStates: Record<string, SqlTabState>;
+  setSqlTabQuery: (tabId: string, query: string) => void;
+  runSqlQuery: (tabId: string, customQuery?: string) => void;
 
   activeTab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection';
   setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection') => void;
@@ -180,11 +185,32 @@ const TUPLE_ROWS: GridRow[] = [
 ];
 
 const DEFAULT_TABS: TabItem[] = [
-  { id: 'tab-grid-user_orders', type: 'grid', title: 'user_orders [Grid]', tableName: 'user_orders', canClose: true },
-  { id: 'tab-schema-user_orders', type: 'schema', title: 'user_orders [Structure & DDL]', tableName: 'user_orders', canClose: true },
-  { id: 'tab-sql-1', type: 'sql', title: 'Query 1 [SQL]', queryId: 1, canClose: true },
-  { id: 'tab-stats', type: 'stats', title: 'Instance Health & Activity', canClose: false },
+  { id: 'tab-sql-1', type: 'sql', title: 'SQL Query', canClose: true },
+  { id: 'tab-grid-tuple', type: 'grid', title: 'tuple', tableName: 'tuple', canClose: true },
+  { id: 'tab-grid-goose', type: 'grid', title: 'goose_db_version', tableName: 'goose_db_version', canClose: true },
 ];
+
+const INITIAL_SQL_TAB_STATES: Record<string, SqlTabState> = {
+  'tab-sql-1': {
+    tabId: 'tab-sql-1',
+    query: `SELECT u.id, u.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend
+FROM users u
+LEFT JOIN user_orders o ON o.user_id = u.id
+WHERE u.status = 'active'
+GROUP BY u.id, u.email
+ORDER BY total_spend DESC LIMIT 50;`,
+    results: [
+      { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
+      { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
+      { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
+    ],
+    columns: ['id', 'email', 'total_orders', 'total_spend'],
+    durationMs: 1.4,
+    rowsCount: 3,
+    executedAt: 'Just now',
+    isExecuting: false,
+  },
+};
 
 const INITIAL_GROUPS: ConnectionGroup[] = [
   { id: 'group-prod', name: 'Production', color: 'rose', tag: 'PROD' },
@@ -307,8 +333,8 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
 
 export const useAppStore = create<AppState>((set, get) => ({
   tabs: DEFAULT_TABS,
-  activeTabId: 'tab-grid-user_orders',
-  activeTab: 'grid',
+  activeTabId: 'tab-sql-1',
+  activeTab: 'sql',
 
   setActiveTabId: (id) => {
     const { tabs } = get();
@@ -341,23 +367,156 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  sqlTabStates: INITIAL_SQL_TAB_STATES,
+
+  setSqlTabQuery: (tabId, query) => {
+    set((state) => ({
+      sqlTabStates: {
+        ...state.sqlTabStates,
+        [tabId]: {
+          ...(state.sqlTabStates[tabId] || {
+            tabId,
+            results: [],
+            columns: [],
+            durationMs: 0,
+            rowsCount: 0,
+          }),
+          query,
+        },
+      },
+    }));
+  },
+
+  runSqlQuery: (tabId, customQuery) => {
+    const currentState = get().sqlTabStates[tabId];
+    const query = customQuery || currentState?.query || '';
+
+    set((state) => ({
+      sqlTabStates: {
+        ...state.sqlTabStates,
+        [tabId]: {
+          ...(state.sqlTabStates[tabId] || {
+            tabId,
+            results: [],
+            columns: [],
+            durationMs: 0,
+            rowsCount: 0,
+          }),
+          query,
+          isExecuting: true,
+        },
+      },
+    }));
+
+    setTimeout(() => {
+      let newResults: any[] = [];
+      const qLower = query.toLowerCase();
+
+      if (qLower.includes('tuple')) {
+        newResults = [
+          { id: 1, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2770', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2770#member' },
+          { id: 2, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2782', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2782#member' },
+          { id: 3, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2806', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2806#member' },
+        ];
+      } else if (qLower.includes('goose')) {
+        newResults = [
+          { id: 1, version_id: 0, is_applied: true, tstamp: '2026-09-20 11:05:42.760469' },
+          { id: 2, version_id: 1, is_applied: true, tstamp: '2026-09-20 11:05:42.791719' },
+          { id: 3, version_id: 2, is_applied: true, tstamp: '2026-09-20 11:05:42.919323' },
+        ];
+      } else {
+        newResults = [
+          { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
+          { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
+          { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
+        ];
+      }
+
+      const columns = Object.keys(newResults[0] || {});
+
+      set((state) => ({
+        sqlTabStates: {
+          ...state.sqlTabStates,
+          [tabId]: {
+            tabId,
+            query,
+            results: newResults,
+            columns,
+            durationMs: 1.4,
+            rowsCount: newResults.length,
+            executedAt: new Date().toLocaleTimeString(),
+            isExecuting: false,
+          },
+        },
+      }));
+    }, 200);
+  },
+
+  renameTab: (id, newTitle) => {
+    if (!newTitle.trim()) return;
+    set((state) => ({
+      tabs: state.tabs.map((t) => (t.id === id ? { ...t, title: newTitle.trim() } : t)),
+    }));
+  },
+
   openNewQueryTab: (initialSql) => {
-    const { tabs } = get();
+    const { tabs, sqlTabStates } = get();
     const sqlTabs = tabs.filter((t) => t.type === 'sql');
-    const maxQueryId = sqlTabs.reduce((max, t) => Math.max(max, t.queryId || 1), 0);
-    const nextQueryId = maxQueryId + 1;
+    const count = sqlTabs.length;
+    const nextTabId = `tab-sql-${Date.now()}`;
+    const tabTitle = count === 0 ? 'SQL Query' : `SQL Query ${count + 1}`;
+
+    const defaultSql =
+      initialSql ||
+      (count === 0
+        ? `SELECT u.id, u.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend\nFROM users u\nLEFT JOIN user_orders o ON o.user_id = u.id\nWHERE u.status = 'active'\nGROUP BY u.id, u.email\nORDER BY total_spend DESC LIMIT 50;`
+        : count === 1
+        ? `SELECT store, object_type, object_id, relation, _user\nFROM tuple\nWHERE object_type = 'connector_tool'\nORDER BY inserted_at DESC\nLIMIT 20;`
+        : `SELECT id, version_id, is_applied, tstamp\nFROM goose_db_version\nORDER BY id ASC;`);
+
+    const initialResults =
+      count === 1
+        ? [
+            { id: 1, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2770', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2770#member' },
+            { id: 2, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2782', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2782#member' },
+          ]
+        : count === 2
+        ? [
+            { id: 1, version_id: 0, is_applied: true, tstamp: '2026-09-20 11:05:42.760469' },
+            { id: 2, version_id: 1, is_applied: true, tstamp: '2026-09-20 11:05:42.791719' },
+          ]
+        : [
+            { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
+            { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
+            { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
+          ];
+
+    const initialColumns = Object.keys(initialResults[0]);
+
     const newTab: TabItem = {
-      id: `tab-sql-${nextQueryId}`,
+      id: nextTabId,
       type: 'sql',
-      title: `Query ${nextQueryId} [SQL]`,
-      queryId: nextQueryId,
-      sqlContent: initialSql,
+      title: tabTitle,
       canClose: true,
     };
+
     set({
       tabs: [...tabs, newTab],
       activeTabId: newTab.id,
       activeTab: 'sql',
+      sqlTabStates: {
+        ...sqlTabStates,
+        [nextTabId]: {
+          tabId: nextTabId,
+          query: defaultSql,
+          results: initialResults,
+          columns: initialColumns,
+          durationMs: 1.4,
+          rowsCount: initialResults.length,
+          executedAt: 'Just now',
+          isExecuting: false,
+        },
+      },
     });
   },
 
@@ -370,11 +529,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeTab: 'grid',
         selectedTable: tableName,
       });
+      get().setSelectedTable(tableName);
     } else {
       const newTab: TabItem = {
         id: `tab-grid-${tableName}`,
         type: 'grid',
-        title: `${tableName} [Grid]`,
+        title: tableName,
         tableName,
         canClose: true,
       };
@@ -384,6 +544,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeTab: 'grid',
         selectedTable: tableName,
       });
+      get().setSelectedTable(tableName);
     }
   },
 

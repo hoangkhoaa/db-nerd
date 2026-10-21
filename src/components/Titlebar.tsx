@@ -1,5 +1,5 @@
 import { useAppStore } from '../stores/useAppStore';
-import { Search, Sparkles, AlertCircle, RefreshCw, PanelRight, PanelRightClose } from 'lucide-react';
+import { Search, Sparkles, AlertCircle, RefreshCw, PanelRight, PanelRightClose, Terminal } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
 
@@ -15,6 +15,7 @@ export const Titlebar = () => {
     rollbackTransaction,
     isRightInspectorOpen,
     toggleRightInspector,
+    openNewQueryTab,
   } = useAppStore();
 
   const handleCommit = () => {
@@ -89,6 +90,16 @@ export const Titlebar = () => {
             showWave={true} 
           />
           <span className="text-slate-200 font-bold text-[11px] truncate max-w-[110px]">{activeConnection.name}</span>
+        </button>
+
+        {/* SQL Query Console Trigger (TablePlus Style) */}
+        <button
+          onClick={() => openNewQueryTab()}
+          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-xs font-bold text-sky-300 hover:text-white transition group shadow-sm active:scale-95"
+          title="SQL Query (⌘E / ⌘T)"
+        >
+          <Terminal className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" />
+          <span className="font-mono text-[11px]">SQL</span>
         </button>
 
         {/* Command Palette Trigger */}

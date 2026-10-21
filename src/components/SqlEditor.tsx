@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, Check, RotateCcw, CheckCircle2, Eye, Copy, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -7,26 +7,24 @@ import { sql, PostgreSQL } from '@codemirror/lang-sql';
 import { HighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
-import { HeartbeatDot } from './HeartbeatDot';
 import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
 
 // Vibrant, high-contrast SQL Syntax Highlighting Theme (Vivid Keywords, Emerald Strings, Amber Functions)
 const sqlHighlightStyle = HighlightStyle.define([
-  { tag: t.keyword, color: '#38bdf8', fontWeight: 'bold' }, // SELECT, FROM, WHERE, JOIN, AS, LIMIT
-  { tag: t.standard(t.name), color: '#c084fc', fontWeight: 'bold' }, // Standard SQL keywords
+  { tag: t.keyword, color: '#38bdf8', fontWeight: 'bold' },
+  { tag: t.standard(t.name), color: '#c084fc', fontWeight: 'bold' },
   { tag: t.special(t.string), color: '#fbbf24' },
-  { tag: t.string, color: '#4ade80' }, // 'active', 'pending'
-  { tag: t.number, color: '#f87171', fontWeight: 'semibold' }, // 50, 100, 1.4
-  { tag: t.bool, color: '#f43f5e', fontWeight: 'bold' }, // TRUE, FALSE
-  { tag: t.null, color: '#f43f5e', fontWeight: 'bold' }, // NULL
-  { tag: t.function(t.variableName), color: '#fbbf24', fontWeight: 'bold' }, // COUNT, SUM, AVG
-  { tag: t.operator, color: '#93c5fd' }, // =, >, <, +, -
-  { tag: t.punctuation, color: '#94a3b8' }, // ,, ;, (, )
-  { tag: t.comment, color: '#64748b', fontStyle: 'italic' }, // -- comment
-  { tag: t.variableName, color: '#f8fafc' }, // table / column names
+  { tag: t.string, color: '#4ade80' },
+  { tag: t.number, color: '#f87171', fontWeight: 'semibold' },
+  { tag: t.bool, color: '#f43f5e', fontWeight: 'bold' },
+  { tag: t.null, color: '#f43f5e', fontWeight: 'bold' },
+  { tag: t.function(t.variableName), color: '#fbbf24', fontWeight: 'bold' },
+  { tag: t.operator, color: '#93c5fd' },
+  { tag: t.punctuation, color: '#94a3b8' },
+  { tag: t.comment, color: '#64748b', fontStyle: 'italic' },
+  { tag: t.variableName, color: '#f8fafc' },
 ]);
 
-// CodeMirror Theme for db-nerd dark aesthetic
 const sqlEditorTheme = EditorView.theme(
   {
     '&': {
@@ -68,27 +66,29 @@ const sqlEditorTheme = EditorView.theme(
   { dark: true }
 );
 
-interface ResultRow {
-  id: number;
-  email: string;
-  total_orders: number;
-  total_spend: number;
-  isDirty?: boolean;
-  dirtyFields?: Record<string, boolean>;
-}
-
-export const SqlEditor = () => {
-  const { activeConnection } = useAppStore();
+export const SqlEditor: React.FC = () => {
+  const { activeTabId, sqlTabStates, setSqlTabQuery, runSqlQuery } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
-  const [isExecuting, setIsExecuting] = useState(false);
+  const tabState = sqlTabStates[activeTabId] || {
+    tabId: activeTabId,
+    query: `SELECT u.id, u.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend\nFROM users u\nLEFT JOIN user_orders o ON o.user_id = u.id\nWHERE u.status = 'active'\nGROUP BY u.id, u.email\nORDER BY total_spend DESC LIMIT 50;`,
+    results: [
+      { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
+      { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
+      { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
+    ],
+    columns: ['id', 'email', 'total_orders', 'total_spend'],
+    durationMs: 1.4,
+    rowsCount: 3,
+    isExecuting: false,
+  };
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
-  const [inspectingRow, setInspectingRow] = useState<ResultRow | null>(null);
-  const [editingCell, setEditingCell] = useState<{ id: number; field: keyof ResultRow } | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
+  const [inspectingRow, setInspectingRow] = useState<any | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -97,54 +97,11 @@ export const SqlEditor = () => {
     }, 2500);
   };
 
-  const handleDuplicateRow = (r: ResultRow) => {
-    const maxId = results.reduce((max, cur) => Math.max(max, cur.id), 500);
-    const newId = maxId + 1;
-    const newRow: ResultRow = {
-      ...r,
-      id: newId,
-      email: `copy_${r.email}`,
-      isDirty: true,
-      dirtyFields: { email: true, total_orders: true, total_spend: true },
-    };
-    setResults([newRow, ...results]);
-    setSelectedRowIds(new Set([newId]));
-    showToast(`✨ Duplicated row #${r.id} as #${newId}`);
-  };
-
-  const handleDeleteRows = (rowsToDelete: ResultRow[]) => {
-    const idsToDelete = new Set(rowsToDelete.map((r) => r.id));
-    setResults(results.filter((r) => !idsToDelete.has(r.id)));
-    setSelectedRowIds(new Set());
-    showToast(`🗑️ Deleted ${rowsToDelete.length} row(s)`);
-  };
-
-  const [results, setResults] = useState<ResultRow[]>([
-    { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
-    { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
-    { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
-  ]);
-
-  const [originalResults, setOriginalResults] = useState<ResultRow[]>([
-    { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
-    { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
-    { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
-  ]);
-
-  const defaultQuery = `SELECT u.id, u.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend
-FROM users u
-LEFT JOIN user_orders o ON o.user_id = u.id
-WHERE u.status = 'active'
-GROUP BY u.id, u.email
-ORDER BY total_spend DESC LIMIT 50;`;
-
   const handleRun = () => {
-    setIsExecuting(true);
-    setTimeout(() => {
-      setIsExecuting(false);
-      setToastMessage('Query executed successfully in 1.4ms (3 rows returned)');
-      setTimeout(() => setToastMessage(null), 2500);
-    }, 280);
+    if (!viewRef.current) return;
+    const currentCode = viewRef.current.state.doc.toString();
+    runSqlQuery(activeTabId, currentCode);
+    showToast(`⚡ Query executed in 1.4ms!`);
   };
 
   // Initialize CodeMirror 6 with SQL language and syntax highlighting
@@ -152,7 +109,7 @@ ORDER BY total_spend DESC LIMIT 50;`;
     if (!editorRef.current) return;
 
     const state = EditorState.create({
-      doc: defaultQuery,
+      doc: tabState.query,
       extensions: [
         lineNumbers(),
         highlightActiveLineGutter(),
@@ -162,6 +119,11 @@ ORDER BY total_spend DESC LIMIT 50;`;
         sql({ dialect: PostgreSQL }),
         syntaxHighlighting(sqlHighlightStyle),
         sqlEditorTheme,
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            setSqlTabQuery(activeTabId, update.state.doc.toString());
+          }
+        }),
         keymap.of([
           {
             key: 'Mod-Enter',
@@ -186,7 +148,7 @@ ORDER BY total_spend DESC LIMIT 50;`;
     return () => {
       view.destroy();
     };
-  }, []);
+  }, [activeTabId]);
 
   const handleFormat = () => {
     if (!viewRef.current) return;
@@ -204,78 +166,17 @@ ORDER BY total_spend DESC LIMIT 50;`;
     viewRef.current.dispatch({
       changes: { from: 0, to: currentText.length, insert: formatted },
     });
+    setSqlTabQuery(activeTabId, formatted);
+    showToast('✨ Formatted SQL Query');
   };
 
-  // Inline editing for query results
-  const startEditing = (id: number, field: keyof ResultRow, val: any) => {
-    if (field === 'id') return;
-    setEditingCell({ id, field });
-    setEditValue(String(val));
-  };
-
-  const saveEditing = () => {
-    if (!editingCell) return;
-    const { id, field } = editingCell;
-    const orig = originalResults.find((r) => r.id === id);
-
-    let finalVal: any = editValue;
-    if (field === 'total_orders' || field === 'total_spend') {
-      const num = Number(editValue);
-      if (!isNaN(num)) finalVal = num;
-    }
-
-    const updated = results.map((r) => {
-      if (r.id !== id) return r;
-      const dirty = { ...(r.dirtyFields || {}) };
-      if (orig && orig[field] === finalVal) {
-        delete dirty[field];
-      } else {
-        dirty[field] = true;
-      }
-      return {
-        ...r,
-        [field]: finalVal,
-        dirtyFields: dirty,
-        isDirty: Object.keys(dirty).length > 0,
-      };
-    });
-
-    setResults(updated);
-    setEditingCell(null);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') saveEditing();
-    else if (e.key === 'Escape') setEditingCell(null);
-  };
-
-  const dirtyCount = results.reduce(
-    (acc, r) => acc + (r.dirtyFields ? Object.keys(r.dirtyFields).length : 0),
-    0
-  );
-
-  const handleCommitResults = () => {
-    setOriginalResults(JSON.parse(JSON.stringify(results)));
-    setResults(
-      results.map((r) => ({
-        ...r,
-        isDirty: false,
-        dirtyFields: {},
-      }))
-    );
-    setToastMessage(`Committed ${dirtyCount} edit(s) via atomic transaction!`);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const handleDiscardResults = () => {
-    setResults(JSON.parse(JSON.stringify(originalResults)));
-    setToastMessage('Discarded pending edits in query result table.');
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const columns = tabState.columns.length > 0
+    ? tabState.columns
+    : Object.keys(tabState.results[0] || {});
+  const results = tabState.results;
 
   return (
     <div className="flex-1 flex flex-col bg-slate-900/60 overflow-hidden relative">
-      
       {/* Toast Notification */}
       {toastMessage && (
         <div className="absolute top-12 right-6 z-40 bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
@@ -284,231 +185,158 @@ ORDER BY total_spend DESC LIMIT 50;`;
         </div>
       )}
 
-      {/* Editor Toolbar */}
-      <div className="h-10 bg-slate-950/70 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
+      {/* Editor Top Toolbar */}
+      <div className="h-10 bg-slate-950/80 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
         <div className="flex items-center space-x-2">
           <button
             onClick={handleRun}
-            disabled={isExecuting}
+            disabled={tabState.isExecuting}
             className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            <span>{isExecuting ? 'Executing...' : 'Run Query'}</span>
+            <span>{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
             <kbd className="px-1.5 py-0.2 bg-slate-950/20 rounded text-[9px] font-mono text-slate-950 font-extrabold">⌘↵</kbd>
           </button>
 
           <button
             onClick={handleFormat}
-            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg transition text-[11px] flex items-center space-x-1"
+            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium"
+            title="Auto-format SQL keywords to uppercase"
           >
-            <Sparkles className="w-3 h-3 text-sky-400" />
-            <span>Format SQL (Auto-Capitalize)</span>
+            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <span>Format</span>
           </button>
         </div>
 
-        <div className="flex items-center space-x-2 text-[11px] text-slate-400 font-mono">
-          <span className="text-emerald-400 font-semibold">● Schema Indexed (0.8ms)</span>
+        {/* Execution Performance Badge */}
+        <div className="flex items-center space-x-3 text-slate-400 font-mono text-[11px]">
+          <span className="flex items-center space-x-1 text-emerald-400 font-semibold">
+            <Clock className="w-3 h-3" />
+            <span>{tabState.durationMs || 1.4}ms</span>
+          </span>
           <span>•</span>
-          <span className="text-slate-300 font-semibold uppercase">{activeConnection.engine}</span>
-          <span>•</span>
-          <span>Syntax: CodeMirror 6</span>
+          <span>{results.length} rows</span>
         </div>
       </div>
 
-      {/* CodeMirror 6 Syntax Highlighted Editor Box */}
-      <div className="h-60 bg-slate-950 border-b border-slate-800 overflow-hidden relative">
-        <div ref={editorRef} className="h-full w-full overflow-hidden" />
+      {/* Top Split: CodeMirror 6 Editor Container */}
+      <div className="h-48 border-b border-slate-800/80 relative flex flex-col bg-slate-950 flex-shrink-0">
+        <div ref={editorRef} className="flex-1 w-full h-full overflow-hidden" />
       </div>
 
-      {/* Results Header */}
-      <div className="h-8 bg-slate-950/70 border-b border-slate-800 px-4 flex items-center justify-between text-xs text-slate-400 select-none flex-shrink-0">
-        <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-          <span>✓</span>
-          <span>Query executed successfully in 1.4ms</span>
-        </span>
-        <span className="font-mono text-[11px]">
-          {results.length} rows returned • Double-click cell to edit inline
-        </span>
-      </div>
+      {/* Bottom Split: Query Result Grid */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 select-text">
+        {/* Results Sub-header */}
+        <div className="h-8 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <Terminal className="w-3.5 h-3.5 text-sky-400" />
+            <span className="font-bold text-slate-200">Query Results</span>
+            <span className="text-[10px] text-slate-500 font-mono">({results.length} records)</span>
+          </div>
+          <div className="flex items-center space-x-2 text-[11px] text-slate-400">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(results, null, 2));
+                showToast('📋 Copied results as JSON!');
+              }}
+              className="hover:text-slate-200 transition"
+            >
+              Copy JSON
+            </button>
+          </div>
+        </div>
 
-      {/* Results Table (with TablePlus-Style Inline Edit & Dirty Tracking) */}
-      <div className="flex-1 overflow-auto bg-slate-900/80 text-xs font-mono select-text">
-        <table className="w-full border-collapse">
-          <thead className="bg-slate-950/90 border-b border-slate-800 text-slate-400 text-left sticky top-0 shadow-sm">
-            <tr>
-              <th className="p-2.5 border-r border-slate-800 w-16 text-center text-slate-600">#</th>
-              <th className="p-2.5 border-r border-slate-800">
-                <span className="text-slate-200 font-bold">id</span>
-              </th>
-              <th className="p-2.5 border-r border-slate-800">
-                <span className="text-slate-200 font-bold">email</span>
-              </th>
-              <th className="p-2.5 border-r border-slate-800">
-                <span className="text-slate-200 font-bold">total_orders</span>
-              </th>
-              <th className="p-2.5">
-                <span className="text-slate-200 font-bold">total_spend</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/60">
-            {results.map((r, index) => {
-              const isSelected = selectedRowIds.has(r.id);
-
-              return (
-                <tr
-                  key={r.id}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey) {
-                      const next = new Set(selectedRowIds);
-                      if (next.has(r.id)) next.delete(r.id);
-                      else next.add(r.id);
-                      setSelectedRowIds(next);
-                    } else if (e.shiftKey) {
-                      const allIds = results.map((row) => row.id);
-                      setSelectedRowIds(new Set(allIds));
-                    } else {
-                      setSelectedRowIds(new Set([r.id]));
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    if (!selectedRowIds.has(r.id)) {
-                      setSelectedRowIds(new Set([r.id]));
-                    }
-                    setContextMenuPos({ x: e.clientX, y: e.clientY });
-                  }}
-                  className={`transition cursor-pointer select-none ${
-                    isSelected
-                      ? 'bg-sky-500/20 text-sky-100 ring-1 ring-sky-500/60 shadow-sm'
-                      : r.isDirty
-                      ? 'bg-amber-950/20 hover:bg-amber-950/30 border-l-4 border-l-amber-400'
-                      : 'hover:bg-slate-800/40'
-                  }`}
-                >
-                  <td className="p-2.5 border-r border-slate-800 text-slate-500 text-center select-none font-bold">
-                    {index + 1}
-                    {r.isDirty && <span className="text-amber-400 ml-0.5">*</span>}
-                  </td>
-
-                  <td className="p-2.5 border-r border-slate-800 text-sky-400 font-semibold">
-                    {r.id}
-                  </td>
-
-                  {/* Email (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(r.id, 'email', r.email)}
-                    className={`p-2.5 border-r border-slate-800 cursor-pointer ${
-                      r.dirtyFields?.email ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-200'
-                    }`}
-                  >
-                    {editingCell?.id === r.id && editingCell.field === 'email' ? (
-                      <input
-                        autoFocus
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span>{r.email}</span>
-                    )}
-                  </td>
-
-                  {/* Total Orders (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(r.id, 'total_orders', r.total_orders)}
-                    className={`p-2.5 border-r border-slate-800 cursor-pointer ${
-                      r.dirtyFields?.total_orders ? 'bg-amber-500/20 text-amber-200 font-semibold ring-1 ring-amber-400/80' : 'text-slate-300'
-                    }`}
-                  >
-                    {editingCell?.id === r.id && editingCell.field === 'total_orders' ? (
-                      <input
-                        autoFocus
-                        type="number"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span>{r.total_orders}</span>
-                    )}
-                  </td>
-
-                  {/* Total Spend (Inline Editable) */}
-                  <td
-                    onDoubleClick={() => startEditing(r.id, 'total_spend', r.total_spend)}
-                    className={`p-2.5 cursor-pointer font-semibold ${
-                      r.dirtyFields?.total_spend ? 'bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/80' : 'text-emerald-400'
-                    }`}
-                  >
-                    {editingCell?.id === r.id && editingCell.field === 'total_spend' ? (
-                      <input
-                        autoFocus
-                        type="number"
-                        step="0.01"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={saveEditing}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-slate-950 text-slate-100 px-1 py-0.5 rounded border border-sky-400 focus:outline-none"
-                      />
-                    ) : (
-                      <span>${typeof r.total_spend === 'number' ? r.total_spend.toFixed(2) : r.total_spend}</span>
-                    )}
+        {/* Dynamic Results Table */}
+        <div className="flex-1 overflow-auto text-xs font-mono">
+          <table className="w-full border-collapse">
+            <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800 text-slate-400 text-left text-[11px]">
+              <tr>
+                <th className="w-12 p-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
+                {columns.map((col) => (
+                  <th key={col} className="p-2 border-r border-slate-800/80 text-slate-200 font-semibold min-w-[120px]">
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50 text-[11px]">
+              {results.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length + 1} className="py-8 text-center text-slate-500">
+                    No records returned from query execution.
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ) : (
+                results.map((r, index) => {
+                  const isSelected = selectedRowIds.has(r.id);
+                  const isEven = index % 2 === 0;
+
+                  return (
+                    <tr
+                      key={r.id ?? index}
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey) {
+                          const next = new Set(selectedRowIds);
+                          if (next.has(r.id)) next.delete(r.id);
+                          else next.add(r.id);
+                          setSelectedRowIds(next);
+                        } else {
+                          setSelectedRowIds(new Set([r.id]));
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setSelectedRowIds(new Set([r.id]));
+                        setContextMenuPos({ x: e.clientX, y: e.clientY });
+                      }}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-sky-600/30 text-white font-medium shadow-inner'
+                          : isEven
+                          ? 'bg-slate-900/40 hover:bg-slate-800/50 text-slate-200'
+                          : 'bg-slate-950/60 hover:bg-slate-800/50 text-slate-200'
+                      }`}
+                    >
+                      <td className="p-2 border-r border-slate-800/60 text-center text-slate-500 select-none">
+                        {index + 1}
+                      </td>
+                      {columns.map((col) => {
+                        const val = r[col];
+                        return (
+                          <td key={col} className="p-2 border-r border-slate-800/60 truncate max-w-xs">
+                            {val === null || val === undefined ? (
+                              <span className="text-slate-500 italic">NULL</span>
+                            ) : typeof val === 'boolean' ? (
+                              <span className={val ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                                {val ? 'TRUE' : 'FALSE'}
+                              </span>
+                            ) : typeof val === 'object' ? (
+                              <span className="text-sky-300">{JSON.stringify(val)}</span>
+                            ) : col === 'total_spend' ? (
+                              <span className="text-emerald-300 font-semibold">${Number(val).toFixed(2)}</span>
+                            ) : (
+                              <span>{String(val)}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Floating Transaction Bar for Result Edits */}
-      {dirtyCount > 0 && (
-        <div className="h-11 bg-amber-500/15 border-t border-amber-500/40 px-4 flex items-center justify-between select-none z-30 shadow-lg backdrop-blur-md flex-shrink-0">
-          <div className="flex items-center space-x-2">
-            <HeartbeatDot color="amber" size="sm" showWave={true} />
-            <span className="text-xs font-bold text-amber-300">
-              {dirtyCount} uncommitted edit{dirtyCount > 1 ? 's' : ''} in query result
-            </span>
-            <span className="text-[11px] text-amber-200/70 hidden sm:inline">
-              • Generates atomic UPDATE statements
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleDiscardResults}
-              className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1 transition active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Discard (⌘Z)</span>
-            </button>
-
-            <button
-              onClick={handleCommitResults}
-              className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-amber-500/20 active:scale-95"
-            >
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Commit Edits (⌘S)</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Right-Click Context Menu */}
+      {/* Right-Click Context Menu for Results */}
       <TableContextMenu
         position={contextMenuPos}
         selectedRows={results.filter((r) => selectedRowIds.has(r.id))}
-        tableName="users"
+        tableName="query_results"
         onClose={() => setContextMenuPos(null)}
-        onDuplicateRow={handleDuplicateRow}
-        onDeleteRows={handleDeleteRows}
+        onDuplicateRow={() => {}}
+        onDeleteRows={() => {}}
         onQuickLook={(row) => setInspectingRow(row)}
         onToast={showToast}
       />
@@ -520,51 +348,29 @@ ORDER BY total_spend DESC LIMIT 50;`;
             <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between select-none">
               <div className="flex items-center space-x-2">
                 <Eye className="w-4 h-4 text-sky-400" />
-                <span className="text-xs font-bold text-slate-100">Quick Look Inspector — Row #{inspectingRow.id}</span>
+                <span className="text-xs font-bold text-slate-100">Quick Look — Row #{inspectingRow.id}</span>
               </div>
               <button
                 onClick={() => setInspectingRow(null)}
                 className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-sky-300 bg-slate-950 select-text">
-              <pre>{JSON.stringify(inspectingRow, null, 2)}</pre>
-            </div>
-            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between select-none">
-              <span className="text-[11px] text-slate-500 font-mono">Format: JSON Object</span>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(JSON.stringify(inspectingRow, null, 2));
-                    showToast('📋 Copied row JSON to clipboard!');
-                  }}
-                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 active:scale-95"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy JSON</span>
-                </button>
-                <button
-                  onClick={() => setInspectingRow(null)}
-                  className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition active:scale-95"
-                >
-                  Done
-                </button>
-              </div>
+            <pre className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-sky-300 bg-slate-950 select-text">
+              {JSON.stringify(inspectingRow, null, 2)}
+            </pre>
+            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-end select-none">
+              <button
+                onClick={() => setInspectingRow(null)}
+                className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Toast Notification Pill */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 border border-sky-500/40 shadow-2xl rounded-xl px-4 py-2.5 text-xs text-sky-200 flex items-center space-x-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150 backdrop-blur-xl ring-1 ring-white/10">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span className="font-semibold">{toastMessage}</span>
-        </div>
-      )}
-
     </div>
   );
 };

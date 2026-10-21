@@ -38,6 +38,17 @@ export interface TabItem {
   canClose?: boolean;
 }
 
+export interface SqlTabState {
+  tabId: string;
+  query: string;
+  results: any[];
+  columns: string[];
+  durationMs: number;
+  rowsCount: number;
+  executedAt?: string;
+  isExecuting?: boolean;
+}
+
 export interface GridRow {
   id: number;
   user_id?: number;

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from './stores/useAppStore';
 import { Titlebar } from './components/Titlebar';
 import { Sidebar } from './components/Sidebar';
@@ -12,7 +12,7 @@ import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X } from 'lucide-react';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2 } from 'lucide-react';
 import './App.css';
 
 export function App() {
@@ -22,6 +22,7 @@ export function App() {
     setActiveTabId,
     closeTab,
     openNewQueryTab,
+    renameTab,
     activeTab,
     isTransactionOpen,
     pendingEditsCount,
@@ -32,6 +33,9 @@ export function App() {
     commitTransaction,
     rollbackTransaction,
   } = useAppStore();
+
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -51,8 +55,8 @@ export function App() {
         e.preventDefault();
         setDatabaseModalOpen(true);
       }
-      // ⌘T: New SQL Query Tab
-      if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+      // ⌘T or ⌘E: New SQL Query Tab (TablePlus standard)
+      if ((e.metaKey || e.ctrlKey) && (e.key === 't' || e.key === 'T' || e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
         openNewQueryTab();
       }
@@ -105,6 +109,30 @@ export function App() {
 
   const activeTabObj = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const currentTabType = activeTabObj?.type || activeTab;
+
+  const activeTabIndex = tabs.findIndex((t) => t.id === activeTabId);
+  const canGoBack = activeTabIndex > 0;
+  const canGoForward = activeTabIndex >= 0 && activeTabIndex < tabs.length - 1;
+
+  const handlePrevTab = () => {
+    if (canGoBack) setActiveTabId(tabs[activeTabIndex - 1].id);
+  };
+
+  const handleNextTab = () => {
+    if (canGoForward) setActiveTabId(tabs[activeTabIndex + 1].id);
+  };
+
+  const startRename = (tabId: string, currentTitle: string) => {
+    setEditingTabId(tabId);
+    setEditingTitle(currentTitle);
+  };
+
+  const saveRename = () => {
+    if (editingTabId && editingTitle.trim()) {
+      renameTab(editingTabId, editingTitle.trim());
+    }
+    setEditingTabId(null);
+  };
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0a0f1d] text-slate-100 overflow-hidden font-sans select-none relative">
@@ -170,10 +198,30 @@ export function App() {
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-900/40">
           
-          {/* Dynamic Multi-Tab Bar (TablePlus / VS Code Style) */}
-          <div className="h-10 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between px-3 select-none flex-shrink-0">
-            <div className="flex items-center space-x-1 h-full pt-1 overflow-x-auto no-scrollbar">
+          {/* Dynamic Multi-Tab Bar (TablePlus Style Capsule Tabs) */}
+          <div className="h-10 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between px-2 select-none flex-shrink-0">
+            <div className="flex items-center space-x-1.5 h-full overflow-x-auto no-scrollbar py-1">
               
+              {/* Tab History Navigation (< >) */}
+              <div className="flex items-center bg-slate-900/80 border border-slate-800/80 rounded-md p-0.5 mr-1 flex-shrink-0">
+                <button
+                  onClick={handlePrevTab}
+                  disabled={!canGoBack}
+                  className={`p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoBack ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                  title="Previous Tab"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleNextTab}
+                  disabled={!canGoForward}
+                  className={`p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoForward ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                  title="Next Tab"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               {/* Dynamic Open Tabs */}
               {tabs.map((tab) => {
                 const isActive = tab.id === activeTabId;
@@ -186,21 +234,48 @@ export function App() {
                   <div
                     key={tab.id}
                     onClick={() => setActiveTabId(tab.id)}
-                    className={`group h-9 px-3 rounded-t-lg text-xs font-semibold flex items-center space-x-2 transition cursor-pointer select-none max-w-[240px] flex-shrink-0 border-t-2 ${
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      startRename(tab.id, tab.title);
+                    }}
+                    onMouseDown={(e) => {
+                      if (e.button === 1 && tab.canClose !== false) {
+                        e.preventDefault();
+                        closeTab(tab.id);
+                      }
+                    }}
+                    className={`group h-7 px-2.5 rounded-md text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer select-none max-w-[220px] flex-shrink-0 border ${
                       isActive
-                        ? 'bg-slate-900 border-t-sky-400 border-x border-slate-800 text-slate-100 shadow-sm'
-                        : 'border-t-transparent hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
+                        ? 'bg-slate-800/90 border-slate-700/80 text-slate-100 shadow-sm font-semibold'
+                        : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                     }`}
+                    title={`${tab.title} (Double-click to rename)`}
                   >
                     {icon}
-                    <span className="truncate">{tab.title}</span>
+                    {editingTabId === tab.id ? (
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        autoFocus
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={saveRename}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveRename();
+                          if (e.key === 'Escape') setEditingTabId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-slate-900 text-slate-100 border border-sky-500 rounded px-1 py-0 text-xs w-24 outline-none font-sans"
+                      />
+                    ) : (
+                      <span className="truncate">{tab.title}</span>
+                    )}
                     {tab.canClose !== false && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           closeTab(tab.id);
                         }}
-                        className="p-0.5 hover:bg-slate-800 text-slate-500 hover:text-rose-400 rounded transition opacity-0 group-hover:opacity-100 ml-1"
+                        className="p-0.5 hover:bg-slate-700 text-slate-400 hover:text-rose-400 rounded transition opacity-0 group-hover:opacity-100 ml-0.5"
                         title="Close Tab (⌘W)"
                       >
                         <X className="w-3 h-3" />
@@ -213,20 +288,30 @@ export function App() {
               {/* New Tab Button (+) */}
               <button
                 onClick={() => openNewQueryTab()}
-                className="h-7 w-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-100 flex items-center justify-center transition active:scale-95 ml-1 flex-shrink-0"
-                title="New SQL Query Tab (⌘T)"
+                className="h-7 w-7 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-100 flex items-center justify-center transition active:scale-95 border border-transparent hover:border-slate-700/60 flex-shrink-0"
+                title="New SQL Query Tab (⌘T / ⌘E)"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
 
             </div>
 
-            <div className="text-[11px] text-slate-500 font-mono flex items-center space-x-2 flex-shrink-0 pl-3">
-              <span>Tabs: <strong className="text-slate-300">{tabs.length}</strong></span>
-              <span>•</span>
-              <span>RAM: <strong className="text-slate-300">46.8 MB</strong></span>
-              <span>•</span>
-              <span className="text-emerald-400 font-bold">120 FPS</span>
+            {/* Right Controls: Split Editor & Engine Stats */}
+            <div className="flex items-center space-x-3 flex-shrink-0 pl-2">
+              <button
+                onClick={() => {}}
+                className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                title="Toggle Split Editor (⌘\)"
+              >
+                <Columns2 className="w-3.5 h-3.5" />
+              </button>
+              <div className="text-[11px] text-slate-500 font-mono hidden md:flex items-center space-x-2">
+                <span>Tabs: <strong className="text-slate-300">{tabs.length}</strong></span>
+                <span>•</span>
+                <span>RAM: <strong className="text-slate-300">46.8 MB</strong></span>
+                <span>•</span>
+                <span className="text-emerald-400 font-bold">120 FPS</span>
+              </div>
             </div>
           </div>
 
