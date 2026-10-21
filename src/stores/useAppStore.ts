@@ -1,9 +1,17 @@
 import { create } from 'zustand';
-import { ConnectionProfile, GridRow, ProcessItem, QueryHistoryItem } from '../types';
+import { ConnectionProfile, GridRow, ProcessItem, QueryHistoryItem, TabItem } from '../types';
 
 interface AppState {
-  activeTab: 'grid' | 'schema' | 'sql' | 'stats';
-  setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats') => void;
+  tabs: TabItem[];
+  activeTabId: string;
+  setActiveTabId: (id: string) => void;
+  openNewQueryTab: (initialSql?: string) => void;
+  openTableGridTab: (tableName: string) => void;
+  openTableSchemaTab: (tableName: string) => void;
+  closeTab: (id: string) => void;
+
+  activeTab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection';
+  setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection') => void;
 
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;
@@ -112,9 +120,146 @@ const INITIAL_ROWS: GridRow[] = [
   },
 ];
 
+const DEFAULT_TABS: TabItem[] = [
+  { id: 'tab-grid-user_orders', type: 'grid', title: 'user_orders [Grid]', tableName: 'user_orders', canClose: true },
+  { id: 'tab-schema-user_orders', type: 'schema', title: 'user_orders [Structure & DDL]', tableName: 'user_orders', canClose: true },
+  { id: 'tab-sql-1', type: 'sql', title: 'Query 1 [SQL]', queryId: 1, canClose: true },
+  { id: 'tab-stats', type: 'stats', title: 'Instance Health & Activity', canClose: false },
+];
+
 export const useAppStore = create<AppState>((set, get) => ({
+  tabs: DEFAULT_TABS,
+  activeTabId: 'tab-grid-user_orders',
   activeTab: 'grid',
-  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  setActiveTabId: (id) => {
+    const { tabs } = get();
+    const tab = tabs.find((t) => t.id === id);
+    if (!tab) return;
+    set({
+      activeTabId: id,
+      activeTab: tab.type,
+      selectedTable: tab.tableName || get().selectedTable,
+    });
+  },
+
+  setActiveTab: (tabType) => {
+    const { tabs, activeTabId, selectedTable } = get();
+    let match = tabs.find((t) => t.id === activeTabId && t.type === tabType);
+    if (!match) {
+      match = tabs.find((t) => t.type === tabType && (!t.tableName || t.tableName === selectedTable));
+    }
+    if (!match) {
+      match = tabs.find((t) => t.type === tabType);
+    }
+    if (match) {
+      set({
+        activeTabId: match.id,
+        activeTab: tabType,
+        selectedTable: match.tableName || selectedTable,
+      });
+    } else {
+      set({ activeTab: tabType });
+    }
+  },
+
+  openNewQueryTab: (initialSql) => {
+    const { tabs } = get();
+    const sqlTabs = tabs.filter((t) => t.type === 'sql');
+    const maxQueryId = sqlTabs.reduce((max, t) => Math.max(max, t.queryId || 1), 0);
+    const nextQueryId = maxQueryId + 1;
+    const newTab: TabItem = {
+      id: `tab-sql-${nextQueryId}`,
+      type: 'sql',
+      title: `Query ${nextQueryId} [SQL]`,
+      queryId: nextQueryId,
+      sqlContent: initialSql,
+      canClose: true,
+    };
+    set({
+      tabs: [...tabs, newTab],
+      activeTabId: newTab.id,
+      activeTab: 'sql',
+    });
+  },
+
+  openTableGridTab: (tableName) => {
+    const { tabs } = get();
+    const existing = tabs.find((t) => t.type === 'grid' && t.tableName === tableName);
+    if (existing) {
+      set({
+        activeTabId: existing.id,
+        activeTab: 'grid',
+        selectedTable: tableName,
+      });
+    } else {
+      const newTab: TabItem = {
+        id: `tab-grid-${tableName}`,
+        type: 'grid',
+        title: `${tableName} [Grid]`,
+        tableName,
+        canClose: true,
+      };
+      set({
+        tabs: [...tabs, newTab],
+        activeTabId: newTab.id,
+        activeTab: 'grid',
+        selectedTable: tableName,
+      });
+    }
+  },
+
+  openTableSchemaTab: (tableName) => {
+    const { tabs } = get();
+    const existing = tabs.find((t) => t.type === 'schema' && t.tableName === tableName);
+    if (existing) {
+      set({
+        activeTabId: existing.id,
+        activeTab: 'schema',
+        selectedTable: tableName,
+      });
+    } else {
+      const newTab: TabItem = {
+        id: `tab-schema-${tableName}`,
+        type: 'schema',
+        title: `${tableName} [Structure & DDL]`,
+        tableName,
+        canClose: true,
+      };
+      set({
+        tabs: [...tabs, newTab],
+        activeTabId: newTab.id,
+        activeTab: 'schema',
+        selectedTable: tableName,
+      });
+    }
+  },
+
+  closeTab: (id) => {
+    const { tabs, activeTabId, selectedTable } = get();
+    if (tabs.length <= 1) return;
+    const tabToClose = tabs.find((t) => t.id === id);
+    if (tabToClose && tabToClose.canClose === false) return;
+
+    const idx = tabs.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+
+    const nextTabs = tabs.filter((t) => t.id !== id);
+    let nextActiveId = activeTabId;
+
+    if (activeTabId === id) {
+      const newIdx = Math.min(idx, nextTabs.length - 1);
+      nextActiveId = nextTabs[newIdx].id;
+    }
+
+    const nextActiveTab = nextTabs.find((t) => t.id === nextActiveId);
+    set({
+      tabs: nextTabs,
+      activeTabId: nextActiveId,
+      activeTab: nextActiveTab?.type || 'grid',
+      selectedTable: nextActiveTab?.tableName || selectedTable,
+    });
+  },
 
   appMode: 'sql',
   setAppMode: (mode) => set({ appMode: mode }),

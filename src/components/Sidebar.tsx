@@ -3,7 +3,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { Search, Table, ChevronRight, ChevronDown } from 'lucide-react';
 
 export const Sidebar = () => {
-  const { appMode, setAppMode, selectedTable, setSelectedTable } = useAppStore();
+  const { appMode, setAppMode, selectedTable, openTableGridTab, openTableSchemaTab } = useAppStore();
   const [isProdOpen, setProdOpen] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
 
@@ -96,8 +96,8 @@ export const Sidebar = () => {
                   {filteredTables.map((tbl) => (
                     <div
                       key={tbl.name}
-                      onClick={() => setSelectedTable(tbl.name)}
-                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition ${
+                      onClick={() => openTableGridTab(tbl.name)}
+                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition group ${
                         selectedTable === tbl.name
                           ? 'bg-sky-500/15 text-sky-300 font-semibold border border-sky-500/30'
                           : 'hover:bg-slate-800/60 text-slate-300 font-medium'
@@ -107,7 +107,19 @@ export const Sidebar = () => {
                         <Table className={`w-3.5 h-3.5 ${selectedTable === tbl.name ? 'text-sky-400' : 'text-slate-500'}`} />
                         <span className="truncate">{tbl.name}</span>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono">{tbl.count}</span>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-[10px] text-slate-500 font-mono group-hover:hidden">{tbl.count}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openTableSchemaTab(tbl.name);
+                          }}
+                          className="hidden group-hover:inline-block px-1.5 py-0.2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-[9px] font-mono border border-indigo-500/30"
+                          title="Open Schema / DDL"
+                        >
+                          DDL
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

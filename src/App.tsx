@@ -9,14 +9,17 @@ import { ConnectionModal } from './components/ConnectionModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns } from 'lucide-react';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X } from 'lucide-react';
 import './App.css';
 
 export function App() {
   const {
+    tabs,
+    activeTabId,
+    setActiveTabId,
+    closeTab,
+    openNewQueryTab,
     activeTab,
-    setActiveTab,
-    selectedTable,
     isTransactionOpen,
     pendingEditsCount,
     setConnectionModalOpen,
@@ -28,6 +31,17 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ⌘T: New SQL Query Tab
+      if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+        e.preventDefault();
+        openNewQueryTab();
+      }
+      // ⌘W: Close Active Tab
+      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+        e.preventDefault();
+        const activeId = useAppStore.getState().activeTabId;
+        closeTab(activeId);
+      }
       // ⌘K: Connection Manager
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -46,7 +60,7 @@ export function App() {
           alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s) in 1.4ms! All locks released.`);
         }
       }
-      // ⌘Z: Rollback Transaction (when not in input)
+      // ⌘Z: Rollback Transaction (when not in input/textarea)
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
         if (useAppStore.getState().pendingEditsCount > 0) {
           e.preventDefault();
@@ -55,10 +69,22 @@ export function App() {
           }
         }
       }
+      // ⌘1 - ⌘9: Switch directly to tab index
+      if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
+        const tabIndex = parseInt(e.key, 10) - 1;
+        const currentTabs = useAppStore.getState().tabs;
+        if (currentTabs[tabIndex]) {
+          e.preventDefault();
+          setActiveTabId(currentTabs[tabIndex].id);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const activeTabObj = tabs.find((t) => t.id === activeTabId) || tabs[0];
+  const currentTabType = activeTabObj?.type || activeTab;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0a0f1d] text-slate-100 overflow-hidden font-sans select-none relative">
@@ -116,75 +142,72 @@ export function App() {
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-900/40">
           
-          {/* Tab Bar */}
-          <div className="h-10 bg-slate-950/40 border-b border-slate-800/80 flex items-center justify-between px-3 select-none flex-shrink-0">
-            <div className="flex items-center space-x-1 h-full pt-1">
+          {/* Dynamic Multi-Tab Bar (TablePlus / VS Code Style) */}
+          <div className="h-10 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between px-3 select-none flex-shrink-0">
+            <div className="flex items-center space-x-1 h-full pt-1 overflow-x-auto no-scrollbar">
               
-              {/* Tab: Data Grid */}
-              <button
-                onClick={() => setActiveTab('grid')}
-                className={`h-9 px-4 rounded-t-lg text-xs font-bold flex items-center space-x-2 transition ${
-                  activeTab === 'grid'
-                    ? 'bg-slate-900 border-t border-x border-slate-800 text-slate-100 shadow-sm'
-                    : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Table className="w-3.5 h-3.5 text-sky-400" />
-                <span>{selectedTable} [Grid]</span>
-              </button>
+              {/* Dynamic Open Tabs */}
+              {tabs.map((tab) => {
+                const isActive = tab.id === activeTabId;
+                let icon = <Table className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />;
+                if (tab.type === 'schema') icon = <Columns className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />;
+                if (tab.type === 'sql') icon = <Terminal className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />;
+                if (tab.type === 'stats') icon = <Activity className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
 
-              {/* Tab: Structure & DDL */}
-              <button
-                onClick={() => setActiveTab('schema')}
-                className={`h-9 px-4 rounded-t-lg text-xs font-semibold flex items-center space-x-2 transition ${
-                  activeTab === 'schema'
-                    ? 'bg-slate-900 border-t border-x border-slate-800 text-slate-100 shadow-sm'
-                    : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Columns className="w-3.5 h-3.5 text-indigo-400" />
-                <span>{selectedTable} [Structure & DDL]</span>
-              </button>
+                return (
+                  <div
+                    key={tab.id}
+                    onClick={() => setActiveTabId(tab.id)}
+                    className={`group h-9 px-3 rounded-t-lg text-xs font-semibold flex items-center space-x-2 transition cursor-pointer select-none max-w-[240px] flex-shrink-0 border-t-2 ${
+                      isActive
+                        ? 'bg-slate-900 border-t-sky-400 border-x border-slate-800 text-slate-100 shadow-sm'
+                        : 'border-t-transparent hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {icon}
+                    <span className="truncate">{tab.title}</span>
+                    {tab.canClose !== false && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                        className="p-0.5 hover:bg-slate-800 text-slate-500 hover:text-rose-400 rounded transition opacity-0 group-hover:opacity-100 ml-1"
+                        title="Close Tab (⌘W)"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
 
-              {/* Tab: SQL Studio */}
+              {/* New Tab Button (+) */}
               <button
-                onClick={() => setActiveTab('sql')}
-                className={`h-9 px-4 rounded-t-lg text-xs font-semibold flex items-center space-x-2 transition ${
-                  activeTab === 'sql'
-                    ? 'bg-slate-900 border-t border-x border-slate-800 text-slate-100 shadow-sm'
-                    : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
-                }`}
+                onClick={() => openNewQueryTab()}
+                className="h-7 w-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-100 flex items-center justify-center transition active:scale-95 ml-1 flex-shrink-0"
+                title="New SQL Query Tab (⌘T)"
               >
-                <Terminal className="w-3.5 h-3.5 text-amber-400" />
-                <span>Query 1 [SQL]</span>
-              </button>
-
-              {/* Tab: Health & Activity */}
-              <button
-                onClick={() => setActiveTab('stats')}
-                className={`h-9 px-4 rounded-t-lg text-xs font-semibold flex items-center space-x-2 transition ${
-                  activeTab === 'stats'
-                    ? 'bg-slate-900 border-t border-x border-slate-800 text-slate-100 shadow-sm'
-                    : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Instance Health & Activity</span>
+                <Plus className="w-3.5 h-3.5" />
               </button>
 
             </div>
 
-            <div className="text-[11px] text-slate-500 font-mono">
-              RAM: <strong className="text-slate-300">46.8 MB</strong> • 120 FPS
+            <div className="text-[11px] text-slate-500 font-mono flex items-center space-x-2 flex-shrink-0 pl-3">
+              <span>Tabs: <strong className="text-slate-300">{tabs.length}</strong></span>
+              <span>•</span>
+              <span>RAM: <strong className="text-slate-300">46.8 MB</strong></span>
+              <span>•</span>
+              <span className="text-emerald-400 font-bold">120 FPS</span>
             </div>
           </div>
 
-          {/* Tab Views */}
+          {/* Active Tab View */}
           <div className="flex-1 flex overflow-hidden">
-            {activeTab === 'grid' && <TableGrid />}
-            {activeTab === 'schema' && <TableSchemaView />}
-            {activeTab === 'sql' && <SqlEditor />}
-            {activeTab === 'stats' && <Observability />}
+            {currentTabType === 'grid' && <TableGrid key={activeTabObj?.tableName || 'grid'} />}
+            {currentTabType === 'schema' && <TableSchemaView key={activeTabObj?.tableName || 'schema'} />}
+            {currentTabType === 'sql' && <SqlEditor key={activeTabId} />}
+            {currentTabType === 'stats' && <Observability />}
           </div>
 
         </main>

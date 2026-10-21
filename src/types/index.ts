@@ -14,6 +14,16 @@ export interface ConnectionProfile {
   latencyMs: number;
 }
 
+export interface TabItem {
+  id: string;
+  type: 'grid' | 'schema' | 'sql' | 'stats' | 'connection';
+  title: string;
+  tableName?: string;
+  queryId?: number;
+  sqlContent?: string;
+  canClose?: boolean;
+}
+
 export interface GridRow {
   id: number;
   user_id: number;
