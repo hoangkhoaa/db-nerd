@@ -1,15 +1,28 @@
 export type DatabaseEngine = 'postgres' | 'mysql' | 'redis' | 'snowflake';
 export type EnvironmentTag = 'prod' | 'staging' | 'local';
 
+export interface ConnectionGroup {
+  id: string;
+  name: string;
+  color: string;
+  tag: string;
+}
+
 export interface ConnectionProfile {
   id: string;
   name: string;
+  groupId: string;
   engine: DatabaseEngine;
   env: EnvironmentTag;
   host: string;
   port: number;
   database: string;
   username: string;
+  password?: string;
+  useSsh?: boolean;
+  sshHost?: string;
+  accountIdentifier?: string;
+  warehouse?: string;
   active: boolean;
   latencyMs: number;
 }

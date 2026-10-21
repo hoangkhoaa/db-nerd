@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ConnectionProfile, GridRow, ProcessItem, QueryHistoryItem, TabItem } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem } from '../types';
 
 interface AppState {
   tabs: TabItem[];
@@ -15,6 +15,16 @@ interface AppState {
 
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;
+
+  connectionGroups: ConnectionGroup[];
+  connections: ConnectionProfile[];
+  addConnectionGroup: (group: Omit<ConnectionGroup, 'id'>) => ConnectionGroup;
+  updateConnectionGroup: (id: string, updates: Partial<ConnectionGroup>) => void;
+  deleteConnectionGroup: (id: string) => void;
+  addConnection: (profile: Omit<ConnectionProfile, 'id'>) => ConnectionProfile;
+  updateConnection: (id: string, updates: Partial<ConnectionProfile>) => void;
+  deleteConnection: (id: string) => void;
+  switchActiveConnection: (id: string) => void;
 
   activeConnection: ConnectionProfile;
   setActiveConnection: (conn: ConnectionProfile) => void;
@@ -125,6 +135,91 @@ const DEFAULT_TABS: TabItem[] = [
   { id: 'tab-schema-user_orders', type: 'schema', title: 'user_orders [Structure & DDL]', tableName: 'user_orders', canClose: true },
   { id: 'tab-sql-1', type: 'sql', title: 'Query 1 [SQL]', queryId: 1, canClose: true },
   { id: 'tab-stats', type: 'stats', title: 'Instance Health & Activity', canClose: false },
+];
+
+const INITIAL_GROUPS: ConnectionGroup[] = [
+  { id: 'group-prod', name: 'Production', color: 'rose', tag: 'PROD' },
+  { id: 'group-staging', name: 'Staging GCP', color: 'amber', tag: 'QA' },
+  { id: 'group-local', name: 'Localhost', color: 'emerald', tag: 'DEV' },
+];
+
+const INITIAL_CONNECTIONS: ConnectionProfile[] = [
+  {
+    id: 'conn-1',
+    name: 'prod-postgres-main',
+    groupId: 'group-prod',
+    engine: 'postgres',
+    env: 'prod',
+    host: 'aurora-cluster.eu-west-1.rds.amazonaws.com',
+    port: 5432,
+    database: 'ecom_prod_db',
+    username: 'app_master',
+    password: '••••••••••••',
+    useSsh: true,
+    sshHost: 'ec2-bastion.corp.io',
+    active: true,
+    latencyMs: 1.8,
+  },
+  {
+    id: 'conn-2',
+    name: 'analytics-dwh',
+    groupId: 'group-prod',
+    engine: 'snowflake',
+    env: 'prod',
+    host: 'xy12345.us-east-1.snowflakecomputing.com',
+    port: 443,
+    database: 'ANALYTICS_PROD',
+    username: 'dwh_engineer',
+    password: '••••••••••••',
+    accountIdentifier: 'xy12345.us-east-1',
+    warehouse: 'COMPUTE_WH',
+    active: false,
+    latencyMs: 24.5,
+  },
+  {
+    id: 'conn-3',
+    name: 'prod-redis-cache',
+    groupId: 'group-prod',
+    engine: 'redis',
+    env: 'prod',
+    host: 'redis-cluster.prod.cache.amazonaws.com',
+    port: 6379,
+    database: '0',
+    username: 'default',
+    password: '',
+    active: false,
+    latencyMs: 0.9,
+  },
+  {
+    id: 'conn-4',
+    name: 'staging-mysql-8',
+    groupId: 'group-staging',
+    engine: 'mysql',
+    env: 'staging',
+    host: '10.128.0.4',
+    port: 3306,
+    database: 'staging_main',
+    username: 'staging_admin',
+    password: '••••••••••••',
+    useSsh: false,
+    active: false,
+    latencyMs: 3.2,
+  },
+  {
+    id: 'conn-5',
+    name: 'local-docker-postgres',
+    groupId: 'group-local',
+    engine: 'postgres',
+    env: 'local',
+    host: 'localhost',
+    port: 5432,
+    database: 'postgres',
+    username: 'postgres',
+    password: '',
+    useSsh: false,
+    active: false,
+    latencyMs: 0.2,
+  },
 ];
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -264,19 +359,73 @@ export const useAppStore = create<AppState>((set, get) => ({
   appMode: 'sql',
   setAppMode: (mode) => set({ appMode: mode }),
 
-  activeConnection: {
-    id: 'conn-1',
-    name: 'ecom_prod_db',
-    engine: 'postgres',
-    env: 'prod',
-    host: 'aurora-cluster.eu-west-1.rds.amazonaws.com',
-    port: 5432,
-    database: 'ecom_prod_db',
-    username: 'app_master',
-    active: true,
-    latencyMs: 1.8,
-  },
+  connectionGroups: INITIAL_GROUPS,
+  connections: INITIAL_CONNECTIONS,
+  activeConnection: INITIAL_CONNECTIONS[0],
   setActiveConnection: (conn) => set({ activeConnection: conn }),
+
+  addConnectionGroup: (group) => {
+    const newGroup: ConnectionGroup = {
+      ...group,
+      id: `group-${Date.now()}`,
+    };
+    set((state) => ({ connectionGroups: [...state.connectionGroups, newGroup] }));
+    return newGroup;
+  },
+
+  updateConnectionGroup: (id, updates) => {
+    set((state) => ({
+      connectionGroups: state.connectionGroups.map((g) => (g.id === id ? { ...g, ...updates } : g)),
+    }));
+  },
+
+  deleteConnectionGroup: (id) => {
+    set((state) => ({
+      connectionGroups: state.connectionGroups.filter((g) => g.id !== id),
+      connections: state.connections.filter((c) => c.groupId !== id),
+    }));
+  },
+
+  addConnection: (profile) => {
+    const newConn: ConnectionProfile = {
+      ...profile,
+      id: `conn-${Date.now()}`,
+    };
+    set((state) => ({ connections: [...state.connections, newConn] }));
+    return newConn;
+  },
+
+  updateConnection: (id, updates) => {
+    set((state) => {
+      const nextConnections = state.connections.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      const nextActive = state.activeConnection.id === id ? { ...state.activeConnection, ...updates } : state.activeConnection;
+      return { connections: nextConnections, activeConnection: nextActive };
+    });
+  },
+
+  deleteConnection: (id) => {
+    set((state) => {
+      const nextConnections = state.connections.filter((c) => c.id !== id);
+      let nextActive = state.activeConnection;
+      if (state.activeConnection.id === id && nextConnections.length > 0) {
+        nextActive = nextConnections[0];
+      }
+      return { connections: nextConnections, activeConnection: nextActive };
+    });
+  },
+
+  switchActiveConnection: (id) => {
+    const { connections } = get();
+    const conn = connections.find((c) => c.id === id);
+    if (!conn) return;
+    const nextEngine = conn.engine;
+    const nextAppMode = nextEngine === 'redis' ? 'redis' : nextEngine === 'snowflake' ? 'snowflake' : 'sql';
+    set((state) => ({
+      connections: state.connections.map((c) => ({ ...c, active: c.id === id })),
+      activeConnection: { ...conn, active: true },
+      appMode: nextAppMode,
+    }));
+  },
 
   isConnectionModalOpen: false,
   setConnectionModalOpen: (open) => set({ isConnectionModalOpen: open }),

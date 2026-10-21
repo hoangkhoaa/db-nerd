@@ -1,11 +1,42 @@
 import { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { Search, Table, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, Table, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+
+const COLOR_MAP: Record<string, { text: string; dot: string; border: string; bg: string }> = {
+  rose: { text: 'text-rose-400', dot: 'bg-rose-500', border: 'border-rose-500/30', bg: 'bg-rose-500/20' },
+  amber: { text: 'text-amber-400', dot: 'bg-amber-500', border: 'border-amber-500/30', bg: 'bg-amber-500/20' },
+  emerald: { text: 'text-emerald-400', dot: 'bg-emerald-500', border: 'border-emerald-500/30', bg: 'bg-emerald-500/20' },
+  sky: { text: 'text-sky-400', dot: 'bg-sky-500', border: 'border-sky-500/30', bg: 'bg-sky-500/20' },
+  purple: { text: 'text-purple-400', dot: 'bg-purple-500', border: 'border-purple-500/30', bg: 'bg-purple-500/20' },
+};
+
+const ENGINE_EMOJI: Record<string, string> = {
+  postgres: '🐘',
+  mysql: '🐬',
+  redis: '🟥',
+  snowflake: '❄️',
+};
 
 export const Sidebar = () => {
-  const { appMode, setAppMode, selectedTable, openTableGridTab, openTableSchemaTab } = useAppStore();
-  const [isProdOpen, setProdOpen] = useState(true);
+  const {
+    appMode,
+    setAppMode,
+    selectedTable,
+    openTableGridTab,
+    openTableSchemaTab,
+    connectionGroups,
+    connections,
+    activeConnection,
+    switchActiveConnection,
+    setConnectionModalOpen,
+  } = useAppStore();
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [searchFilter, setSearchFilter] = useState('');
+
+  const toggleGroup = (groupId: string) => {
+    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   const tables = [
     { name: 'user_orders', count: '1.2M', active: true },
@@ -15,7 +46,7 @@ export const Sidebar = () => {
     { name: 'audit_logs', count: '2.1M' },
   ];
 
-  const filteredTables = tables.filter(t => t.name.toLowerCase().includes(searchFilter.toLowerCase()));
+  const filteredTables = tables.filter((t) => t.name.toLowerCase().includes(searchFilter.toLowerCase()));
 
   return (
     <aside className="w-64 bg-slate-950/60 border-r border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0">
@@ -67,87 +98,108 @@ export const Sidebar = () => {
       {/* Tree Content */}
       <div className="flex-1 overflow-y-auto p-2 space-y-3 text-xs">
         {appMode === 'sql' && (
-          <div className="space-y-1">
-            {/* Group: Production */}
-            <div 
-              onClick={() => setProdOpen(!isProdOpen)}
-              className="flex items-center justify-between px-2 py-1 text-[11px] font-bold text-rose-400 uppercase tracking-wider cursor-pointer hover:bg-slate-900/50 rounded-md transition"
-            >
-              <div className="flex items-center space-x-1.5">
-                {isProdOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                <span className="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
-                <span>Production</span>
-              </div>
-              <span className="px-1.5 py-0.2 bg-rose-500/20 text-rose-300 rounded text-[9px] font-mono">PROD</span>
-            </div>
+          <div className="space-y-2">
+            {connectionGroups.map((group) => {
+              const groupConns = connections.filter((c) => c.groupId === group.id);
+              const isCollapsed = !!collapsedGroups[group.id];
+              const colorInfo = COLOR_MAP[group.color] || COLOR_MAP.rose;
 
-            {isProdOpen && (
-              <div className="ml-2 pl-2 border-l border-rose-500/30 space-y-0.5">
-                <div className="flex items-center justify-between px-2 py-1 rounded text-slate-300 font-semibold text-xs">
-                  <div className="flex items-center space-x-1.5">
-                    <span>🐘</span>
-                    <span>ecom_prod_db</span>
-                  </div>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                </div>
-
-                {/* Table List */}
-                <div className="ml-3 pl-2 border-l border-slate-800 space-y-0.5 pt-1">
-                  {filteredTables.map((tbl) => (
-                    <div
-                      key={tbl.name}
-                      onClick={() => openTableGridTab(tbl.name)}
-                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition group ${
-                        selectedTable === tbl.name
-                          ? 'bg-sky-500/15 text-sky-300 font-semibold border border-sky-500/30'
-                          : 'hover:bg-slate-800/60 text-slate-300 font-medium'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 truncate">
-                        <Table className={`w-3.5 h-3.5 ${selectedTable === tbl.name ? 'text-sky-400' : 'text-slate-500'}`} />
-                        <span className="truncate">{tbl.name}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-[10px] text-slate-500 font-mono group-hover:hidden">{tbl.count}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openTableSchemaTab(tbl.name);
-                          }}
-                          className="hidden group-hover:inline-block px-1.5 py-0.2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-[9px] font-mono border border-indigo-500/30"
-                          title="Open Schema / DDL"
-                        >
-                          DDL
-                        </button>
-                      </div>
+              return (
+                <div key={group.id} className="space-y-1">
+                  {/* Group Header */}
+                  <div
+                    onClick={() => toggleGroup(group.id)}
+                    className={`flex items-center justify-between px-2 py-1 text-[11px] font-bold ${colorInfo.text} uppercase tracking-wider cursor-pointer hover:bg-slate-900/50 rounded-md transition group`}
+                  >
+                    <div className="flex items-center space-x-1.5 truncate">
+                      {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      <span className={`w-2 h-2 rounded-full ${colorInfo.dot} shadow-sm`}></span>
+                      <span className="truncate">{group.name}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    <div className="flex items-center space-x-1">
+                      <span className={`px-1.5 py-0.2 ${colorInfo.bg} rounded text-[9px] font-mono`}>
+                        {group.tag}
+                      </span>
+                    </div>
+                  </div>
 
-            {/* Group: Staging */}
+                  {/* Group Connections */}
+                  {!isCollapsed && (
+                    <div className={`ml-2 pl-2 border-l ${colorInfo.border} space-y-1`}>
+                      {groupConns.map((conn) => {
+                        const isConnActive = activeConnection.id === conn.id;
+
+                        return (
+                          <div key={conn.id} className="space-y-1">
+                            <div
+                              onClick={() => switchActiveConnection(conn.id)}
+                              className={`flex items-center justify-between px-2 py-1 rounded cursor-pointer transition ${
+                                isConnActive
+                                  ? 'bg-slate-800/80 text-slate-100 font-semibold'
+                                  : 'hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-1.5 truncate">
+                                <span>{ENGINE_EMOJI[conn.engine] || '🐘'}</span>
+                                <span className="truncate">{conn.name}</span>
+                              </div>
+                              {isConnActive && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+                              )}
+                            </div>
+
+                            {/* Tables for Active Connection */}
+                            {isConnActive && (
+                              <div className="ml-3 pl-2 border-l border-slate-800 space-y-0.5 pt-0.5">
+                                {filteredTables.map((tbl) => (
+                                  <div
+                                    key={tbl.name}
+                                    onClick={() => openTableGridTab(tbl.name)}
+                                    className={`flex items-center justify-between px-2 py-1 rounded-lg cursor-pointer transition group ${
+                                      selectedTable === tbl.name
+                                        ? 'bg-sky-500/15 text-sky-300 font-semibold border border-sky-500/30'
+                                        : 'hover:bg-slate-800/60 text-slate-300 font-medium'
+                                    }`}
+                                  >
+                                    <div className="flex items-center space-x-2 truncate">
+                                      <Table className={`w-3.5 h-3.5 ${selectedTable === tbl.name ? 'text-sky-400' : 'text-slate-500'}`} />
+                                      <span className="truncate">{tbl.name}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <span className="text-[10px] text-slate-500 font-mono group-hover:hidden">{tbl.count}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openTableSchemaTab(tbl.name);
+                                        }}
+                                        className="hidden group-hover:inline-block px-1.5 py-0.2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-[9px] font-mono border border-indigo-500/30"
+                                        title="Open Schema / DDL"
+                                      >
+                                        DDL
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Quick Open Connection Manager Button */}
             <div className="pt-2">
-              <div className="flex items-center justify-between px-2 py-1 text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-                <div className="flex items-center space-x-1.5">
-                  <ChevronRight className="w-3.5 h-3.5" />
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span>Staging GCP</span>
-                </div>
-                <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded text-[9px] font-mono">QA</span>
-              </div>
-            </div>
-
-            {/* Group: Local */}
-            <div className="pt-1">
-              <div className="flex items-center justify-between px-2 py-1 text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
-                <div className="flex items-center space-x-1.5">
-                  <ChevronRight className="w-3.5 h-3.5" />
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Localhost</span>
-                </div>
-                <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded text-[9px] font-mono">DEV</span>
-              </div>
+              <button
+                onClick={() => setConnectionModalOpen(true)}
+                className="w-full py-1.5 px-2 bg-slate-900/60 hover:bg-slate-800 border border-dashed border-slate-700/80 rounded-lg text-slate-400 hover:text-slate-200 text-xs flex items-center justify-center space-x-1.5 transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add / Manage Connections</span>
+              </button>
             </div>
           </div>
         )}
@@ -193,11 +245,15 @@ export const Sidebar = () => {
 
       {/* Footer Status */}
       <div className="p-3 border-t border-slate-800/80 bg-slate-950/80 text-[11px] text-slate-400 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
-          <span className="font-medium text-slate-300">ec2-bastion (SSH)</span>
+        <div className="flex items-center space-x-2 truncate">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 flex-shrink-0"></span>
+          <span className="font-medium text-slate-300 truncate">
+            {activeConnection.useSsh && activeConnection.sshHost
+              ? `${activeConnection.sshHost} (SSH)`
+              : activeConnection.host || 'localhost'}
+          </span>
         </div>
-        <span className="font-mono text-slate-500">1.8ms</span>
+        <span className="font-mono text-slate-500 flex-shrink-0">{activeConnection.latencyMs}ms</span>
       </div>
 
     </aside>
