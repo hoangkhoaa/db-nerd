@@ -1,6 +1,7 @@
 import { useAppStore } from '../stores/useAppStore';
 import { Database, Search, Sparkles } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { HeartbeatDot } from './HeartbeatDot';
 
 export const Titlebar = () => {
   const {
@@ -69,9 +70,13 @@ export const Titlebar = () => {
         {/* Connection Switcher Button */}
         <button
           onClick={() => setConnectionModalOpen(true)}
-          className="no-drag flex items-center space-x-2 px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800/90 rounded-lg border border-rose-500/40 text-xs font-semibold transition shadow-sm group"
+          className="no-drag flex items-center space-x-2 px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800/90 rounded-lg border border-rose-500/40 text-xs font-semibold transition-all duration-150 shadow-sm group active:scale-[0.98]"
         >
-          <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse ring-2 ring-rose-500/30"></span>
+          <HeartbeatDot 
+            color={activeConnection.env === 'prod' ? 'red' : activeConnection.env === 'staging' ? 'amber' : 'green'} 
+            size="sm" 
+            showWave={true} 
+          />
           <span className="text-slate-100 font-bold">{activeConnection.name}</span>
           <span className="px-1.5 py-0.2 text-[9px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded uppercase">
             {activeConnection.env}
@@ -115,7 +120,7 @@ export const Titlebar = () => {
         {pendingEditsCount > 0 && (
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <HeartbeatDot color="amber" size="xs" showWave={true} />
               <span>{pendingEditsCount} pending</span>
             </div>
 

@@ -1,5 +1,6 @@
 import { useAppStore } from '../stores/useAppStore';
 import { Activity } from 'lucide-react';
+import { HeartbeatDot } from './HeartbeatDot';
 
 export const Observability = () => {
   const { processes, killProcess } = useAppStore();
@@ -88,6 +89,7 @@ export const Observability = () => {
       {/* Processlist Header */}
       <div className="p-3 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between text-xs select-none flex-shrink-0">
         <div className="flex items-center space-x-2">
+          <HeartbeatDot color="green" size="xs" showWave={true} />
           <Activity className="w-4 h-4 text-emerald-400" />
           <span className="text-slate-200 font-bold">Live Processlist & Running Queries (Kill Query)</span>
         </div>
@@ -121,10 +123,11 @@ export const Observability = () => {
                   {proc.duration}
                 </td>
                 <td className="p-2.5 border-r border-slate-800/60">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     proc.state === 'locked' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/15 text-emerald-400'
                   }`}>
-                    {proc.state}
+                    <HeartbeatDot color={proc.state === 'locked' ? 'red' : 'green'} size="xs" showWave={proc.state === 'locked'} />
+                    <span>{proc.state}</span>
                   </span>
                 </td>
                 <td className="p-2.5 border-r border-slate-800/60 text-slate-300 truncate max-w-md">{proc.query}</td>

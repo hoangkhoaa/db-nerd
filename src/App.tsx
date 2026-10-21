@@ -9,6 +9,7 @@ import { ConnectionModal } from './components/ConnectionModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
+import { HeartbeatDot } from './components/HeartbeatDot';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X } from 'lucide-react';
 import './App.css';
 
@@ -92,46 +93,54 @@ export function App() {
       {/* Native macOS Titlebar */}
       <Titlebar />
 
-      {/* Transaction Alert Banner (TablePlus Style) */}
-      {isTransactionOpen && pendingEditsCount > 0 && (
-        <div className="h-8 bg-amber-500/15 border-b border-amber-500/40 px-4 flex items-center justify-between text-xs select-none z-20 backdrop-blur-md">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span className="font-bold text-amber-300">Active Transaction Open</span>
-            <span className="text-amber-200/80">
-              • TxID: #891024 • {pendingEditsCount} uncommitted edit{pendingEditsCount > 1 ? 's' : ''}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setSqlDiffModalOpen(true)}
-              className="px-2 py-0.5 hover:bg-slate-800 text-amber-300 rounded font-medium text-[11px] flex items-center space-x-1"
-            >
-              <FileCode className="w-3 h-3" />
-              <span>Review SQL</span>
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("Rollback transaction?")) rollbackTransaction();
-              }}
-              className="px-2 py-0.5 hover:bg-slate-800 text-slate-300 rounded font-medium text-[11px] flex items-center space-x-1"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Rollback (⌘Z)</span>
-            </button>
-            <button
-              onClick={() => {
-                const res = commitTransaction();
-                alert(`✅ Transaction Committed!\n\nExecuted ${res.count} change(s) in 1.4ms.`);
-              }}
-              className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded text-[11px] flex items-center space-x-1 shadow-sm"
-            >
-              <Check className="w-3 h-3 stroke-[3]" />
-              <span>Commit (⌘S)</span>
-            </button>
+      {/* Transaction Alert Banner with Smooth Expand/Collapse & Heartbeat LED */}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-240 ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
+          isTransactionOpen && pendingEditsCount > 0
+            ? 'grid-rows-[1fr] opacity-100'
+            : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="h-8 bg-amber-500/15 border-b border-amber-500/40 px-4 flex items-center justify-between text-xs select-none backdrop-blur-md">
+            <div className="flex items-center space-x-2">
+              <HeartbeatDot color="amber" size="sm" showWave={true} />
+              <span className="font-bold text-amber-300">Active Transaction Open</span>
+              <span className="text-amber-200/80">
+                • TxID: #891024 • {pendingEditsCount} uncommitted edit{pendingEditsCount > 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setSqlDiffModalOpen(true)}
+                className="px-2 py-0.5 hover:bg-slate-800 text-amber-300 rounded font-medium text-[11px] flex items-center space-x-1 transition-colors"
+              >
+                <FileCode className="w-3 h-3" />
+                <span>Review SQL</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm("Rollback transaction?")) rollbackTransaction();
+                }}
+                className="px-2 py-0.5 hover:bg-slate-800 text-slate-300 rounded font-medium text-[11px] flex items-center space-x-1 transition-colors active:scale-95"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Rollback (⌘Z)</span>
+              </button>
+              <button
+                onClick={() => {
+                  const res = commitTransaction();
+                  alert(`✅ Transaction Committed!\n\nExecuted ${res.count} change(s) in 1.4ms.`);
+                }}
+                className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded text-[11px] flex items-center space-x-1 shadow-sm transition-all active:scale-95"
+              >
+                <Check className="w-3 h-3 stroke-[3]" />
+                <span>Commit (⌘S)</span>
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Workspace Split (Sidebar + Main) */}
       <div className="flex-1 flex overflow-hidden">

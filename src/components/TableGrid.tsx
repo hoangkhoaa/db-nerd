@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { ExternalLink, Plus, Trash2, Check, RotateCcw, FileCode, CheckCircle2, Columns } from 'lucide-react';
 import { GridRow } from '../types';
+import { HeartbeatDot } from './HeartbeatDot';
 
 export const TableGrid = () => {
   const {
@@ -344,7 +345,7 @@ export const TableGrid = () => {
       {pendingEditsCount > 0 && (
         <div className="h-11 bg-amber-500/15 border-t border-amber-500/40 px-4 flex items-center justify-between select-none z-30 shadow-lg backdrop-blur-md">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <HeartbeatDot color="amber" size="sm" showWave={true} />
             <span className="text-xs font-bold text-amber-300">
               {pendingEditsCount} uncommitted change{pendingEditsCount > 1 ? 's' : ''} in active transaction
             </span>

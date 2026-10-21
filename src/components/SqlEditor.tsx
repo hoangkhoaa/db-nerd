@@ -7,6 +7,7 @@ import { sql, PostgreSQL } from '@codemirror/lang-sql';
 import { HighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
+import { HeartbeatDot } from './HeartbeatDot';
 
 // Vibrant, high-contrast SQL Syntax Highlighting Theme (Vivid Keywords, Emerald Strings, Amber Functions)
 const sqlHighlightStyle = HighlightStyle.define([
@@ -410,7 +411,7 @@ ORDER BY total_spend DESC LIMIT 50;`;
       {dirtyCount > 0 && (
         <div className="h-11 bg-amber-500/15 border-t border-amber-500/40 px-4 flex items-center justify-between select-none z-30 shadow-lg backdrop-blur-md flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <HeartbeatDot color="amber" size="sm" showWave={true} />
             <span className="text-xs font-bold text-amber-300">
               {dirtyCount} uncommitted edit{dirtyCount > 1 ? 's' : ''} in query result
             </span>
