@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { DatabaseEngine, ConnectionProfile } from '../types';
-import { X, Plus, FolderPlus, Trash2, Check, ChevronRight, Server, Shield } from 'lucide-react';
+import { X, Plus, FolderPlus, Trash2, Check, ChevronRight, Server, Shield, GripVertical } from 'lucide-react';
 import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
+
+interface DraggedItem {
+  type: 'group' | 'connection';
+  id: string;
+  groupId?: string;
+}
+
+interface DropIndicator {
+  type: 'group' | 'connection';
+  id: string;
+  position: 'before' | 'after' | 'inside';
+}
 
 const ENGINE_OPTIONS: { id: DatabaseEngine; label: string; icon: string; defaultPort: number }[] = [
   { id: 'postgres', label: 'PostgreSQL', icon: '🐘', defaultPort: 5432 },
@@ -40,12 +52,19 @@ export const ConnectionModal = () => {
     updateConnection,
     deleteConnection,
     switchActiveConnection,
+    reorderConnectionGroups,
+    moveConnection,
+    showToast,
   } = useAppStore();
 
   const [selectedConnId, setSelectedConnId] = useState<string | null>(activeConnection?.id || null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  // Drag and Drop State
+  const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropIndicator | null>(null);
 
   // Group Form state
   const [groupName, setGroupName] = useState('');
@@ -207,6 +226,120 @@ export const ConnectionModal = () => {
     setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
   };
 
+  const handleGroupDragStart = (e: React.DragEvent, groupId: string) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'group', id: groupId }));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedItem({ type: 'group', id: groupId });
+  };
+
+  const handleGroupDragOver = (e: React.DragEvent, groupId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    if (!draggedItem) return;
+
+    if (draggedItem.type === 'group') {
+      if (draggedItem.id === groupId) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pos = e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
+      setDropTarget({ type: 'group', id: groupId, position: pos });
+    } else if (draggedItem.type === 'connection') {
+      // Hovering connection over a group header means dropping into this group
+      setDropTarget({ type: 'group', id: groupId, position: 'inside' });
+    }
+  };
+
+  const handleGroupDragLeave = (e: React.DragEvent, groupId: string) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      if (dropTarget?.id === groupId) {
+        setDropTarget(null);
+      }
+    }
+  };
+
+  const handleGroupDrop = (e: React.DragEvent, targetGroup: { id: string; name: string }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedItem) return;
+
+    if (draggedItem.type === 'group' && draggedItem.id !== targetGroup.id && dropTarget?.type === 'group') {
+      const pos = dropTarget.position === 'after' ? 'after' : 'before';
+      reorderConnectionGroups(draggedItem.id, targetGroup.id, pos);
+      showToast('Reordered groups');
+    } else if (draggedItem.type === 'connection') {
+      const conn = connections.find((c) => c.id === draggedItem.id);
+      moveConnection(draggedItem.id, targetGroup.id);
+      setCollapsedGroups((prev) => ({ ...prev, [targetGroup.id]: false }));
+      showToast(`Moved '${conn?.name || 'connection'}' to group '${targetGroup.name}'`);
+    }
+
+    setDraggedItem(null);
+    setDropTarget(null);
+  };
+
+  const handleConnDragStart = (e: React.DragEvent, conn: ConnectionProfile) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'connection', id: conn.id, groupId: conn.groupId }));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedItem({ type: 'connection', id: conn.id, groupId: conn.groupId });
+  };
+
+  const handleConnDragOver = (e: React.DragEvent, conn: ConnectionProfile) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    if (!draggedItem || draggedItem.type !== 'connection' || draggedItem.id === conn.id) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
+    setDropTarget({ type: 'connection', id: conn.id, position: pos });
+  };
+
+  const handleConnDragLeave = (e: React.DragEvent, connId: string) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      if (dropTarget?.id === connId) {
+        setDropTarget(null);
+      }
+    }
+  };
+
+  const handleConnDrop = (e: React.DragEvent, targetConn: ConnectionProfile) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedItem || draggedItem.type !== 'connection' || draggedItem.id === targetConn.id) return;
+
+    const pos = dropTarget?.position === 'after' ? 'after' : 'before';
+    const sourceConn = connections.find((c) => c.id === draggedItem.id);
+    const targetGroup = connectionGroups.find((g) => g.id === targetConn.groupId);
+    const isCrossGroup = draggedItem.groupId !== targetConn.groupId;
+
+    moveConnection(draggedItem.id, targetConn.groupId, targetConn.id, pos);
+
+    if (isCrossGroup) {
+      setCollapsedGroups((prev) => ({ ...prev, [targetConn.groupId]: false }));
+      showToast(`Moved '${sourceConn?.name || 'connection'}' to '${targetGroup?.name || 'group'}'`);
+    } else {
+      showToast(`Reordered '${sourceConn?.name || 'connection'}'`);
+    }
+
+    setDraggedItem(null);
+    setDropTarget(null);
+  };
+
+  const handleEmptyGroupDrop = (e: React.DragEvent, targetGroup: { id: string; name: string }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedItem || draggedItem.type !== 'connection') return;
+
+    const sourceConn = connections.find((c) => c.id === draggedItem.id);
+    moveConnection(draggedItem.id, targetGroup.id);
+    setCollapsedGroups((prev) => ({ ...prev, [targetGroup.id]: false }));
+    showToast(`Moved '${sourceConn?.name || 'connection'}' to '${targetGroup.name}'`);
+
+    setDraggedItem(null);
+    setDropTarget(null);
+  };
+
   return (
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-150">
       <div className="w-full max-w-4xl h-[650px] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 animate-in zoom-in-95 duration-150">
@@ -224,13 +357,13 @@ export const ConnectionModal = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => alert("📥 Auto-Discovery:\nScanned local configurations.\nImported all profiles successfully!")}
-              className="px-2.5 py-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold transition active:scale-95"
+              className="px-2.5 py-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer"
             >
               Import XML / JSON
             </button>
             <button
               onClick={() => setConnectionModalOpen(false)}
-              className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95"
+              className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -248,7 +381,7 @@ export const ConnectionModal = () => {
                 {/* New Group Button */}
                 <button
                   onClick={() => setIsCreatingGroup(!isCreatingGroup)}
-                  className={`p-1 rounded transition-all duration-150 active:scale-95 ${
+                  className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
                     isCreatingGroup ? 'bg-indigo-500/30 text-indigo-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
                   title="Create New Group (Folder)"
@@ -259,7 +392,7 @@ export const ConnectionModal = () => {
                 {/* New Connection Button */}
                 <button
                   onClick={() => handleStartNewConnection()}
-                  className={`p-1 rounded transition-all duration-150 active:scale-95 ${
+                  className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
                     isCreatingNew ? 'bg-sky-500/30 text-sky-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
                   title="Create New Connection"
@@ -282,7 +415,7 @@ export const ConnectionModal = () => {
                     <button
                       type="button"
                       onClick={() => setIsCreatingGroup(false)}
-                      className="text-slate-400 hover:text-slate-200"
+                      className="text-slate-400 hover:text-slate-200 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -302,7 +435,7 @@ export const ConnectionModal = () => {
                     <select
                       value={groupTag}
                       onChange={(e) => setGroupTag(e.target.value as any)}
-                      className="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200"
+                      className="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 cursor-pointer"
                     >
                       <option value="PROD">PROD</option>
                       <option value="QA">QA</option>
@@ -318,7 +451,7 @@ export const ConnectionModal = () => {
                           key={col}
                           type="button"
                           onClick={() => setGroupColor(col)}
-                          className={`w-3.5 h-3.5 rounded-full ${COLOR_MAP[col]?.dot} transition-transform ${
+                          className={`w-3.5 h-3.5 rounded-full ${COLOR_MAP[col]?.dot} transition-transform cursor-pointer ${
                             groupColor === col ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
                           }`}
                         />
@@ -328,7 +461,7 @@ export const ConnectionModal = () => {
                   <button
                     type="submit"
                     disabled={!groupName.trim()}
-                    className="w-full py-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition active:scale-95"
+                    className="w-full py-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
                   >
                     Create Group
                   </button>
@@ -336,7 +469,7 @@ export const ConnectionModal = () => {
               </div>
             </div>
 
-            {/* List of Groups & Connections with smooth accordions */}
+            {/* List of Groups & Connections with smooth accordions & Drag-and-Drop */}
             <div className="space-y-3">
               {connectionGroups.map((group) => {
                 const groupConns = connections.filter((c) => c.groupId === group.id);
@@ -344,44 +477,81 @@ export const ConnectionModal = () => {
                 const colorInfo = COLOR_MAP[group.color] || COLOR_MAP.rose;
                 const dotColor = GROUP_COLOR_MAP[group.color] || 'red';
 
+                const isGroupDragged = draggedItem?.type === 'group' && draggedItem.id === group.id;
+                const isGroupDropTarget = dropTarget?.id === group.id;
+
                 return (
-                  <div key={group.id} className="space-y-1">
-                    {/* Group Header with rotating chevron */}
+                  <div key={group.id} className="space-y-1 relative">
+                    {/* Group Header with rotating chevron & drag-and-drop */}
                     <div
+                      draggable={true}
+                      onDragStart={(e) => handleGroupDragStart(e, group.id)}
+                      onDragEnd={() => {
+                        setDraggedItem(null);
+                        setDropTarget(null);
+                      }}
+                      onDragOver={(e) => handleGroupDragOver(e, group.id)}
+                      onDragLeave={(e) => handleGroupDragLeave(e, group.id)}
+                      onDrop={(e) => handleGroupDrop(e, group)}
                       onClick={() => toggleGroupCollapse(group.id)}
-                      className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${colorInfo.bg} ${colorInfo.text} font-bold text-xs border ${colorInfo.border} cursor-pointer hover:brightness-110 transition-all duration-150 active:scale-[0.99] group`}
+                      className={`relative flex items-center justify-between px-2 py-1.5 rounded-lg ${colorInfo.bg} ${colorInfo.text} font-bold text-xs border ${colorInfo.border} cursor-grab active:cursor-grabbing hover:brightness-110 transition-all duration-150 select-none group ${
+                        isGroupDragged ? 'opacity-40 scale-[0.98] border-dashed border-sky-400' : ''
+                      } ${
+                        isGroupDropTarget && dropTarget.position === 'inside'
+                          ? 'ring-2 ring-sky-400 bg-sky-500/25 border-sky-400 scale-[1.01] shadow-lg shadow-sky-500/25'
+                          : ''
+                      }`}
                     >
+                      {/* Insertion line indicator above group */}
+                      {isGroupDropTarget && dropTarget.position === 'before' && (
+                        <div className="absolute -top-1 left-0 right-0 h-0.5 bg-sky-400 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.9)] z-20 pointer-events-none" />
+                      )}
+                      {/* Insertion line indicator below group */}
+                      {isGroupDropTarget && dropTarget.position === 'after' && (
+                        <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-sky-400 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.9)] z-20 pointer-events-none" />
+                      )}
+
                       <div className="flex items-center space-x-1.5 truncate">
+                        <span title="Drag to reorder group" className="inline-flex items-center">
+                          <GripVertical
+                            className="w-3.5 h-3.5 text-slate-400/50 group-hover:text-slate-200 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
+                          />
+                        </span>
                         <ChevronRight
-                          className={`w-3.5 h-3.5 transition-transform duration-200 ease-out flex-shrink-0 ${
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ease-out flex-shrink-0 cursor-pointer ${
                             isCollapsed ? 'rotate-0' : 'rotate-90'
                           }`}
                         />
                         <HeartbeatDot color={dotColor} size="xs" showWave={false} />
                         <span className="truncate">{group.name}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+
+                      <div className="flex items-center space-x-1" onMouseDown={(e) => e.stopPropagation()}>
                         <span className="text-[9px] px-1 bg-black/30 rounded font-mono uppercase">{group.tag}</span>
                         {/* Quick Add Connection in this group */}
                         <button
+                          type="button"
+                          draggable={false}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleStartNewConnection(group.id);
                           }}
-                          className="p-0.5 hover:bg-white/10 rounded text-slate-300 opacity-0 group-hover:opacity-100 transition active:scale-95"
+                          className="p-0.5 hover:bg-white/10 rounded text-slate-300 opacity-0 group-hover:opacity-100 transition active:scale-95 cursor-pointer"
                           title={`Add connection to ${group.name}`}
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                         {groupConns.length === 0 && connectionGroups.length > 1 && (
                           <button
+                            type="button"
+                            draggable={false}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (confirm(`Delete empty group "${group.name}"?`)) {
                                 deleteConnectionGroup(group.id);
                               }
                             }}
-                            className="p-0.5 hover:bg-white/10 rounded text-rose-300 opacity-0 group-hover:opacity-100 transition active:scale-95"
+                            className="p-0.5 hover:bg-white/10 rounded text-rose-300 opacity-0 group-hover:opacity-100 transition active:scale-95 cursor-pointer"
                             title="Delete empty group"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -399,36 +569,91 @@ export const ConnectionModal = () => {
                       <div className="overflow-hidden">
                         <div className={`ml-3 pl-2 border-l ${colorInfo.border} space-y-1 text-xs pt-1`}>
                           {groupConns.length === 0 ? (
-                            <div className="px-2 py-1 text-slate-500 italic text-[11px]">
-                              No connections yet. Click + to add.
+                            <div
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (draggedItem?.type === 'connection') {
+                                  setDropTarget({ type: 'group', id: group.id, position: 'inside' });
+                                }
+                              }}
+                              onDragLeave={(e) => {
+                                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                                  if (dropTarget?.id === group.id && dropTarget.position === 'inside') {
+                                    setDropTarget(null);
+                                  }
+                                }
+                              }}
+                              onDrop={(e) => handleEmptyGroupDrop(e, group)}
+                              className={`px-2 py-2 rounded-lg border border-dashed text-[11px] text-center transition-all ${
+                                dropTarget?.id === group.id && dropTarget.position === 'inside'
+                                  ? 'border-sky-400 bg-sky-500/25 text-sky-200 shadow-md shadow-sky-500/20'
+                                  : 'border-slate-800/80 text-slate-500 hover:border-slate-700'
+                              }`}
+                            >
+                              {draggedItem?.type === 'connection'
+                                ? 'Drop connection here'
+                                : 'No connections yet. Drag here or click +'}
                             </div>
                           ) : (
                             groupConns.map((conn) => {
                               const isSelected = !isCreatingNew && selectedConnId === conn.id;
                               const isConnActive = conn.active;
                               const engObj = ENGINE_OPTIONS.find((e) => e.id === conn.engine);
+                              const isConnDragged = draggedItem?.type === 'connection' && draggedItem.id === conn.id;
+                              const isConnDropTarget = dropTarget?.id === conn.id;
 
                               return (
                                 <div
                                   key={conn.id}
+                                  draggable={true}
+                                  onDragStart={(e) => handleConnDragStart(e, conn)}
+                                  onDragEnd={() => {
+                                    setDraggedItem(null);
+                                    setDropTarget(null);
+                                  }}
+                                  onDragOver={(e) => handleConnDragOver(e, conn)}
+                                  onDragLeave={(e) => handleConnDragLeave(e, conn.id)}
+                                  onDrop={(e) => handleConnDrop(e, conn)}
                                   onClick={() => handleSelectConnection(conn)}
-                                  className={`px-2 py-1.5 rounded-lg cursor-pointer font-medium flex items-center justify-between transition-all duration-150 ${
+                                  className={`relative px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing font-medium flex items-center justify-between transition-all duration-150 select-none group ${
                                     isSelected
                                       ? 'bg-sky-500/20 text-sky-200 border border-sky-500/40 shadow-sm'
                                       : 'hover:bg-slate-800 text-slate-300'
+                                  } ${
+                                    isConnDragged
+                                      ? 'opacity-40 scale-[0.98] border border-dashed border-sky-400 bg-sky-950/20'
+                                      : ''
                                   }`}
                                 >
+                                  {/* Insertion indicator before */}
+                                  {isConnDropTarget && dropTarget.position === 'before' && (
+                                    <div className="absolute -top-1 left-1 right-1 h-0.5 bg-sky-400 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.9)] z-20 pointer-events-none" />
+                                  )}
+                                  {/* Insertion indicator after */}
+                                  {isConnDropTarget && dropTarget.position === 'after' && (
+                                    <div className="absolute -bottom-1 left-1 right-1 h-0.5 bg-sky-400 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.9)] z-20 pointer-events-none" />
+                                  )}
+
                                   <div className="flex items-center space-x-1.5 truncate">
+                                    <span title="Drag to reorder or move to another group" className="inline-flex items-center">
+                                      <GripVertical
+                                        className="w-3 h-3 text-slate-500 group-hover:text-slate-300 opacity-20 group-hover:opacity-90 transition-opacity flex-shrink-0 cursor-grab active:cursor-grabbing"
+                                      />
+                                    </span>
                                     <span>{engObj?.icon || '🐘'}</span>
                                     <span className="truncate">{conn.name}</span>
                                   </div>
-                                  <div className="flex items-center space-x-1">
+
+                                  <div className="flex items-center space-x-1" onMouseDown={(e) => e.stopPropagation()}>
                                     {isConnActive && (
                                       <HeartbeatDot color="green" size="xs" showWave={true} />
                                     )}
                                     <button
+                                      type="button"
+                                      draggable={false}
                                       onClick={(e) => handleDeleteConnection(conn.id, e)}
-                                      className="p-0.5 hover:bg-slate-700 text-slate-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition ml-1 active:scale-95"
+                                      className="p-0.5 hover:bg-slate-700 text-slate-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition ml-1 active:scale-95 cursor-pointer"
                                       title="Delete connection"
                                     >
                                       <Trash2 className="w-3 h-3" />
@@ -449,7 +674,7 @@ export const ConnectionModal = () => {
             {/* Quick button to create new connection at bottom */}
             <button
               onClick={() => handleStartNewConnection()}
-              className="w-full py-2 px-3 border border-dashed border-slate-700 hover:border-sky-500/60 rounded-xl text-slate-400 hover:text-sky-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all duration-150 active:scale-[0.98]"
+              className="w-full py-2 px-3 border border-dashed border-slate-700 hover:border-sky-500/60 rounded-xl text-slate-400 hover:text-sky-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all duration-150 active:scale-[0.98] cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Connection</span>
@@ -682,7 +907,7 @@ export const ConnectionModal = () => {
             <button
               onClick={handleTestConnection}
               disabled={isTesting}
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition active:scale-95 disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition active:scale-95 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {isTesting ? 'Pinging host...' : 'Test Connection'}
             </button>
@@ -698,13 +923,13 @@ export const ConnectionModal = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setConnectionModalOpen(false)}
-              className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition active:scale-95"
+              className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition active:scale-95 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveAndConnect}
-              className="px-4 py-1.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 active:scale-95"
+              className="px-4 py-1.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 active:scale-95 cursor-pointer"
             >
               {isCreatingNew ? 'Create & Connect' : 'Save & Connect'}
             </button>

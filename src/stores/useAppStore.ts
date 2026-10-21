@@ -29,6 +29,8 @@ interface AppState {
   addConnection: (profile: Omit<ConnectionProfile, 'id'>) => ConnectionProfile;
   updateConnection: (id: string, updates: Partial<ConnectionProfile>) => void;
   deleteConnection: (id: string) => void;
+  reorderConnectionGroups: (sourceId: string, targetId: string, position: 'before' | 'after') => void;
+  moveConnection: (connId: string, targetGroupId: string, targetConnId?: string, position?: 'before' | 'after') => void;
   switchActiveConnection: (id: string) => void;
 
   activeConnection: ConnectionProfile;
@@ -643,6 +645,64 @@ export const useAppStore = create<AppState>((set, get) => ({
         nextActive = nextConnections[0];
       }
       return { connections: nextConnections, activeConnection: nextActive };
+    });
+  },
+
+  reorderConnectionGroups: (sourceId, targetId, position) => {
+    set((state) => {
+      const groups = [...state.connectionGroups];
+      const fromIdx = groups.findIndex((g) => g.id === sourceId);
+      const toIdx = groups.findIndex((g) => g.id === targetId);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return state;
+
+      const [movedGroup] = groups.splice(fromIdx, 1);
+      let insertIdx = groups.findIndex((g) => g.id === targetId);
+      if (position === 'after') {
+        insertIdx += 1;
+      }
+      groups.splice(insertIdx, 0, movedGroup);
+      return { connectionGroups: groups };
+    });
+  },
+
+  moveConnection: (connId, targetGroupId, targetConnId, position) => {
+    set((state) => {
+      const conns = [...state.connections];
+      const fromIdx = conns.findIndex((c) => c.id === connId);
+      if (fromIdx === -1) return state;
+
+      const [moved] = conns.splice(fromIdx, 1);
+      const updatedMoved: ConnectionProfile = { ...moved, groupId: targetGroupId };
+
+      let nextActive = state.activeConnection;
+      if (state.activeConnection.id === connId) {
+        nextActive = { ...state.activeConnection, groupId: targetGroupId };
+      }
+
+      if (targetConnId && targetConnId !== connId) {
+        let insertIdx = conns.findIndex((c) => c.id === targetConnId);
+        if (insertIdx !== -1) {
+          if (position === 'after') {
+            insertIdx += 1;
+          }
+          conns.splice(insertIdx, 0, updatedMoved);
+          return { connections: conns, activeConnection: nextActive };
+        }
+      }
+
+      // If no targetConnId specified, append to targetGroupId
+      const lastInGroupIdx = conns
+        .map((c, i) => (c.groupId === targetGroupId ? i : -1))
+        .filter((i) => i !== -1)
+        .pop();
+
+      if (lastInGroupIdx !== undefined && lastInGroupIdx >= 0) {
+        conns.splice(lastInGroupIdx + 1, 0, updatedMoved);
+      } else {
+        conns.push(updatedMoved);
+      }
+
+      return { connections: conns, activeConnection: nextActive };
     });
   },
 
