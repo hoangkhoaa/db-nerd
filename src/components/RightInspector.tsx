@@ -19,6 +19,7 @@ import {
   Zap,
   ShieldCheck,
 } from 'lucide-react';
+import { ColumnTypeIcon } from './ColumnTypeIcon';
 
 export const RightInspector: React.FC = () => {
   const {
@@ -240,6 +241,7 @@ export const RightInspector: React.FC = () => {
                         {isDirty && (
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse flex-shrink-0" />
                         )}
+                        <ColumnTypeIcon type={colType} sampleValue={val} size={11} />
                         <span className="font-semibold text-slate-300 truncate group-hover:text-sky-300 transition-colors">
                           {field}
                         </span>

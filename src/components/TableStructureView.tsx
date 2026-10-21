@@ -3,6 +3,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { getTableSchema } from '../data/schemas';
 import { Search, Key } from 'lucide-react';
 import { ColumnDefinition } from '../types';
+import { ColumnTypeIcon } from './ColumnTypeIcon';
 
 const DATA_TYPES = [
   'int4',
@@ -141,12 +142,15 @@ export const TableStructureView: React.FC = () => {
 
                   {/* Column Name */}
                   <td className="px-3 py-1.5 border-r border-slate-800/60 font-semibold text-slate-200">
-                    <input
-                      type="text"
-                      value={col.name}
-                      onChange={(e) => handleUpdateCol(idx, 'name', e.target.value)}
-                      className="w-full bg-transparent border-0 focus:outline-none focus:bg-slate-800/60 rounded px-1 text-slate-100"
-                    />
+                    <div className="flex items-center space-x-1.5">
+                      <ColumnTypeIcon type={col.type} size={12} />
+                      <input
+                        type="text"
+                        value={col.name}
+                        onChange={(e) => handleUpdateCol(idx, 'name', e.target.value)}
+                        className="w-full bg-transparent border-0 focus:outline-none focus:bg-slate-800/60 rounded px-1 text-slate-100"
+                      />
+                    </div>
                   </td>
 
                   {/* Data Type Dropdown */}

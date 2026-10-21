@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock } from 'lucide-react';
+import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -18,6 +18,7 @@ import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
 import { TABLE_SCHEMAS } from '../data/schemas';
 import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
+import { ColumnTypeIcon } from './ColumnTypeIcon';
 
 // Build rich SQL Schema with column types, primary key badges, and descriptions for autocompletion
 const buildSqlSchema = () => {
@@ -425,11 +426,35 @@ export const SqlEditor: React.FC = () => {
             <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800 text-slate-400 text-left text-[11px]">
               <tr>
                 <th className="w-12 p-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
-                {columns.map((col) => (
-                  <th key={col} className="p-2 border-r border-slate-800/80 text-slate-200 font-semibold min-w-[120px]">
-                    {col}
-                  </th>
-                ))}
+                {columns.map((col) => {
+                  const firstRowWithVal = results.find((r) => r[col] !== null && r[col] !== undefined);
+                  const sampleVal = firstRowWithVal ? firstRowWithVal[col] : undefined;
+
+                  let foundType: string | undefined;
+                  let isPk = false;
+                  for (const schema of Object.values(TABLE_SCHEMAS)) {
+                    const match = schema.columns.find((c) => c.name === col);
+                    if (match) {
+                      foundType = match.type;
+                      isPk = !!match.isPrimaryKey;
+                      break;
+                    }
+                  }
+
+                  return (
+                    <th key={col} className="p-2 border-r border-slate-800/80 text-slate-200 font-semibold min-w-[120px]">
+                      <div className="flex items-center space-x-1.5 truncate">
+                        <ColumnTypeIcon type={foundType} sampleValue={sampleVal} />
+                        <span className="text-slate-200 font-semibold truncate">{col}</span>
+                        {isPk && (
+                          <span title="Primary Key" className="inline-flex items-center ml-0.5">
+                            <Key className="w-2.5 h-2.5 text-amber-400/90 flex-shrink-0" />
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50 text-[11px]">
@@ -478,17 +503,13 @@ export const SqlEditor: React.FC = () => {
                         return (
                           <td key={col} className="p-2 border-r border-slate-800/60 truncate max-w-xs">
                             {val === null || val === undefined ? (
-                              <span className="text-slate-500 italic">NULL</span>
+                              <span className="text-slate-500 italic select-none">NULL</span>
                             ) : typeof val === 'boolean' ? (
-                              <span className={val ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                                {val ? 'TRUE' : 'FALSE'}
-                              </span>
+                              <span className="text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
                             ) : typeof val === 'object' ? (
-                              <span className="text-sky-300">{JSON.stringify(val)}</span>
-                            ) : col === 'total_spend' ? (
-                              <span className="text-emerald-300 font-semibold">${Number(val).toFixed(2)}</span>
+                              <span className="truncate block font-mono text-slate-300">{JSON.stringify(val)}</span>
                             ) : (
-                              <span>{String(val)}</span>
+                              <span className="truncate block text-slate-200">{String(val)}</span>
                             )}
                           </td>
                         );

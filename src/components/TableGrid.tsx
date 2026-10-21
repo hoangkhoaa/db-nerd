@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { getTableSchema } from '../data/schemas';
 import {
-  ExternalLink,
+  Key,
   Plus,
   FileCode,
   CheckCircle2,
@@ -19,6 +19,7 @@ import { GridRow } from '../types';
 import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
 import { TableStructureView } from './TableStructureView';
 import { TableIndexesView } from './TableIndexesView';
+import { ColumnTypeIcon } from './ColumnTypeIcon';
 
 export const TableGrid: React.FC = () => {
   const {
@@ -218,23 +219,15 @@ export const TableGrid: React.FC = () => {
               <tr className="text-left font-semibold">
                 <th className="w-12 px-3 py-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
                 {activeCols.map((col) => (
-                  <th key={col.name} className="px-3 py-2 border-r border-slate-800/80 min-w-[140px]">
-                    <div className="flex items-center justify-between space-x-2">
-                      <div className="flex items-center space-x-1.5 truncate">
-                        <span className="text-slate-200 font-bold truncate">{col.name}</span>
-                        {col.isPrimaryKey && (
-                          <span className="text-[9px] px-1 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-bold">
-                            PK
-                          </span>
-                        )}
-                        {col.isForeignKey && (
-                          <span className="text-[9px] px-1.5 py-0.2 bg-sky-500/20 text-sky-300 border border-sky-500/40 rounded font-bold flex items-center gap-0.5">
-                            <span>FK</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-500 font-sans">{col.type}</span>
+                  <th key={col.name} className="px-3 py-2 border-r border-slate-800/80 min-w-[130px]">
+                    <div className="flex items-center space-x-1.5 truncate">
+                      <ColumnTypeIcon type={col.type} />
+                      <span className="text-slate-200 font-semibold truncate">{col.name}</span>
+                      {col.isPrimaryKey && (
+                        <span title="Primary Key" className="inline-flex items-center ml-0.5">
+                          <Key className="w-2.5 h-2.5 text-amber-400/90 flex-shrink-0" />
+                        </span>
+                      )}
                     </div>
                   </th>
                 ))}
@@ -299,19 +292,15 @@ export const TableGrid: React.FC = () => {
                               className="w-full bg-slate-900 border border-sky-500 rounded px-1.5 py-0.5 text-slate-100 font-mono text-[11px] focus:outline-none"
                             />
                           ) : val === null || val === undefined ? (
-                            <span className="text-slate-500 italic">NULL</span>
+                            <span className="text-slate-500 italic select-none">NULL</span>
                           ) : typeof val === 'boolean' ? (
-                            <span className={val ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                              {val ? 'TRUE' : 'FALSE'}
-                            </span>
+                            <span className="text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
                           ) : typeof val === 'object' ? (
-                            <span className="text-sky-300 truncate block">
+                            <span className="truncate block font-mono text-slate-300">
                               {JSON.stringify(val)}
                             </span>
-                          ) : col.name === 'total_amount' ? (
-                            <span className="text-emerald-300 font-semibold">${Number(val).toFixed(2)}</span>
                           ) : (
-                            <span className="truncate block">{String(val)}</span>
+                            <span className="truncate block text-slate-200">{String(val)}</span>
                           )}
                         </td>
                       );
