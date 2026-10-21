@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    userskhoanguyenworkingspersonaldb_nerd_lib::run()
+    db_nerd_lib::run()
 }
