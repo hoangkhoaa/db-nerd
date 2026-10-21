@@ -9,6 +9,10 @@ interface AppState {
   openTableGridTab: (tableName: string) => void;
   openTableSchemaTab: (tableName: string) => void;
   closeTab: (id: string) => void;
+  closeOtherTabs: (id: string) => void;
+  closeTabsToRight: (id: string) => void;
+  closeAllTabs: () => void;
+  duplicateTab: (id: string) => void;
   renameTab: (id: string, newTitle: string) => void;
 
   sqlTabStates: Record<string, SqlTabState>;
@@ -587,6 +591,86 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeTabId: nextActiveId,
       activeTab: nextActiveTab?.type || 'grid',
       selectedTable: nextActiveTab?.tableName || selectedTable,
+    });
+  },
+
+  closeOtherTabs: (id) => {
+    const { tabs, selectedTable } = get();
+    const target = tabs.find((t) => t.id === id);
+    if (!target) return;
+    const nextTabs = tabs.filter((t) => t.id === id || t.canClose === false);
+    set({
+      tabs: nextTabs,
+      activeTabId: target.id,
+      activeTab: target.type,
+      selectedTable: target.tableName || selectedTable,
+    });
+  },
+
+  closeTabsToRight: (id) => {
+    const { tabs, activeTabId, selectedTable } = get();
+    const idx = tabs.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+    const nextTabs = tabs.filter((t, i) => i <= idx || t.canClose === false);
+    let nextActiveId = activeTabId;
+    if (!nextTabs.some((t) => t.id === activeTabId)) {
+      nextActiveId = id;
+    }
+    const nextActive = nextTabs.find((t) => t.id === nextActiveId) || nextTabs[0];
+    set({
+      tabs: nextTabs,
+      activeTabId: nextActive.id,
+      activeTab: nextActive.type,
+      selectedTable: nextActive.tableName || selectedTable,
+    });
+  },
+
+  closeAllTabs: () => {
+    const { tabs, selectedTable } = get();
+    let nextTabs = tabs.filter((t) => t.canClose === false);
+    if (nextTabs.length === 0) {
+      const defaultTab: TabItem = {
+        id: `tab-sql-${Date.now()}`,
+        type: 'sql',
+        title: 'Console 1',
+        canClose: true,
+      };
+      nextTabs = [defaultTab];
+    }
+    const nextActive = nextTabs[0];
+    set({
+      tabs: nextTabs,
+      activeTabId: nextActive.id,
+      activeTab: nextActive.type,
+      selectedTable: nextActive.tableName || selectedTable,
+    });
+  },
+
+  duplicateTab: (id) => {
+    const { tabs, sqlTabStates } = get();
+    const target = tabs.find((t) => t.id === id);
+    if (!target) return;
+    const newId = `tab-${target.type}-${Date.now()}`;
+    const newTab: TabItem = {
+      ...target,
+      id: newId,
+      title: `${target.title} (Copy)`,
+      canClose: true,
+    };
+    const nextTabs = [...tabs, newTab];
+    const nextSqlStates = { ...sqlTabStates };
+    if (target.type === 'sql' && sqlTabStates[id]) {
+      nextSqlStates[newId] = {
+        ...sqlTabStates[id],
+        tabId: newId,
+      };
+    }
+    set({
+      tabs: nextTabs,
+      activeTabId: newId,
+      activeTab: newTab.type,
+      selectedTable: newTab.tableName || get().selectedTable,
+      sqlTabStates: nextSqlStates,
     });
   },
 

@@ -10,7 +10,25 @@ import {
   Clock,
   SlidersHorizontal,
   CheckCircle2,
+  Copy,
+  Columns,
+  Play,
+  FileCode,
+  Code,
+  Database,
+  Trash2,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
+import { TABLE_SCHEMAS } from '../data/schemas';
+import {
+  ContextMenuContainer,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuHeader,
+  ContextMenuPosition,
+} from './ContextMenu';
+import { format as formatSql } from 'sql-formatter';
 
 const SAVED_QUERIES = [
   {
@@ -62,16 +80,26 @@ export const Sidebar = () => {
     selectedTable,
     setSelectedTable,
     openTableGridTab,
+    openTableSchemaTab,
     openNewQueryTab,
     activeConnection,
     setDatabaseModalOpen,
     history,
+    showToast,
+    reloadData,
   } = useAppStore();
 
   const [sidebarTab, setSidebarTab] = useState<'items' | 'queries' | 'history'>('items');
   const [searchFilter, setSearchFilter] = useState('');
   const [isFunctionsOpen, setIsFunctionsOpen] = useState(false);
   const [isTablesOpen, setIsTablesOpen] = useState(true);
+
+  // Context Menu state
+  const [tableContextPos, setTableContextPos] = useState<ContextMenuPosition | null>(null);
+  const [targetTable, setTargetTable] = useState<string | null>(null);
+
+  const [queryContextPos, setQueryContextPos] = useState<ContextMenuPosition | null>(null);
+  const [targetQuery, setTargetQuery] = useState<{ id: string; title?: string; sql: string } | null>(null);
 
   const filteredTables = TABLES.filter((t) =>
     t.name.toLowerCase().includes(searchFilter.toLowerCase())
@@ -209,6 +237,12 @@ export const Sidebar = () => {
                           setSelectedTable(tbl.name);
                           openTableGridTab(tbl.name);
                         }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setTableContextPos({ x: e.clientX, y: e.clientY });
+                          setTargetTable(tbl.name);
+                        }}
                         className={`flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group ${
                           isSelected
                             ? 'bg-slate-800/90 text-slate-100 font-semibold shadow-xs'
@@ -245,8 +279,14 @@ export const Sidebar = () => {
               <div
                 key={q.id}
                 onClick={() => openNewQueryTab(q.sql)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setQueryContextPos({ x: e.clientX, y: e.clientY });
+                  setTargetQuery({ id: q.id, title: q.title, sql: q.sql });
+                }}
                 className="p-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/90 border border-slate-800/60 hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
-                title="Click to open query in new SQL tab"
+                title="Click to open query (Right click for options)"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1.5 truncate">
@@ -275,8 +315,14 @@ export const Sidebar = () => {
               <div
                 key={h.id}
                 onClick={() => openNewQueryTab(h.sql)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setQueryContextPos({ x: e.clientX, y: e.clientY });
+                  setTargetQuery({ id: h.id, title: `Query (${h.durationMs}ms)`, sql: h.sql });
+                }}
                 className="p-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/90 border border-slate-800/60 hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
-                title="Click to open this query in SQL tab"
+                title="Click to open query (Right click for options)"
               >
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
                   <div className="flex items-center space-x-1">
@@ -302,7 +348,7 @@ export const Sidebar = () => {
       <div className="h-9 px-2 border-t border-slate-800/80 bg-slate-950/90 flex items-center justify-between text-xs text-slate-400 flex-shrink-0">
         <button
           onClick={() => openNewQueryTab()}
-          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-100 rounded transition"
+          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-100 rounded transition cursor-pointer"
           title="New SQL Query (⌘E / ⌘T)"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -311,7 +357,7 @@ export const Sidebar = () => {
         {/* TablePlus Database & Schema Switcher Dropdown */}
         <button
           onClick={() => setDatabaseModalOpen(true)}
-          className="flex items-center space-x-1.5 px-2 py-0.5 hover:bg-slate-800/80 rounded text-[11px] font-mono text-slate-300 hover:text-white transition group border border-transparent hover:border-slate-700/60"
+          className="flex items-center space-x-1.5 px-2 py-0.5 hover:bg-slate-800/80 rounded text-[11px] font-mono text-slate-300 hover:text-white transition group border border-transparent hover:border-slate-700/60 cursor-pointer"
           title="Switch Database or Schema (⌘O)"
         >
           <span className="font-semibold text-sky-400 truncate max-w-[120px]">
@@ -322,6 +368,183 @@ export const Sidebar = () => {
           <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-200 transition-transform" />
         </button>
       </div>
+
+      {/* Table Context Menu */}
+      {tableContextPos && targetTable && (
+        <ContextMenuContainer
+          position={tableContextPos}
+          onClose={() => {
+            setTableContextPos(null);
+            setTargetTable(null);
+          }}
+          width={240}
+        >
+          <ContextMenuHeader title={`Table: ${targetTable}`} />
+          <ContextMenuItem
+            icon={<TableIcon className="w-3.5 h-3.5 text-sky-400" />}
+            label="Open Data (Grid)"
+            shortcut="↵"
+            onClick={() => {
+              setSelectedTable(targetTable);
+              openTableGridTab(targetTable);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Columns className="w-3.5 h-3.5 text-indigo-400" />}
+            label="Open Structure (Schema)"
+            onClick={() => {
+              setSelectedTable(targetTable);
+              openTableSchemaTab(targetTable);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<RefreshCw className="w-3.5 h-3.5 text-emerald-400" />}
+            label="Reload Table Data"
+            shortcut="⌘R"
+            onClick={() => {
+              reloadData();
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Terminal className="w-3.5 h-3.5 text-amber-400" />}
+            label="Query in New Tab"
+            shortcut="⌘E"
+            onClick={() => {
+              openNewQueryTab(`SELECT * FROM ${targetTable} LIMIT 100;`);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-400" />}
+            label="Copy Table Name"
+            onClick={() => {
+              navigator.clipboard.writeText(targetTable);
+              showToast(`📋 Copied "${targetTable}"`);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<FileCode className="w-3.5 h-3.5 text-slate-400" />}
+            label="Copy SELECT Query"
+            onClick={() => {
+              const query = `SELECT * FROM ${targetTable} LIMIT 50;`;
+              navigator.clipboard.writeText(query);
+              showToast(`📋 Copied SELECT query for "${targetTable}"`);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Code className="w-3.5 h-3.5 text-slate-400" />}
+            label="Copy INSERT Template"
+            onClick={() => {
+              const cols = TABLE_SCHEMAS[targetTable]?.columns || [];
+              const colNames = cols.map((c) => c.name).join(', ');
+              const valPlaceholders = cols
+                .map((c) => (c.type.includes('int') ? '0' : c.type.includes('bool') ? 'true' : "'value'"))
+                .join(', ');
+              const insertSql = `INSERT INTO ${targetTable} (${colNames})\nVALUES (${valPlaceholders});`;
+              navigator.clipboard.writeText(insertSql);
+              showToast(`📋 Copied INSERT template for "${targetTable}"`);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Database className="w-3.5 h-3.5 text-slate-400" />}
+            label="Copy CREATE TABLE DDL"
+            onClick={() => {
+              const cols = TABLE_SCHEMAS[targetTable]?.columns || [];
+              const colDefs = cols
+                .map((c) => `  ${c.name} ${c.type.toUpperCase()}${c.isPrimaryKey ? ' PRIMARY KEY' : ''}`)
+                .join(',\n');
+              const ddlSql = `CREATE TABLE ${targetTable} (\n${colDefs}\n);`;
+              navigator.clipboard.writeText(ddlSql);
+              showToast(`📋 Copied CREATE TABLE DDL for "${targetTable}"`);
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Sparkles className="w-3.5 h-3.5 text-rose-400" />}
+            label="Truncate Table..."
+            danger
+            onClick={() => {
+              if (confirm(`Are you sure you want to TRUNCATE table "${targetTable}"? All data will be deleted.`)) {
+                showToast(`⚡ Truncated table "${targetTable}" (0 rows)`);
+              }
+              setTableContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Trash2 className="w-3.5 h-3.5 text-rose-400" />}
+            label="Drop Table..."
+            danger
+            onClick={() => {
+              if (confirm(`Are you sure you want to DROP table "${targetTable}"? This action cannot be undone.`)) {
+                showToast(`🗑️ Dropped table "${targetTable}"`);
+              }
+              setTableContextPos(null);
+            }}
+          />
+        </ContextMenuContainer>
+      )}
+
+      {/* Saved Query / History Context Menu */}
+      {queryContextPos && targetQuery && (
+        <ContextMenuContainer
+          position={queryContextPos}
+          onClose={() => {
+            setQueryContextPos(null);
+            setTargetQuery(null);
+          }}
+          width={220}
+        >
+          <ContextMenuHeader title={targetQuery.title || 'SQL Query'} />
+          <ContextMenuItem
+            icon={<Play className="w-3.5 h-3.5 text-emerald-400" />}
+            label="Open in New Query Tab"
+            shortcut="⌘E"
+            onClick={() => {
+              openNewQueryTab(targetQuery.sql);
+              setQueryContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-400" />}
+            label="Copy SQL"
+            shortcut="⌘C"
+            onClick={() => {
+              navigator.clipboard.writeText(targetQuery.sql);
+              showToast('📋 Copied SQL query to clipboard');
+              setQueryContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Sparkles className="w-3.5 h-3.5 text-sky-400" />}
+            label="Copy Formatted SQL"
+            onClick={() => {
+              try {
+                const formatted = formatSql(targetQuery.sql, {
+                  language: 'postgresql',
+                  keywordCase: 'upper',
+                  dataTypeCase: 'upper',
+                  functionCase: 'upper',
+                  tabWidth: 2,
+                });
+                navigator.clipboard.writeText(formatted);
+                showToast('✨ Copied beautified SQL to clipboard');
+              } catch {
+                navigator.clipboard.writeText(targetQuery.sql);
+                showToast('📋 Copied SQL to clipboard');
+              }
+              setQueryContextPos(null);
+            }}
+          />
+        </ContextMenuContainer>
+      )}
 
     </aside>
   );

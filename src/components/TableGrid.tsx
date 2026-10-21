@@ -14,12 +14,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  ArrowUpAZ,
+  ArrowDownZA,
+  Columns,
 } from 'lucide-react';
 import { GridRow } from '../types';
-import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
+import { TableContextMenu } from './TableContextMenu';
 import { TableStructureView } from './TableStructureView';
 import { TableIndexesView } from './TableIndexesView';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
+import {
+  ContextMenuContainer,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuHeader,
+  ContextMenuPosition,
+} from './ContextMenu';
 
 export const TableGrid: React.FC = () => {
   const {
@@ -38,6 +48,7 @@ export const TableGrid: React.FC = () => {
     setFilterWhereText,
     filterOrderByText,
     setFilterOrderByText,
+    setSelectedStructureColumn,
   } = useAppStore();
 
   const schemaInfo = getTableSchema(selectedTable);
@@ -46,6 +57,8 @@ export const TableGrid: React.FC = () => {
   const [editValue, setEditValue] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
+  const [colContextPos, setColContextPos] = useState<ContextMenuPosition | null>(null);
+  const [targetCol, setTargetCol] = useState<any | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
   const [inspectingRow, setInspectingRow] = useState<GridRow | null>(null);
   const [isDdlModalOpen, setIsDdlModalOpen] = useState(false);
@@ -219,7 +232,16 @@ export const TableGrid: React.FC = () => {
               <tr className="text-left font-semibold">
                 <th className="w-12 px-3 py-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
                 {activeCols.map((col) => (
-                  <th key={col.name} className="px-3 py-2 border-r border-slate-800/80 min-w-[130px]">
+                  <th
+                    key={col.name}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setColContextPos({ x: e.clientX, y: e.clientY });
+                      setTargetCol(col);
+                    }}
+                    className="px-3 py-2 border-r border-slate-800/80 min-w-[130px] cursor-pointer hover:bg-slate-900/60 transition-colors"
+                  >
                     <div className="flex items-center space-x-1.5 truncate">
                       <ColumnTypeIcon type={col.type} />
                       <span className="text-slate-200 font-semibold truncate">{col.name}</span>
@@ -564,6 +586,84 @@ export const TableGrid: React.FC = () => {
         onQuickLook={(row) => setInspectingRow(row)}
         onToast={showToast}
       />
+
+      {/* Column Header Right-Click Context Menu */}
+      {colContextPos && targetCol && (
+        <ContextMenuContainer position={colContextPos} onClose={() => setColContextPos(null)}>
+          <ContextMenuHeader title={`Column: ${targetCol.name} (${targetCol.type})`} />
+          <ContextMenuItem
+            icon={<ArrowUpAZ className="w-3.5 h-3.5 text-sky-400" />}
+            label={`Sort "${targetCol.name}" ASC`}
+            onClick={() => {
+              setFilterOrderByText(`${targetCol.name} ASC`);
+              showToast(`⚡ Sorted by ${targetCol.name} ASC`);
+            }}
+          />
+          <ContextMenuItem
+            icon={<ArrowDownZA className="w-3.5 h-3.5 text-sky-400" />}
+            label={`Sort "${targetCol.name}" DESC`}
+            onClick={() => {
+              setFilterOrderByText(`${targetCol.name} DESC`);
+              showToast(`⚡ Sorted by ${targetCol.name} DESC`);
+            }}
+          />
+          {filterOrderByText && (
+            <ContextMenuItem
+              icon={<X className="w-3.5 h-3.5 text-slate-400" />}
+              label="Clear Sort"
+              onClick={() => {
+                setFilterOrderByText('');
+                showToast('Cleared sorting');
+              }}
+            />
+          )}
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Filter className="w-3.5 h-3.5 text-purple-400" />}
+            label={`Filter by "${targetCol.name}"`}
+            onClick={() => {
+              setFilterWhereText(`${targetCol.name} = ''`);
+              if (!isFilterBarOpen) toggleFilterBar();
+              showToast(`Filter added: ${targetCol.name}`);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-300" />}
+            label="Copy Column Name"
+            shortcut="⌘C"
+            onClick={() => {
+              navigator.clipboard.writeText(targetCol.name);
+              showToast(`Copied "${targetCol.name}" to clipboard`);
+            }}
+          />
+          <ContextMenuItem
+            icon={<FileCode className="w-3.5 h-3.5 text-slate-300" />}
+            label={`Copy Qualified Name (${selectedTable}.${targetCol.name})`}
+            onClick={() => {
+              navigator.clipboard.writeText(`"${selectedTable}"."${targetCol.name}"`);
+              showToast(`Copied "${selectedTable}"."${targetCol.name}"`);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Eye className="w-3.5 h-3.5 text-emerald-400" />}
+            label="Inspect Column in Structure View"
+            onClick={() => {
+              setSelectedStructureColumn?.(targetCol);
+              setTableViewMode('structure');
+            }}
+          />
+          <ContextMenuItem
+            icon={<Columns className="w-3.5 h-3.5 text-slate-400" />}
+            label="Hide this Column"
+            onClick={() => {
+              toggleColumnVisibility(targetCol.name);
+              showToast(`Column "${targetCol.name}" hidden`);
+            }}
+          />
+        </ContextMenuContainer>
+      )}
 
       {/* Quick Look Inspector Dialog */}
       {inspectingRow && (

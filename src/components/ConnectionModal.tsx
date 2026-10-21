@@ -1,8 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { DatabaseEngine, ConnectionProfile } from '../types';
-import { X, Plus, FolderPlus, Trash2, Check, ChevronRight, Server, Shield, GripVertical } from 'lucide-react';
+import { DatabaseEngine, ConnectionProfile, ConnectionGroup } from '../types';
+import {
+  X,
+  Plus,
+  FolderPlus,
+  Trash2,
+  Check,
+  ChevronRight,
+  Server,
+  Shield,
+  GripVertical,
+  Play,
+  Pencil,
+  Copy,
+  FileCode,
+  FolderOpen,
+} from 'lucide-react';
 import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
+import {
+  ContextMenuContainer,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuHeader,
+  ContextMenuPosition,
+} from './ContextMenu';
 
 interface DraggedItem {
   type: 'group' | 'connection';
@@ -65,6 +87,12 @@ export const ConnectionModal = () => {
   // Drag and Drop State
   const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null);
   const [dropTarget, setDropTarget] = useState<DropIndicator | null>(null);
+
+  // Context Menu State
+  const [connContextPos, setConnContextPos] = useState<ContextMenuPosition | null>(null);
+  const [targetConn, setTargetConn] = useState<ConnectionProfile | null>(null);
+  const [groupContextPos, setGroupContextPos] = useState<ContextMenuPosition | null>(null);
+  const [targetGroup, setTargetGroup] = useState<ConnectionGroup | null>(null);
 
   // Group Form state
   const [groupName, setGroupName] = useState('');
@@ -494,6 +522,13 @@ export const ConnectionModal = () => {
                       onDragLeave={(e) => handleGroupDragLeave(e, group.id)}
                       onDrop={(e) => handleGroupDrop(e, group)}
                       onClick={() => toggleGroupCollapse(group.id)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setConnContextPos(null);
+                        setGroupContextPos({ x: e.clientX, y: e.clientY });
+                        setTargetGroup(group);
+                      }}
                       className={`relative flex items-center justify-between px-2 py-1.5 rounded-lg ${colorInfo.bg} ${colorInfo.text} font-bold text-xs border ${colorInfo.border} cursor-grab active:cursor-grabbing hover:brightness-110 transition-all duration-150 select-none group ${
                         isGroupDragged ? 'opacity-40 scale-[0.98] border-dashed border-sky-400' : ''
                       } ${
@@ -616,6 +651,13 @@ export const ConnectionModal = () => {
                                   onDragLeave={(e) => handleConnDragLeave(e, conn.id)}
                                   onDrop={(e) => handleConnDrop(e, conn)}
                                   onClick={() => handleSelectConnection(conn)}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setGroupContextPos(null);
+                                    setConnContextPos({ x: e.clientX, y: e.clientY });
+                                    setTargetConn(conn);
+                                  }}
                                   className={`relative px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing font-medium flex items-center justify-between transition-all duration-150 select-none group ${
                                     isSelected
                                       ? 'bg-sky-500/20 text-sky-200 border border-sky-500/40 shadow-sm'
@@ -937,6 +979,128 @@ export const ConnectionModal = () => {
         </div>
 
       </div>
+
+      {/* Connection Profile Context Menu */}
+      {connContextPos && targetConn && (
+        <ContextMenuContainer position={connContextPos} onClose={() => setConnContextPos(null)}>
+          <ContextMenuHeader title={`Connection: ${targetConn.name}`} />
+          <ContextMenuItem
+            icon={<Play className="w-3.5 h-3.5 text-emerald-400" />}
+            label={`Connect to "${targetConn.name}"`}
+            onClick={() => {
+              switchActiveConnection(targetConn.id);
+              setConnectionModalOpen(false);
+              showToast(`Connected to ${targetConn.name}`);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Pencil className="w-3.5 h-3.5 text-sky-400" />}
+            label="Edit Connection Profile"
+            onClick={() => {
+              handleSelectConnection(targetConn);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-300" />}
+            label="Duplicate Connection"
+            onClick={() => {
+              const { id: _, ...rest } = targetConn;
+              addConnection({
+                ...rest,
+                name: `${targetConn.name} (Copy)`,
+                active: false,
+              });
+              showToast(`Duplicated "${targetConn.name}"`);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<FileCode className="w-3.5 h-3.5 text-slate-300" />}
+            label="Copy Connection URI"
+            onClick={() => {
+              const uri = `${targetConn.engine}://${targetConn.username || 'user'}:••••@${targetConn.host || 'localhost'}:${targetConn.port}/${targetConn.database || ''}`;
+              navigator.clipboard.writeText(uri);
+              showToast(`Copied URI for "${targetConn.name}"`);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-300" />}
+            label="Copy Config JSON"
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(targetConn, null, 2));
+              showToast(`Copied JSON config for "${targetConn.name}"`);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Trash2 className="w-3.5 h-3.5 text-rose-400" />}
+            label="Delete Connection"
+            danger
+            onClick={() => {
+              if (confirm(`Delete connection "${targetConn.name}"?`)) {
+                deleteConnection(targetConn.id);
+                if (selectedConnId === targetConn.id) {
+                  const remaining = connections.filter((c) => c.id !== targetConn.id);
+                  if (remaining.length > 0) setSelectedConnId(remaining[0].id);
+                  else handleStartNewConnection();
+                }
+                showToast(`Deleted "${targetConn.name}"`);
+              }
+            }}
+          />
+        </ContextMenuContainer>
+      )}
+
+      {/* Group Context Menu */}
+      {groupContextPos && targetGroup && (
+        <ContextMenuContainer position={groupContextPos} onClose={() => setGroupContextPos(null)}>
+          <ContextMenuHeader title={`Group: ${targetGroup.name} (${targetGroup.tag})`} />
+          <ContextMenuItem
+            icon={<Plus className="w-3.5 h-3.5 text-emerald-400" />}
+            label={`New Connection in "${targetGroup.name}"`}
+            onClick={() => {
+              handleStartNewConnection(targetGroup.id);
+              setCollapsedGroups((prev) => ({ ...prev, [targetGroup.id]: false }));
+            }}
+          />
+          <ContextMenuItem
+            icon={<FolderOpen className="w-3.5 h-3.5 text-sky-400" />}
+            label={collapsedGroups[targetGroup.id] ? 'Expand Group' : 'Collapse Group'}
+            onClick={() => {
+              toggleGroupCollapse(targetGroup.id);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-300" />}
+            label="Copy Group Name"
+            onClick={() => {
+              navigator.clipboard.writeText(targetGroup.name);
+              showToast(`Copied "${targetGroup.name}"`);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Trash2 className="w-3.5 h-3.5 text-rose-400" />}
+            label="Delete Group"
+            danger
+            onClick={() => {
+              const count = connections.filter((c) => c.groupId === targetGroup.id).length;
+              if (count > 0) {
+                if (confirm(`Group "${targetGroup.name}" contains ${count} connection(s). Delete group and all its connections?`)) {
+                  connections.filter((c) => c.groupId === targetGroup.id).forEach((c) => deleteConnection(c.id));
+                  deleteConnectionGroup(targetGroup.id);
+                  showToast(`Deleted group "${targetGroup.name}"`);
+                }
+              } else {
+                if (confirm(`Delete empty group "${targetGroup.name}"?`)) {
+                  deleteConnectionGroup(targetGroup.id);
+                  showToast(`Deleted group "${targetGroup.name}"`);
+                }
+              }
+            }}
+          />
+        </ContextMenuContainer>
+      )}
     </div>
   );
 };

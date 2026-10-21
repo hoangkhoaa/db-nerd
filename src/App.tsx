@@ -12,7 +12,14 @@ import { SqlDiffModal } from './components/SqlDiffModal';
 import { TableSchemaView } from './components/TableSchemaView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2 } from 'lucide-react';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy } from 'lucide-react';
+import {
+  ContextMenuContainer,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuHeader,
+  ContextMenuPosition,
+} from './components/ContextMenu';
 import './App.css';
 
 export function App() {
@@ -21,6 +28,10 @@ export function App() {
     activeTabId,
     setActiveTabId,
     closeTab,
+    closeOtherTabs,
+    closeTabsToRight,
+    closeAllTabs,
+    duplicateTab,
     openNewQueryTab,
     renameTab,
     activeTab,
@@ -35,11 +46,15 @@ export function App() {
     commitTransaction,
     rollbackTransaction,
     toastMessage,
+    showToast,
     reloadData,
+    sqlTabStates,
   } = useAppStore();
 
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [tabContextPos, setTabContextPos] = useState<ContextMenuPosition | null>(null);
+  const [targetTabId, setTargetTabId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -252,6 +267,12 @@ export function App() {
                         closeTab(tab.id);
                       }
                     }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTabContextPos({ x: e.clientX, y: e.clientY });
+                      setTargetTabId(tab.id);
+                    }}
                     className={`group h-7 px-2.5 rounded-md text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer select-none max-w-[220px] flex-shrink-0 border ${
                       isActive
                         ? 'bg-slate-800/90 border-slate-700/80 text-slate-100 shadow-sm font-semibold'
@@ -344,6 +365,99 @@ export function App() {
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* Tab Context Menu */}
+      {tabContextPos && targetTabId && (() => {
+        const targetTab = tabs.find((t) => t.id === targetTabId);
+        if (!targetTab) return null;
+        const targetIdx = tabs.findIndex((t) => t.id === targetTabId);
+        const hasTabsToRight = targetIdx < tabs.length - 1;
+        const hasOtherTabs = tabs.length > 1;
+
+        return (
+          <ContextMenuContainer
+            position={tabContextPos}
+            onClose={() => {
+              setTabContextPos(null);
+              setTargetTabId(null);
+            }}
+            width={220}
+          >
+            <ContextMenuHeader title={`Tab: ${targetTab.title}`} />
+            {targetTab.canClose !== false && (
+              <ContextMenuItem
+                icon={<X className="w-3.5 h-3.5 text-rose-400" />}
+                label="Close Tab"
+                shortcut="⌘W"
+                onClick={() => {
+                  closeTab(targetTab.id);
+                  setTabContextPos(null);
+                }}
+              />
+            )}
+            <ContextMenuItem
+              icon={<X className="w-3.5 h-3.5 text-slate-400" />}
+              label="Close Other Tabs"
+              disabled={!hasOtherTabs}
+              onClick={() => {
+                closeOtherTabs(targetTab.id);
+                setTabContextPos(null);
+              }}
+            />
+            <ContextMenuItem
+              icon={<ArrowRight className="w-3.5 h-3.5 text-slate-400" />}
+              label="Close Tabs to the Right"
+              disabled={!hasTabsToRight}
+              onClick={() => {
+                closeTabsToRight(targetTab.id);
+                setTabContextPos(null);
+              }}
+            />
+            <ContextMenuItem
+              icon={<X className="w-3.5 h-3.5 text-rose-400" />}
+              label="Close All Tabs"
+              danger
+              onClick={() => {
+                closeAllTabs();
+                setTabContextPos(null);
+              }}
+            />
+            <ContextMenuDivider />
+            <ContextMenuItem
+              icon={<CopyPlus className="w-3.5 h-3.5 text-sky-400" />}
+              label="Duplicate Tab"
+              shortcut="⌘D"
+              onClick={() => {
+                duplicateTab(targetTab.id);
+                setTabContextPos(null);
+              }}
+            />
+            <ContextMenuItem
+              icon={<Edit3 className="w-3.5 h-3.5 text-slate-400" />}
+              label="Rename Tab..."
+              onClick={() => {
+                startRename(targetTab.id, targetTab.title);
+                setTabContextPos(null);
+              }}
+            />
+            <ContextMenuItem
+              icon={<Copy className="w-3.5 h-3.5 text-slate-400" />}
+              label={targetTab.type === 'sql' ? 'Copy SQL Content' : 'Copy Tab Title'}
+              onClick={() => {
+                if (targetTab.type === 'sql') {
+                  const query = sqlTabStates[targetTab.id]?.query || '';
+                  navigator.clipboard.writeText(query);
+                  showToast('📋 Copied SQL content to clipboard');
+                } else {
+                  navigator.clipboard.writeText(targetTab.title);
+                  showToast(`📋 Copied "${targetTab.title}" to clipboard`);
+                }
+                setTabContextPos(null);
+              }}
+            />
+          </ContextMenuContainer>
+        );
+      })()}
 
       {/* Global Modals */}
       <ConnectionModal />

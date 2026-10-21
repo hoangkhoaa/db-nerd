@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key } from 'lucide-react';
+import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -17,9 +17,16 @@ import { HighlightStyle, syntaxHighlighting, bracketMatching } from '@codemirror
 import { tags as t } from '@lezer/highlight';
 import { useAppStore } from '../stores/useAppStore';
 import { TABLE_SCHEMAS } from '../data/schemas';
-import { TableContextMenu, ContextMenuPosition } from './TableContextMenu';
+import { TableContextMenu } from './TableContextMenu';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
 import { format as formatSql } from 'sql-formatter';
+import {
+  ContextMenuContainer,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuHeader,
+  ContextMenuPosition,
+} from './ContextMenu';
 
 // Build rich SQL Schema with column types, primary key badges, and descriptions for autocompletion
 const buildSqlSchema = () => {
@@ -246,6 +253,7 @@ export const SqlEditor: React.FC = () => {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
+  const [editorContextPos, setEditorContextPos] = useState<ContextMenuPosition | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
   const [inspectingRow, setInspectingRow] = useState<any | null>(null);
 
@@ -483,7 +491,13 @@ export const SqlEditor: React.FC = () => {
       </div>
 
       {/* Top Split: CodeMirror 6 Editor Container */}
-      <div className="h-48 border-b border-slate-800/80 relative flex flex-col bg-slate-950 flex-shrink-0">
+      <div
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setEditorContextPos({ x: e.clientX, y: e.clientY });
+        }}
+        className="h-48 border-b border-slate-800/80 relative flex flex-col bg-slate-950 flex-shrink-0"
+      >
         <div ref={editorRef} className="flex-1 w-full h-full overflow-hidden" />
       </div>
 
@@ -653,6 +667,128 @@ export const SqlEditor: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Code Editor Context Menu */}
+      {editorContextPos && (
+        <ContextMenuContainer
+          position={editorContextPos}
+          onClose={() => setEditorContextPos(null)}
+          width={240}
+        >
+          <ContextMenuHeader title="SQL Editor" />
+          <ContextMenuItem
+            icon={<Play className="w-3.5 h-3.5 text-emerald-400" />}
+            label="Run Query"
+            shortcut="⌘↵"
+            onClick={() => {
+              handleRun();
+              setEditorContextPos(null);
+            }}
+          />
+          {viewRef.current && viewRef.current.state.selection.main.from !== viewRef.current.state.selection.main.to && (
+            <ContextMenuItem
+              icon={<Play className="w-3.5 h-3.5 text-sky-400" />}
+              label="Run Selected Query"
+              onClick={() => {
+                const sel = viewRef.current!.state.sliceDoc(
+                  viewRef.current!.state.selection.main.from,
+                  viewRef.current!.state.selection.main.to
+                );
+                runSqlQuery(activeTabId, sel);
+                showToast(`⚡ Selected query executed in 1.4ms!`);
+                setEditorContextPos(null);
+              }}
+            />
+          )}
+          <ContextMenuItem
+            icon={<Sparkles className="w-3.5 h-3.5 text-sky-400" />}
+            label="Format SQL"
+            shortcut="⇧⌥F"
+            onClick={() => {
+              handleFormat();
+              setEditorContextPos(null);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Check className="w-3.5 h-3.5 text-slate-400" />}
+            label="Select All"
+            shortcut="⌘A"
+            onClick={() => {
+              if (viewRef.current) {
+                viewRef.current.dispatch({
+                  selection: { anchor: 0, head: viewRef.current.state.doc.length },
+                });
+              }
+              setEditorContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Copy className="w-3.5 h-3.5 text-slate-400" />}
+            label="Copy"
+            shortcut="⌘C"
+            onClick={() => {
+              if (viewRef.current) {
+                const { from, to } = viewRef.current.state.selection.main;
+                const text = from !== to ? viewRef.current.state.sliceDoc(from, to) : viewRef.current.state.doc.toString();
+                navigator.clipboard.writeText(text);
+                showToast('📋 Copied to clipboard');
+              }
+              setEditorContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Scissors className="w-3.5 h-3.5 text-slate-400" />}
+            label="Cut"
+            shortcut="⌘X"
+            onClick={() => {
+              if (viewRef.current) {
+                const { from, to } = viewRef.current.state.selection.main;
+                if (from !== to) {
+                  const text = viewRef.current.state.sliceDoc(from, to);
+                  navigator.clipboard.writeText(text);
+                  viewRef.current.dispatch({ changes: { from, to, insert: '' } });
+                  showToast('✂️ Cut selection');
+                }
+              }
+              setEditorContextPos(null);
+            }}
+          />
+          <ContextMenuItem
+            icon={<Trash className="w-3.5 h-3.5 text-slate-400" />}
+            label="Clear Editor"
+            onClick={() => {
+              if (viewRef.current) {
+                viewRef.current.dispatch({
+                  changes: { from: 0, to: viewRef.current.state.doc.length, insert: '' },
+                });
+                setSqlTabQuery(activeTabId, '');
+                showToast('🧹 Cleared editor');
+              }
+              setEditorContextPos(null);
+            }}
+          />
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Zap className="w-3.5 h-3.5 text-amber-400" />}
+            label="Explain Query (EXPLAIN ANALYZE)"
+            onClick={() => {
+              if (viewRef.current) {
+                const currentDoc = viewRef.current.state.doc.toString();
+                const explainQuery = currentDoc.trim().toLowerCase().startsWith('explain')
+                  ? currentDoc
+                  : `EXPLAIN ANALYZE\n${currentDoc}`;
+                viewRef.current.dispatch({
+                  changes: { from: 0, to: viewRef.current.state.doc.length, insert: explainQuery },
+                });
+                setSqlTabQuery(activeTabId, explainQuery);
+                runSqlQuery(activeTabId, explainQuery);
+                showToast('⚡ Running EXPLAIN ANALYZE...');
+              }
+              setEditorContextPos(null);
+            }}
+          />
+        </ContextMenuContainer>
       )}
     </div>
   );
