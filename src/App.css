@@ -14,3 +14,11 @@
     color: #f1f5f9;
   }
 }
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
