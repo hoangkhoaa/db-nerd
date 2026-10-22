@@ -261,12 +261,12 @@ export const AllTableStatsView: React.FC = () => {
 
   return (
     <div
-      className="flex-1 flex flex-col bg-slate-950 text-slate-200 select-none overflow-hidden font-sans outline-none"
+      className="flex-1 flex flex-col bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-none overflow-hidden font-sans outline-none"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       {/* Top Filter and Actions Bar */}
-      <div className="h-9 px-3 bg-slate-900/90 border-b border-slate-800/90 flex items-center justify-between flex-shrink-0 text-xs">
+      <div className="h-9 px-3 bg-slate-50/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800/90 flex items-center justify-between flex-shrink-0 text-xs">
         <div className="flex items-center space-x-2.5">
           <div className="relative w-64">
             <input
@@ -274,16 +274,16 @@ export const AllTableStatsView: React.FC = () => {
               placeholder={`Filter ${filteredStats.length} tables in ${schemaLabel}...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="w-full bg-slate-950/80 border border-slate-800 rounded px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 pl-7 transition-colors font-sans"
+              className="w-full bg-white dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 rounded px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 pl-7 transition-colors font-sans shadow-2xs"
             />
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2 top-2" />
           </div>
 
-          <div className="text-[11px] text-slate-400 font-mono flex items-center space-x-1.5">
-            <span className="font-semibold text-sky-400">{filteredStats.length}</span>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center space-x-1.5">
+            <span className="font-semibold text-sky-600 dark:text-sky-400">{filteredStats.length}</span>
             <span>tables</span>
             <span>•</span>
-            <span className="text-slate-400 font-medium">Schema: <span className="text-slate-200 font-semibold">{schemaLabel}</span></span>
+            <span className="text-slate-500 dark:text-slate-400 font-medium">Schema: <span className="text-slate-800 dark:text-slate-200 font-semibold">{schemaLabel}</span></span>
           </div>
         </div>
 
@@ -291,27 +291,27 @@ export const AllTableStatsView: React.FC = () => {
           <button
             onClick={() => fetchStats()}
             disabled={loading}
-            className="relative overflow-hidden h-6 px-2.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1.5 text-xs transition active:scale-95 border border-slate-700/60"
+            className="relative overflow-hidden h-6 px-2.5 rounded bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white flex items-center space-x-1.5 text-xs transition active:scale-95 border border-slate-300/80 dark:border-slate-700/60 shadow-2xs"
             title="Refresh Table Statistics"
           >
             {loading && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-sky-400' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-sky-500 dark:text-sky-400' : ''}`} />
             <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
 
-      {/* Statistics Data Grid (TablePlus Pixel-Perfect Recreation) */}
-      <div className="flex-1 overflow-auto bg-slate-950">
+      {/* Statistics Data Grid */}
+      <div className="flex-1 overflow-auto bg-white dark:bg-slate-950">
         <table className="w-full border-collapse text-left font-mono text-xs">
           {/* Header Row */}
-          <thead className="sticky top-0 z-10 bg-slate-900/95 border-b border-slate-800 backdrop-blur shadow-xs">
-            <tr className="text-slate-400 font-semibold text-[11px] tracking-wide select-none">
+          <thead className="sticky top-0 z-10 bg-slate-100/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur shadow-2xs">
+            <tr className="text-slate-600 dark:text-slate-400 font-semibold text-[11px] tracking-wide select-none">
               <th
                 onClick={() => handleSort('name')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[260px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[260px]"
               >
                 <div className="flex items-center justify-between">
                   <span>name</span>
@@ -422,7 +422,7 @@ export const AllTableStatsView: React.FC = () => {
           </thead>
 
           {/* Grid Rows */}
-          <tbody className="divide-y divide-slate-900/80">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-900/80">
             {filteredStats.map((row, idx) => {
               const isSelected = selectedRowName === row.name;
 
@@ -443,52 +443,52 @@ export const AllTableStatsView: React.FC = () => {
                   }}
                   className={`cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-sky-600/30 text-white font-semibold'
+                      ? 'bg-sky-100/90 dark:bg-sky-600/30 text-sky-950 dark:text-white font-semibold'
                       : idx % 2 === 0
-                      ? 'bg-slate-950/90 text-slate-300 hover:bg-slate-900/60'
-                      : 'bg-slate-900/30 text-slate-300 hover:bg-slate-900/60'
+                      ? 'bg-white dark:bg-slate-950/90 text-slate-800 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-900/60'
+                      : 'bg-slate-50/70 dark:bg-slate-900/30 text-slate-800 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-900/60'
                   }`}
                 >
                   {/* Name with table icon */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 flex items-center space-x-2 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 flex items-center space-x-2 truncate">
                     <div className="w-4 h-4 rounded bg-sky-500/10 border border-sky-400/20 flex items-center justify-center flex-shrink-0">
-                      <TableIcon className="w-3 h-3 text-sky-400" />
+                      <TableIcon className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                     </div>
-                    <span className="truncate">{row.name}</span>
+                    <span className="truncate text-slate-900 dark:text-slate-100 font-medium">{row.name}</span>
                   </td>
 
                   {/* Schema */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-slate-400 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-slate-600 dark:text-slate-400 truncate">
                     {row.schema}
                   </td>
 
                   {/* Kind */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-slate-400 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-slate-600 dark:text-slate-400 truncate">
                     {row.kind}
                   </td>
 
                   {/* Owner */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-slate-400 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-slate-600 dark:text-slate-400 truncate">
                     {row.owner}
                   </td>
 
                   {/* Estimated Row (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-200">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-800 dark:text-slate-200">
                     {formatNumber(row.estimated_row)}
                   </td>
 
                   {/* Total Size (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-300 font-medium">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                     {row.total_size}
                   </td>
 
                   {/* Data Size (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-400">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-600 dark:text-slate-400">
                     {row.data_size}
                   </td>
 
                   {/* Index Size (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-400">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-600 dark:text-slate-400">
                     {row.index_size}
                   </td>
 
@@ -502,7 +502,7 @@ export const AllTableStatsView: React.FC = () => {
 
             {filteredStats.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-slate-500 font-sans">
+                <td colSpan={9} className="py-12 text-center text-slate-400 dark:text-slate-500 font-sans">
                   No tables matching "{filterText}"
                 </td>
               </tr>
@@ -512,21 +512,21 @@ export const AllTableStatsView: React.FC = () => {
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="h-6 px-3 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-mono select-none flex-shrink-0">
+      <div className="h-6 px-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono select-none flex-shrink-0">
         <div className="flex items-center space-x-3">
           <span>
-            Total Tables: <strong className="text-slate-200 font-bold">{filteredStats.length}</strong>
+            Total Tables: <strong className="text-slate-800 dark:text-slate-200 font-bold">{filteredStats.length}</strong>
           </span>
           <span>•</span>
           <span>
-            Selected: <strong className="text-sky-400 font-bold">{selectedRowName || '--'}</strong>
+            Selected: <strong className="text-sky-600 dark:text-sky-400 font-bold">{selectedRowName || '--'}</strong>
           </span>
         </div>
 
-        <div className="flex items-center space-x-3 text-slate-500">
+        <div className="flex items-center space-x-3 text-slate-400 dark:text-slate-500">
           <span>Double-click row to open table data</span>
           <span>•</span>
-          <span className="text-emerald-400 font-medium">Connected</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">Connected</span>
         </div>
       </div>
 

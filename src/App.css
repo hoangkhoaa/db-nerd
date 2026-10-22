@@ -392,7 +392,8 @@ html.light body,
 
 .border-chase-root {
   position: absolute;
-  inset: 0;
+  inset: -1px;
+  box-sizing: border-box;
   border-radius: inherit;
   padding: 1.5px;
   overflow: hidden;

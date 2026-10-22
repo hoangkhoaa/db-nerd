@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2, AlertCircle } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -169,6 +169,10 @@ export const SqlEditor: React.FC = () => {
   };
 
   const handleRun = () => {
+    if (activeConnection?.connectionStatus === 'failed') {
+      showToast('⚠️ Cannot run query: Database connection failed (Press ⌘K to fix)');
+      return;
+    }
     if (!viewRef.current) return;
     const currentCode = viewRef.current.state.doc.toString();
     runSqlQuery(activeTabId, currentCode);
@@ -367,18 +371,25 @@ export const SqlEditor: React.FC = () => {
       {/* Editor Top Toolbar */}
       <div className="h-10 bg-white dark:bg-slate-950/80 border-b border-slate-300 dark:border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
         <div className="flex items-center space-x-2 h-full">
-          <button
-            onClick={handleRun}
-            disabled={tabState.isExecuting}
-            className="relative overflow-hidden h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer leading-none"
-          >
-            {tabState.isExecuting && (
-              <BorderChase color="emerald" dual={true} speed="fast" borderWidth={2} glow={true} />
-            )}
-            <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-white' : ''}`} />
-            <span className="leading-none">{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
-            <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘↵</kbd>
-          </button>
+          {activeConnection?.connectionStatus === 'failed' ? (
+            <div className="h-7 px-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 rounded-lg text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>Disconnected (⌘K)</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleRun}
+              disabled={tabState.isExecuting}
+              className="relative overflow-hidden h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer leading-none"
+            >
+              {tabState.isExecuting && (
+                <BorderChase color="emerald" dual={true} speed="fast" borderWidth={2} glow={true} />
+              )}
+              <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-white' : ''}`} />
+              <span className="leading-none">{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
+              <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘↵</kbd>
+            </button>
+          )}
 
           <button
             onClick={handleFormat}

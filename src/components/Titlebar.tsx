@@ -10,10 +10,8 @@ import {
   Terminal,
   Database,
   Filter,
-  History,
   Sliders,
   XCircle,
-  Activity,
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
@@ -25,9 +23,7 @@ export const Titlebar = () => {
     activeConnection,
     setConnectionModalOpen,
     setDatabaseModalOpen,
-    setHistoryModalOpen,
     setRunningQueriesModalOpen,
-    setActiveTab,
     pendingEditsCount,
     commitTransaction,
     rollbackTransaction,
@@ -43,7 +39,10 @@ export const Titlebar = () => {
     isReloading,
     reloadData,
     setSettingsModalOpen,
+    sqlTabStates,
   } = useAppStore();
+
+  const isAnyQueryRunning = Object.values(sqlTabStates).some((s) => Boolean((s as any).isExecuting || (s as any).isRunning));
 
   const handleCommit = async () => {
     const res = await commitTransaction();
@@ -172,29 +171,21 @@ export const Titlebar = () => {
           </div>
         )}
 
-        {/* Sharp Unified Toolbar Segmented Cluster */}
-        <div className="flex items-center bg-slate-200/90 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-0.5 space-x-0.5 shadow-xs">
+        {/* Running Query Cancel Action (Only appears when queries are executing) */}
+        {isAnyQueryRunning && (
           <button
             onClick={() => setRunningQueriesModalOpen(true)}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition active:scale-95 cursor-pointer"
-            title="Running Queries & Cancel Process (⌘.)"
+            className="no-drag h-7 px-2.5 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
+            title="Active Query Running — Click to View / Cancel (⌘.)"
           >
-            <XCircle className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+            <XCircle className="w-3.5 h-3.5 animate-spin text-rose-500" />
+            <span className="font-mono text-[11px]">Cancel</span>
           </button>
-          <button
-            onClick={() => setActiveTab('stats')}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition active:scale-95 cursor-pointer"
-            title="Observability & Process Diagnostics"
-          >
-            <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-          </button>
-          <button
-            onClick={() => setHistoryModalOpen(true)}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 transition active:scale-95 cursor-pointer"
-            title="Query History & Logs (⌘H)"
-          >
-            <History className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-          </button>
+        )}
+
+        {/* Sharp Unified Toolbar Segmented Cluster (h-7 matching height) */}
+        <div className="flex items-center bg-slate-200/90 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-0.5 space-x-0.5 shadow-xs">
+          {/* Reload Data */}
           <button
             onClick={() => reloadData()}
             className={`no-drag relative overflow-hidden h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition active:scale-95 cursor-pointer ${
@@ -207,40 +198,42 @@ export const Titlebar = () => {
             )}
             <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'text-sky-600 dark:text-sky-400 animate-pulse' : ''}`} />
           </button>
+
+          {/* Preferences & Settings */}
           <button
             onClick={() => setSettingsModalOpen(true)}
             className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition active:scale-95 cursor-pointer"
-            title="Settings & Preferences (Theme, Fonts, Limits) (⌘,)"
+            title="Settings & Themes (⌘,)"
           >
             <Sliders className="w-3.5 h-3.5" />
           </button>
+
+          {/* Toggle Bottom Console / Query Log Panel */}
+          <button
+            onClick={toggleBottomPanel}
+            className={`no-drag h-6 w-6 flex items-center justify-center rounded transition active:scale-95 cursor-pointer ${
+              isBottomPanelOpen
+                ? 'bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 shadow-2xs font-bold'
+                : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+            }`}
+            title="Toggle Bottom Console Panel (⌘J)"
+          >
+            {isBottomPanelOpen ? <PanelBottomClose className="w-3.5 h-3.5" /> : <PanelBottom className="w-3.5 h-3.5" />}
+          </button>
+
+          {/* Toggle Right Inspector Panel */}
+          <button
+            onClick={toggleRightInspector}
+            className={`no-drag h-6 w-6 flex items-center justify-center rounded transition active:scale-95 cursor-pointer ${
+              isRightInspectorOpen
+                ? 'bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 shadow-2xs font-bold'
+                : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+            }`}
+            title="Toggle Right Inspector Panel (⌘I)"
+          >
+            {isRightInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
+          </button>
         </div>
-
-        {/* Toggle Bottom Console / Query Log Panel */}
-        <button
-          onClick={toggleBottomPanel}
-          className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
-            isBottomPanelOpen
-              ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/50 shadow-xs'
-              : 'bg-white/80 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-          title="Toggle Bottom Console Panel (⌘J)"
-        >
-          {isBottomPanelOpen ? <PanelBottomClose className="w-3.5 h-3.5" /> : <PanelBottom className="w-3.5 h-3.5" />}
-        </button>
-
-        {/* Toggle Right Inspector Panel */}
-        <button
-          onClick={toggleRightInspector}
-          className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
-            isRightInspectorOpen
-              ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/50 shadow-xs'
-              : 'bg-white/80 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-          title="Toggle Right Inspector Panel (⌘I)"
-        >
-          {isRightInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
-        </button>
       </div>
     </header>
   );

@@ -57,9 +57,6 @@ export const TableStructureView: React.FC = () => {
     });
   };
 
-  // Generate 25 zebra rows to fill viewport like TablePlus
-  const totalRowsCount = Math.max(25, filteredColumns.length);
-  const emptyRowsNeeded = Math.max(0, totalRowsCount - filteredColumns.length);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900/90 text-xs font-mono overflow-hidden select-none">
@@ -226,30 +223,7 @@ export const TableStructureView: React.FC = () => {
               );
             })}
 
-            {/* Empty Zebra Striped Rows (Matching TablePlus style) */}
-            {Array.from({ length: emptyRowsNeeded }).map((_, i) => {
-              const rowNum = filteredColumns.length + i + 1;
-              const isEven = (filteredColumns.length + i) % 2 === 0;
-
-              return (
-                <tr
-                  key={`empty-${i}`}
-                  className={`h-7 ${isEven ? 'bg-[#fcfdfd] dark:bg-slate-900/40' : 'bg-white dark:bg-slate-950/60'}`}
-                >
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40 text-center text-slate-400 dark:text-slate-700 select-none">
-                    {rowNum}
-                  </td>
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40"></td>
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40"></td>
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40"></td>
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40"></td>
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40"></td>
-                  <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40"></td>
-                  <td className="px-3 py-1"></td>
-                </tr>
-              );
-            })}
-          </tbody>
+            </tbody>
         </table>
       </div>
     </div>

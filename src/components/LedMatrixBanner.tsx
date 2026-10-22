@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
-import { AlertCircle, Zap, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { BorderChase } from './BorderChase';
 
 interface LedMatrixBannerProps {
@@ -14,7 +14,7 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     isConnecting,
     connectingPhase,
     networkSpeed,
-    triggerConnectingAnimation,
+    resolvedTheme,
   } = useAppStore();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -160,7 +160,12 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
             alpha = Math.min(1, alpha + pulse * 0.4);
           }
 
-          ctx.fillStyle = `rgba(${rCol}, ${gCol}, ${bCol}, ${Math.max(0.15, Math.min(1, alpha))})`;
+          const isLight = resolvedTheme === 'light';
+          const finalAlpha = isLight
+            ? Math.max(0.08, Math.min(0.22, alpha * 0.3))
+            : Math.max(0.15, Math.min(1, alpha));
+
+          ctx.fillStyle = `rgba(${rCol}, ${gCol}, ${bCol}, ${finalAlpha})`;
           ctx.beginPath();
           ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
           ctx.fill();
@@ -176,19 +181,21 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [env, isConnecting]);
+  }, [env, isConnecting, resolvedTheme]);
 
   return (
     <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0 select-none">
       {/* TablePlus Iconic LED Dot-Matrix Capsule */}
       <button
         onClick={onOpenDatabaseModal}
-        className={`no-drag relative h-7 px-3.5 rounded-full text-xs font-mono font-bold transition-all shadow-md active:scale-[0.98] flex items-center justify-between overflow-hidden cursor-pointer border max-w-xl group ${
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        className={`no-drag relative h-7 px-3.5 rounded-full text-xs font-mono font-semibold transition-all active:scale-[0.98] flex items-center justify-between overflow-hidden cursor-pointer border max-w-xl group shadow-2xs dark:shadow-md ${
           env === 'prod'
-            ? 'border-rose-500/60 shadow-rose-950/50 hover:border-rose-400'
+            ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-500/60 hover:border-rose-300 dark:hover:border-rose-400'
             : env === 'staging'
-            ? 'border-amber-500/60 shadow-amber-950/50 hover:border-amber-400'
-            : 'border-emerald-500/60 shadow-emerald-950/50 hover:border-emerald-400'
+            ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-500/60 hover:border-amber-300 dark:hover:border-amber-400'
+            : 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/60 hover:border-emerald-300 dark:hover:border-emerald-400'
         }`}
         title="Click to Switch Database or Change Schema (⌘O)"
       >
@@ -200,129 +207,100 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
         {/* HTML5 Canvas LED Dot Matrix Layer */}
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none opacity-90"
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
         />
 
         {/* Ambient Gradient Overlay for text legibility */}
         <div
           className={`absolute inset-0 pointer-events-none ${
             env === 'prod'
-              ? 'bg-gradient-to-r from-red-950/80 via-rose-950/40 to-red-950/80'
+              ? 'bg-gradient-to-r from-rose-50/90 via-rose-100/40 to-rose-50/90 dark:from-red-950/80 dark:via-rose-950/40 dark:to-red-950/80'
               : env === 'staging'
-              ? 'bg-gradient-to-r from-amber-950/80 via-yellow-950/40 to-amber-950/80'
-              : 'bg-gradient-to-r from-emerald-950/80 via-teal-950/40 to-emerald-950/80'
+              ? 'bg-gradient-to-r from-amber-50/90 via-amber-100/40 to-amber-50/90 dark:from-amber-950/80 dark:via-yellow-950/40 dark:to-amber-950/80'
+              : 'bg-gradient-to-r from-emerald-50/90 via-emerald-100/40 to-emerald-50/90 dark:from-emerald-950/80 dark:via-teal-950/40 dark:to-emerald-950/80'
           }`}
         />
 
         {/* Connecting High-Energy Scan Beam */}
         {isConnecting && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent blur-sm animate-[led-sweep_0.8s_linear_infinite]" />
+            <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent blur-sm animate-[led-sweep_0.8s_linear_infinite]" />
           </div>
         )}
 
         {/* Monospace High-Contrast Foreground Content */}
-        <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-white leading-none [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
+        <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-slate-800 dark:text-white leading-none dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
           {isConnecting ? (
             /* Connecting Telemetry Status */
             <div className="flex items-center space-x-2 truncate">
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-300" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500 dark:bg-sky-300" />
               </span>
-              <span className="font-extrabold text-sky-200 tracking-wide uppercase">
+              <span className="font-extrabold text-sky-700 dark:text-sky-200 tracking-wide uppercase">
                 {connectingPhase || 'Establishing TLSv1.3 Handshake...'}
               </span>
             </div>
           ) : (
             /* TablePlus Standard Formatted Connection Banner */
-            <div className="flex items-center space-x-1.5 truncate">
-              <span className="font-extrabold tracking-wider">{envTag}</span>
-              <span className="opacity-60">|</span>
+            <div className="flex items-center space-x-1.5 truncate text-[11px]">
+              <span className="font-extrabold tracking-wider text-slate-900 dark:text-white">{envTag}</span>
+              <span className="opacity-40">|</span>
               <span className="shrink-0">{engineLabel}</span>
-              <span className="opacity-60">:</span>
+              <span className="opacity-40">:</span>
               <span className="shrink-0">TLSv1.3</span>
-              <span className="opacity-60">:</span>
-              <span className="truncate max-w-[130px]">{activeConnection.name}</span>
-              <span className="opacity-60">:</span>
-              <span className="underline decoration-white/50 underline-offset-2 truncate max-w-[110px]">
+              <span className="opacity-40">:</span>
+              <span className="truncate max-w-[130px] font-bold text-slate-900 dark:text-slate-100">{activeConnection.name}</span>
+              <span className="opacity-40">:</span>
+              <span className="underline decoration-slate-400/50 dark:decoration-white/50 underline-offset-2 truncate max-w-[110px]">
                 {activeConnection.database || 'postgres'}
               </span>
-              <span className="opacity-60">:</span>
-              <span className="truncate max-w-[120px]">public.{selectedTable}</span>
+              <span className="opacity-40">:</span>
+              <span className="truncate max-w-[120px] text-slate-600 dark:text-slate-300">public.{selectedTable}</span>
             </div>
           )}
 
-          {/* Right Speed Meter (Exact TablePlus 355 KB/s display) */}
+          {/* Right Speed Meter */}
           <div className="flex items-center space-x-1.5 shrink-0 pl-2">
-            <span className="text-[11px] font-mono font-bold text-white/90 bg-black/35 px-1.5 py-0.5 rounded leading-none border border-white/10 shadow-inner">
+            <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-white/90 bg-white/80 dark:bg-black/35 px-1.5 py-0.5 rounded leading-none border border-slate-200 dark:border-white/10 shadow-2xs">
               {speedDisplay}
             </span>
           </div>
         </div>
       </button>
 
-      {/* TablePlus Iconic Orange Status / Alert Icon on the right */}
-      <div className="relative">
-        <button
-          onClick={() => triggerConnectingAnimation(activeConnection.id)}
-          onMouseEnter={() => setShowTooltip(true)}
-          onMouseLeave={() => setShowTooltip(false)}
-          className={`no-drag relative h-7 w-7 flex items-center justify-center rounded-full transition-all cursor-pointer overflow-hidden ${
-            isConnecting
-              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
-              : env === 'prod'
-              ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/40 hover:scale-105 active:scale-95'
-              : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/80 hover:scale-105 active:scale-95'
-          }`}
-          title="Connection Health & Latency Telemetry (Click to Re-test)"
-        >
-          {isConnecting && (
-            <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
-          )}
-          {isConnecting ? (
-            <Zap className="w-3.5 h-3.5 fill-current" />
-          ) : (
-            <AlertCircle className="w-3.5 h-3.5" />
-          )}
-        </button>
-
-        {/* Hover Telemetry Quick Popover */}
-        {showTooltip && (
-          <div className="absolute top-9 right-0 w-64 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-3 z-50 text-[11px] font-mono text-slate-300 animate-in fade-in zoom-in-95 duration-100">
-            <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 mb-2">
-              <span className="font-bold text-slate-100 flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Connection Health</span>
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
-                ONLINE
-              </span>
+      {/* Hover Telemetry Quick Popover */}
+      {showTooltip && (
+        <div className="absolute top-9 left-1/2 -translate-x-1/2 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-2xl p-3 z-50 text-[11px] font-mono text-slate-700 dark:text-slate-300 animate-in fade-in zoom-in-95 duration-100">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-800 mb-2">
+            <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Connection Health</span>
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold">
+              ONLINE
+            </span>
+          </div>
+          <div className="space-y-1 text-[10px]">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Latency:</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">0.8ms (Direct Socket)</span>
             </div>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Latency:</span>
-                <span className="text-emerald-400 font-bold">0.8ms (Direct Socket)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Cipher:</span>
-                <span className="text-slate-300">TLS_AES_256_GCM</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Buffer Hit Ratio:</span>
-                <span className="text-sky-400 font-bold">99.8%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Throughput:</span>
-                <span className="text-amber-300 font-bold">{speedDisplay}</span>
-              </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Cipher:</span>
+              <span className="text-slate-700 dark:text-slate-300">TLS_AES_256_GCM</span>
             </div>
-            <div className="mt-2 pt-1.5 border-t border-slate-800 text-[10px] text-center text-sky-400 font-sans cursor-pointer hover:underline">
-              ⚡ Click to re-ping connection
+            <div className="flex justify-between">
+              <span className="text-slate-500">Buffer Hit Ratio:</span>
+              <span className="text-sky-600 dark:text-sky-400 font-bold">99.8%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Throughput:</span>
+              <span className="text-amber-600 dark:text-amber-300 font-bold">{speedDisplay}</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

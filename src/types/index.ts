@@ -68,10 +68,13 @@ export interface ConnectionProfile {
   password?: string;
   useSsh?: boolean;
   sshHost?: string;
+  sshUser?: string;
   accountIdentifier?: string;
   warehouse?: string;
   active: boolean;
   latencyMs: number;
+  connectionStatus?: 'connected' | 'connecting' | 'failed';
+  lastError?: string;
 }
 
 export interface FunctionItem {

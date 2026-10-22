@@ -17,6 +17,8 @@ import {
   ArrowUpAZ,
   ArrowDownZA,
   Columns,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { GridRow } from '../types';
 import { TableContextMenu } from './TableContextMenu';
@@ -53,6 +55,9 @@ export const TableGrid: React.FC = () => {
     setFilterOrderByText,
     setSelectedStructureColumn,
     isReloading,
+    activeConnection,
+    setConnectionModalOpen,
+    triggerConnectingAnimation,
   } = useAppStore();
 
   const schemaInfo = getTableSchema(selectedTable);
@@ -138,7 +143,6 @@ export const TableGrid: React.FC = () => {
   };
 
   const activeCols = schemaInfo.columns.filter((c) => visibleColumns.has(c.name));
-  const emptyRowsCount = Math.max(0, 20 - rows.length);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-900/60 overflow-hidden relative">
@@ -160,6 +164,46 @@ export const TableGrid: React.FC = () => {
               <div className="text-[11px] text-slate-400 truncate max-w-[210px]">
                 Fetching schema & rows for {selectedTable}...
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* If connection is failed, block table interaction and show prominent state */}
+      {activeConnection?.connectionStatus === 'failed' && (
+        <div className="absolute inset-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-6 select-none animate-in fade-in duration-200">
+          <div className="max-w-md w-full bg-slate-50 dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 shadow-2xl text-center flex flex-col items-center ring-1 ring-rose-500/10">
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-500 mb-4 shadow-sm">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
+              Database Connection Failed
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+              Cannot reach <span className="font-semibold text-slate-800 dark:text-slate-200">{activeConnection.name}</span> ({activeConnection.host}:{activeConnection.port})
+            </p>
+            {activeConnection.lastError && (
+              <div className="w-full bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/40 rounded-xl p-3 mb-4 text-[11px] font-mono text-rose-700 dark:text-rose-300 text-left break-all">
+                {activeConnection.lastError}
+              </div>
+            )}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-5">
+              Tasks and data queries are blocked until this connection is verified.
+            </p>
+            <div className="flex items-center space-x-3 w-full justify-center">
+              <button
+                onClick={() => setConnectionModalOpen(true)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+              >
+                Edit Connection (⌘K)
+              </button>
+              <button
+                onClick={() => triggerConnectingAnimation(activeConnection.id)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center space-x-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Connection</span>
+              </button>
             </div>
           </div>
         </div>
@@ -342,25 +386,6 @@ export const TableGrid: React.FC = () => {
                 );
               })}
 
-              {/* Zebra Empty Rows (matching TablePlus aesthetic) */}
-              {Array.from({ length: emptyRowsCount }).map((_, i) => {
-                const rowNum = rows.length + i + 1;
-                const isEven = (rows.length + i) % 2 === 0;
-
-                return (
-                  <tr
-                    key={`empty-${i}`}
-                    className={`h-7 ${isEven ? 'bg-slate-50/60 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-950/60'}`}
-                  >
-                    <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40 text-center text-slate-400 dark:text-slate-700 select-none">
-                      {rowNum}
-                    </td>
-                    {activeCols.map((col) => (
-                      <td key={col.name} className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40" />
-                    ))}
-                  </tr>
-                );
-              })}
             </tbody>
           </table>
         </div>

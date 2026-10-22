@@ -16,9 +16,13 @@ import {
   Copy,
   FileCode,
   FolderOpen,
+  Link,
+  AlertCircle,
 } from 'lucide-react';
 import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
 import { BorderChase } from './BorderChase';
+import { parseConnectionUrl, serializeConnectionUrl } from '../utils/connectionUrl';
+import { testRealConnection } from '../services/dbService';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -85,6 +89,9 @@ export const ConnectionModal = () => {
   const [selectedConnId, setSelectedConnId] = useState<string | null>(activeConnection?.id || null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [isImportingUrl, setIsImportingUrl] = useState(false);
+  const [importUrlInput, setImportUrlInput] = useState('');
+  const [testError, setTestError] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [showAllConnectors, setShowAllConnectors] = useState(false);
   const [connectorSearch, setConnectorSearch] = useState('');
@@ -215,32 +222,108 @@ export const ConnectionModal = () => {
     }));
   };
 
-  const handleTestConnection = () => {
-    setIsTesting(true);
-    setTestSuccess(false);
-    setTimeout(() => {
-      setIsTesting(false);
-      setTestSuccess(true);
-      setTestLatency(+(Math.random() * 2 + 0.8).toFixed(1));
-    }, 380);
+  const handleImportFromUrl = () => {
+    try {
+      if (!importUrlInput.trim()) return;
+      const parsed = parseConnectionUrl(importUrlInput.trim());
+      const targetGroupId = connectionGroups[0]?.id || 'group-prod';
+      const newProfile: Omit<ConnectionProfile, 'id'> = {
+        name: parsed.name || `${parsed.database} (${parsed.host})`,
+        groupId: targetGroupId,
+        engine: parsed.engine,
+        env: parsed.env,
+        host: parsed.host,
+        port: parsed.port,
+        database: parsed.database,
+        username: parsed.username,
+        password: parsed.password || '',
+        useSsh: parsed.useSsh || false,
+        sshHost: parsed.sshHost || '',
+        sshUser: parsed.sshUser || '',
+        accountIdentifier: '',
+        warehouse: '',
+        active: false,
+        latencyMs: 1.0,
+      };
+
+      const created = addConnection(newProfile);
+      setSelectedConnId(created.id);
+      setIsCreatingNew(false);
+      setIsImportingUrl(false);
+      setImportUrlInput('');
+      setTestSuccess(false);
+      setTestError(null);
+      showToast(`Imported connection: ${created.name}`);
+    } catch (err: any) {
+      alert(`Failed to parse connection URL: ${err.message}`);
+    }
   };
 
-  const handleSaveAndConnect = () => {
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestSuccess(false);
+    setTestError(null);
+    try {
+      const profileToTest: ConnectionProfile = {
+        ...formData,
+        id: selectedConnId || 'temp-test-id',
+      };
+      const res = await testRealConnection(profileToTest);
+      setIsTesting(false);
+      if (res.success) {
+        setTestSuccess(true);
+        setTestLatency(res.latency_ms || 1.2);
+        setTestError(null);
+      } else {
+        setTestSuccess(false);
+        setTestError(res.message || 'Connection failed: Host unreachable');
+      }
+    } catch (err: any) {
+      setIsTesting(false);
+      setTestSuccess(false);
+      setTestError(String(err?.message || err || 'Connection failed'));
+    }
+  };
+
+  const handleSaveAndConnect = async () => {
     if (!formData.name.trim()) {
       alert('Please enter a valid connection name');
       return;
     }
 
+    let status: 'connected' | 'connecting' | 'failed' = 'connected';
+    let lastError: string | undefined = undefined;
+
+    if (testError) {
+      status = 'failed';
+      lastError = testError;
+    } else if (!testSuccess) {
+      setIsTesting(true);
+      const res = await testRealConnection({ ...formData, id: selectedConnId || 'temp' });
+      setIsTesting(false);
+      if (res.success) {
+        status = 'connected';
+      } else {
+        status = 'failed';
+        lastError = res.message;
+        setTestError(res.message);
+        setTestSuccess(false);
+        showToast(`⚠️ Connection failed: ${res.message}`);
+      }
+    }
+
+    const payload = {
+      ...formData,
+      connectionStatus: status,
+      lastError,
+      active: true,
+    };
+
     if (isCreatingNew) {
-      const created = addConnection({
-        ...formData,
-        active: true,
-      });
+      const created = addConnection(payload);
       switchActiveConnection(created.id);
     } else if (selectedConnId) {
-      updateConnection(selectedConnId, {
-        ...formData,
-      });
+      updateConnection(selectedConnId, payload);
       switchActiveConnection(selectedConnId);
     }
 
@@ -420,7 +503,10 @@ export const ConnectionModal = () => {
               <div className="flex items-center space-x-1">
                 {/* New Group Button */}
                 <button
-                  onClick={() => setIsCreatingGroup(!isCreatingGroup)}
+                  onClick={() => {
+                    setIsCreatingGroup(!isCreatingGroup);
+                    setIsImportingUrl(false);
+                  }}
                   className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
                     isCreatingGroup ? 'bg-indigo-500/30 text-indigo-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
@@ -429,9 +515,27 @@ export const ConnectionModal = () => {
                   <FolderPlus className="w-3.5 h-3.5" />
                 </button>
 
+                {/* Import URL Button */}
+                <button
+                  onClick={() => {
+                    setIsImportingUrl(!isImportingUrl);
+                    setIsCreatingGroup(false);
+                  }}
+                  className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
+                    isImportingUrl ? 'bg-amber-500/30 text-amber-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Import from Connection URL (TablePlus / Postgres / MySQL)"
+                >
+                  <Link className="w-3.5 h-3.5" />
+                </button>
+
                 {/* New Connection Button */}
                 <button
-                  onClick={() => handleStartNewConnection()}
+                  onClick={() => {
+                    handleStartNewConnection();
+                    setIsImportingUrl(false);
+                    setIsCreatingGroup(false);
+                  }}
                   className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
                     isCreatingNew ? 'bg-sky-500/30 text-sky-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
@@ -439,6 +543,48 @@ export const ConnectionModal = () => {
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
+              </div>
+            </div>
+
+            {/* Smooth Collapsible Inline Import URL Card */}
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-250 ease-out ${
+                isImportingUrl ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="p-3 bg-slate-900 border border-amber-500/40 rounded-xl space-y-2 text-xs shadow-lg mb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-300 flex items-center space-x-1">
+                      <Link className="w-3.5 h-3.5" />
+                      <span>Import Connection URL</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsImportingUrl(false)}
+                      className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div>
+                    <textarea
+                      placeholder="Paste postgresql://, mysql:// or postgresql+ssh://..."
+                      value={importUrlInput}
+                      onChange={(e) => setImportUrlInput(e.target.value)}
+                      rows={3}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 placeholder-slate-500 font-mono text-[10px] focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleImportFromUrl}
+                    disabled={!importUrlInput.trim()}
+                    className="w-full py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    Parse & Import Profile
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1049,11 +1195,37 @@ export const ConnectionModal = () => {
               )}
               {isTesting ? 'Pinging host...' : 'Test Connection'}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const currentProfile: ConnectionProfile = {
+                  ...formData,
+                  id: selectedConnId || 'temp',
+                };
+                const url = serializeConnectionUrl(currentProfile);
+                navigator.clipboard.writeText(url);
+                showToast('📋 Copied Connection URL');
+              }}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs rounded-xl transition active:scale-95 cursor-pointer flex items-center space-x-1.5"
+              title="Copy connection as TablePlus / standard URL"
+            >
+              <Link className="w-3.5 h-3.5 text-amber-400" />
+              <span>Copy as URL</span>
+            </button>
+
             {testSuccess && (
               <span className="text-xs text-emerald-400 font-semibold flex items-center space-x-1.5 animate-in fade-in duration-200">
                 <HeartbeatDot color="green" size="xs" showWave={true} />
                 <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Connected in {testLatency}ms (TLSv1.3 Handshake OK)</span>
+              </span>
+            )}
+
+            {testError && (
+              <span className="text-xs text-rose-400 font-medium flex items-center space-x-1.5 animate-in fade-in duration-200 max-w-sm truncate" title={testError}>
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                <span className="truncate">{testError}</span>
               </span>
             )}
           </div>
@@ -1110,6 +1282,15 @@ export const ConnectionModal = () => {
             }}
           />
           <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<Link className="w-3.5 h-3.5 text-amber-300" />}
+            label="Copy as URL (TablePlus format)"
+            onClick={() => {
+              const url = serializeConnectionUrl(targetConn);
+              navigator.clipboard.writeText(url);
+              showToast(`Copied URL for "${targetConn.name}"`);
+            }}
+          />
           <ContextMenuItem
             icon={<FileCode className="w-3.5 h-3.5 text-slate-300" />}
             label="Copy Connection URI"

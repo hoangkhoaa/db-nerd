@@ -108,22 +108,26 @@ export function App() {
       // ⌘T or ⌘E: New SQL Query Tab (TablePlus standard)
       if ((e.metaKey || e.ctrlKey) && (e.key === 't' || e.key === 'T' || e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
+        e.stopPropagation();
         openNewQueryTab();
       }
       // ⌘W: Close Active Tab
-      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'W')) {
         e.preventDefault();
+        e.stopPropagation();
         const activeId = useAppStore.getState().activeTabId;
         closeTab(activeId);
       }
       // ⌘K: Connection Manager
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
+        e.stopPropagation();
         setConnectionModalOpen(true);
       }
       // ⌘H: Query History
-      if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'h' || e.key === 'H')) {
         e.preventDefault();
+        e.stopPropagation();
         setHistoryModalOpen(true);
       }
       // ⌘S: Commit Transaction
@@ -159,8 +163,8 @@ export function App() {
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
   // Synchronize Theme Mode & Custom Themes (Monokai, Dracula, One Dark, Material, etc.)
@@ -642,9 +646,11 @@ export function App() {
 
       {/* Global Floating Toast */}
       {toastMessage && (
-        <div className="fixed top-14 right-6 z-50 bg-emerald-500 text-slate-950 font-bold px-3.5 py-2 rounded-xl shadow-2xl flex items-center space-x-2 text-xs border border-emerald-400/40 animate-in fade-in slide-in-from-top-3 duration-150 pointer-events-none select-none">
-          <CheckCircle2 className="w-4 h-4 text-slate-950 flex-shrink-0" />
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-12 right-6 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-800 dark:text-slate-100 font-medium px-4 py-2.5 rounded-xl shadow-xl flex items-center space-x-2.5 text-xs border border-slate-200/90 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 pointer-events-none select-none ring-1 ring-black/5">
+          <div className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+          </div>
+          <span className="font-sans">{toastMessage}</span>
         </div>
       )}
 

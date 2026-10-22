@@ -136,12 +136,12 @@ export const AllFunctionsView: React.FC = () => {
 
   return (
     <div
-      className="flex-1 flex flex-col bg-slate-950 text-slate-200 select-none overflow-hidden font-sans outline-none"
+      className="flex-1 flex flex-col bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-none overflow-hidden font-sans outline-none"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       {/* Top Filter and Actions Bar */}
-      <div className="h-9 px-3 bg-slate-900/90 border-b border-slate-800/90 flex items-center justify-between flex-shrink-0 text-xs">
+      <div className="h-9 px-3 bg-slate-50/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800/90 flex items-center justify-between flex-shrink-0 text-xs">
         <div className="flex items-center space-x-2.5">
           <div className="relative w-64">
             <input
@@ -149,16 +149,16 @@ export const AllFunctionsView: React.FC = () => {
               placeholder={`Filter ${filteredFunctions.length} functions in ${schemaLabel}...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="w-full bg-slate-950/80 border border-slate-800 rounded px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 pl-7 transition-colors font-sans"
+              className="w-full bg-white dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 rounded px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500 pl-7 transition-colors font-sans shadow-2xs"
             />
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2 top-2" />
           </div>
 
-          <div className="text-[11px] text-slate-400 font-mono flex items-center space-x-1.5">
-            <span className="font-semibold text-amber-400">{filteredFunctions.length}</span>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center space-x-1.5">
+            <span className="font-semibold text-amber-600 dark:text-amber-400">{filteredFunctions.length}</span>
             <span>functions</span>
             <span>•</span>
-            <span className="text-slate-400 font-medium">Schema: <span className="text-slate-200 font-semibold">{schemaLabel}</span></span>
+            <span className="text-slate-500 dark:text-slate-400 font-medium">Schema: <span className="text-slate-800 dark:text-slate-200 font-semibold">{schemaLabel}</span></span>
           </div>
         </div>
 
@@ -166,27 +166,27 @@ export const AllFunctionsView: React.FC = () => {
           <button
             onClick={() => fetchFunctions()}
             disabled={loading}
-            className="relative overflow-hidden h-6 px-2.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1.5 text-xs transition active:scale-95 border border-slate-700/60"
+            className="relative overflow-hidden h-6 px-2.5 rounded bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white flex items-center space-x-1.5 text-xs transition active:scale-95 border border-slate-300/80 dark:border-slate-700/60 shadow-2xs"
             title="Refresh Functions List"
           >
             {loading && (
               <BorderChase color="amber" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-amber-400' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-amber-500 dark:text-amber-400' : ''}`} />
             <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
 
-      {/* Functions Data Grid (TablePlus Pixel-Perfect Recreation) */}
-      <div className="flex-1 overflow-auto bg-slate-950">
+      {/* Functions Data Grid */}
+      <div className="flex-1 overflow-auto bg-white dark:bg-slate-950">
         <table className="w-full border-collapse text-left font-mono text-xs">
           {/* Header Row */}
-          <thead className="sticky top-0 z-10 bg-slate-900/95 border-b border-slate-800 backdrop-blur shadow-xs">
-            <tr className="text-slate-400 font-semibold text-[11px] tracking-wide select-none">
+          <thead className="sticky top-0 z-10 bg-slate-100/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur shadow-2xs">
+            <tr className="text-slate-600 dark:text-slate-400 font-semibold text-[11px] tracking-wide select-none">
               <th
                 onClick={() => handleSort('name')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[280px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[280px]"
               >
                 <div className="flex items-center justify-between">
                   <span>name</span>
@@ -281,7 +281,7 @@ export const AllFunctionsView: React.FC = () => {
           </thead>
 
           {/* Grid Rows */}
-          <tbody className="divide-y divide-slate-900/80">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-900/80">
             {filteredFunctions.map((fn, idx) => {
               const isSelected = selectedFunctionName === fn.name;
 
@@ -299,52 +299,52 @@ export const AllFunctionsView: React.FC = () => {
                   }}
                   className={`cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-sky-600/30 text-white font-semibold'
+                      ? 'bg-sky-100/90 dark:bg-sky-600/30 text-sky-950 dark:text-white font-semibold'
                       : idx % 2 === 0
-                      ? 'bg-slate-950/90 text-slate-300 hover:bg-slate-900/60'
-                      : 'bg-slate-900/30 text-slate-300 hover:bg-slate-900/60'
+                      ? 'bg-white dark:bg-slate-950/90 text-slate-800 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-900/60'
+                      : 'bg-slate-50/70 dark:bg-slate-900/30 text-slate-800 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-900/60'
                   }`}
                 >
                   {/* Name with orange {} icon */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 flex items-center space-x-2 truncate">
-                    <div className="w-4 h-4 rounded bg-amber-500/10 border border-amber-400/30 flex items-center justify-center flex-shrink-0 text-amber-400 font-mono font-bold text-[10px]">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 flex items-center space-x-2 truncate">
+                    <div className="w-4 h-4 rounded bg-amber-500/10 border border-amber-400/30 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400 font-mono font-bold text-[10px]">
                       {'{ }'}
                     </div>
-                    <span className="truncate">{fn.name}</span>
+                    <span className="truncate text-slate-900 dark:text-slate-100 font-medium">{fn.name}</span>
                   </td>
 
                   {/* Schema */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-slate-400 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-slate-600 dark:text-slate-400 truncate">
                     {fn.schema}
                   </td>
 
                   {/* Kind */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-slate-400 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-slate-600 dark:text-slate-400 truncate">
                     {fn.kind}
                   </td>
 
                   {/* Owner */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-slate-400 truncate">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-slate-600 dark:text-slate-400 truncate">
                     {fn.owner}
                   </td>
 
                   {/* Estimated Row (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-500">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-500">
                     {fn.estimated_row || '--'}
                   </td>
 
                   {/* Total Size (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-500">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-500">
                     {fn.total_size || '--'}
                   </td>
 
                   {/* Data Size (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-500">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-500">
                     {fn.data_size || '--'}
                   </td>
 
                   {/* Index Size (Right-Aligned) */}
-                  <td className="py-1 px-3 border-r border-slate-900/80 text-right font-mono text-slate-500">
+                  <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-900/80 text-right font-mono text-slate-500">
                     {fn.index_size || '--'}
                   </td>
 
@@ -358,7 +358,7 @@ export const AllFunctionsView: React.FC = () => {
 
             {filteredFunctions.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-slate-500 font-sans">
+                <td colSpan={9} className="py-12 text-center text-slate-400 dark:text-slate-500 font-sans">
                   No functions matching "{filterText}"
                 </td>
               </tr>
@@ -368,21 +368,21 @@ export const AllFunctionsView: React.FC = () => {
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="h-6 px-3 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-mono select-none flex-shrink-0">
+      <div className="h-6 px-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono select-none flex-shrink-0">
         <div className="flex items-center space-x-3">
           <span>
-            Total Functions: <strong className="text-slate-200 font-bold">{filteredFunctions.length}</strong>
+            Total Functions: <strong className="text-slate-800 dark:text-slate-200 font-bold">{filteredFunctions.length}</strong>
           </span>
           <span>•</span>
           <span>
-            Selected: <strong className="text-amber-400 font-bold">{selectedFunctionName || '--'}</strong>
+            Selected: <strong className="text-amber-600 dark:text-amber-400 font-bold">{selectedFunctionName || '--'}</strong>
           </span>
         </div>
 
-        <div className="flex items-center space-x-3 text-slate-500">
+        <div className="flex items-center space-x-3 text-slate-400 dark:text-slate-500">
           <span>Double-click to view routine definition</span>
           <span>•</span>
-          <span className="text-emerald-400 font-medium">Instance Active</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">Instance Active</span>
         </div>
       </div>
 

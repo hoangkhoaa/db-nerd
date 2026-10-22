@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Plus,
   Terminal,
-  Clock,
   SlidersHorizontal,
   CheckCircle2,
   Copy,
@@ -69,6 +68,7 @@ export const Sidebar = () => {
   const {
     selectedTable,
     setSelectedTable,
+    setSelectedRowData,
     openTableGridTab,
     openTableSchemaTab,
     openAllTableStatsTab,
@@ -96,6 +96,8 @@ export const Sidebar = () => {
   const [searchFilter, setSearchFilter] = useState('');
   const [isFunctionsOpen, setIsFunctionsOpen] = useState(false);
   const [isTablesOpen, setIsTablesOpen] = useState(true);
+  const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
+  const [allHistoryExpanded, setAllHistoryExpanded] = useState(false);
 
   // Context Menu state
   const [tableContextPos, setTableContextPos] = useState<ContextMenuPosition | null>(null);
@@ -261,8 +263,12 @@ export const Sidebar = () => {
                       <div
                         key={fn.name}
                         onClick={() => {
+                          setSelectedRowData(fn);
+                        }}
+                        onDoubleClick={() => {
                           openAllFunctionsTab();
                         }}
+                        title="Click to select • Double-click to open in new tab"
                         className="flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group hover:bg-slate-200/80 dark:hover:bg-slate-900/70 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                       >
                         <div className="flex items-center space-x-2 truncate">
@@ -320,8 +326,11 @@ export const Sidebar = () => {
                         key={tbl.name}
                         onClick={() => {
                           setSelectedTable(tbl.name);
+                        }}
+                        onDoubleClick={() => {
                           openTableGridTab(tbl.name);
                         }}
+                        title="Click to select • Double-click to open in new tab"
                         onContextMenu={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -363,7 +372,7 @@ export const Sidebar = () => {
             {filteredQueries.map((q) => (
               <div
                 key={q.id}
-                onClick={() => openNewQueryTab(q.sql)}
+                onDoubleClick={() => openNewQueryTab(q.sql)}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -371,7 +380,7 @@ export const Sidebar = () => {
                   setTargetQuery({ id: q.id, title: q.title, sql: q.sql });
                 }}
                 className="p-2 rounded-lg bg-white dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900/90 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
-                title="Click to open query (Right click for options)"
+                title="Double-click to open query tab (Right click for options)"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1.5 truncate">
@@ -392,38 +401,83 @@ export const Sidebar = () => {
 
         {/* Tab 3: Execution History */}
         {sidebarTab === 'history' && (
-          <div className="space-y-1">
-            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Recent Executions ({filteredHistory.length})
-            </div>
-            {filteredHistory.map((h) => (
-              <div
-                key={h.id}
-                onClick={() => openNewQueryTab(h.sql)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setQueryContextPos({ x: e.clientX, y: e.clientY });
-                  setTargetQuery({ id: h.id, title: `Query (${h.durationMs}ms)`, sql: h.sql });
-                }}
-                className="p-2 rounded-lg bg-white dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900/90 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
-                title="Click to open query (Right click for options)"
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between px-1.5 py-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Recent Executions ({filteredHistory.length})
+              </span>
+              <button
+                onClick={() => setAllHistoryExpanded(!allHistoryExpanded)}
+                className="text-[10px] text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-sans font-medium cursor-pointer"
               >
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
-                  <div className="flex items-center space-x-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-emerald-700 dark:text-emerald-400 font-bold">{h.durationMs}ms</span>
+                {allHistoryExpanded ? 'Collapse All' : 'Expand All'}
+              </button>
+            </div>
+            {filteredHistory.map((h) => {
+              const isExpanded = allHistoryExpanded || !!expandedHistory[h.id];
+
+              return (
+                <div
+                  key={h.id}
+                  onDoubleClick={() => openNewQueryTab(h.sql)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setQueryContextPos({ x: e.clientX, y: e.clientY });
+                    setTargetQuery({ id: h.id, title: `Query (${h.durationMs}ms)`, sql: h.sql });
+                  }}
+                  className="p-2.5 rounded-xl bg-white dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900/90 border border-slate-200 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-all space-y-1.5 group shadow-2xs"
+                  title="Double-click to open in new SQL tab • Click expand to view full query"
+                >
+                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                    <div className="flex items-center space-x-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-emerald-700 dark:text-emerald-400 font-bold">{h.durationMs}ms</span>
+                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <span className="text-slate-400 dark:text-slate-500">{h.timestamp.replace('Today at ', '')}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(h.sql);
+                          showToast('📋 Copied SQL query to clipboard');
+                        }}
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                        title="Copy SQL Query"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedHistory((prev) => ({ ...prev, [h.id]: !prev[h.id] }));
+                        }}
+                        className="px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-[10px] text-sky-600 dark:text-sky-400 font-sans font-medium transition"
+                        title={isExpanded ? "Collapse full query" : "Expand to view full query"}
+                      >
+                        {isExpanded ? 'Collapse' : 'Expand'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-2.5 h-2.5 text-slate-400" />
-                    <span>{h.timestamp.replace('Today at ', '')}</span>
+
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedHistory((prev) => ({ ...prev, [h.id]: !prev[h.id] }));
+                    }}
+                    className={`font-mono text-[11px] text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-slate-950/70 p-2 rounded-lg border border-slate-200 dark:border-slate-800/80 transition-all ${
+                      isExpanded
+                        ? 'whitespace-pre-wrap break-words max-h-72 overflow-y-auto select-text font-normal'
+                        : 'line-clamp-2 cursor-pointer'
+                    }`}
+                  >
+                    {h.sql}
                   </div>
                 </div>
-                <div className="font-mono text-[11px] text-slate-800 dark:text-slate-300 line-clamp-2 leading-relaxed bg-slate-50 dark:bg-slate-950/60 p-1.5 rounded border border-slate-200 dark:border-slate-800/80">
-                  {h.sql}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -445,6 +499,13 @@ export const Sidebar = () => {
           className="flex items-center space-x-1.5 px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-800/80 rounded text-[11px] font-mono text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition group border border-transparent hover:border-slate-300 dark:hover:border-slate-700/60 cursor-pointer"
           title="Switch Database or Schema (⌘O)"
         >
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+              activeConnection.connectionStatus === 'failed'
+                ? 'bg-rose-500 shadow-xs shadow-rose-500/50'
+                : 'bg-emerald-500 shadow-xs shadow-emerald-500/50'
+            }`}
+          />
           <span className="font-semibold text-sky-600 dark:text-sky-400 truncate max-w-[120px]">
             {activeConnection.database || 'postgres'}
           </span>
