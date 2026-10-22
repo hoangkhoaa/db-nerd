@@ -10,30 +10,38 @@
         try {
           var params = new URLSearchParams(window.location.search);
           var urlTheme = params.get('theme');
-          var theme = urlTheme;
-          if (!theme) {
+          var appTheme = urlTheme;
+          if (!appTheme) {
             var raw = localStorage.getItem('db_nerd_user_settings');
-            if (raw) theme = JSON.parse(raw).themeMode;
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              appTheme = parsed.appTheme || (parsed.themeMode === 'light' ? 'default-light' : 'default-dark');
+            }
           }
-          if (theme === 'light') {
+          if (appTheme === 'light' || appTheme === 'default-light') {
             document.documentElement.classList.remove('dark');
             document.documentElement.classList.add('light');
-            document.documentElement.setAttribute('data-theme', 'light');
-          } else if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'default-light');
+          } else if (appTheme === 'dark' || appTheme === 'default-dark') {
             document.documentElement.classList.remove('light');
             document.documentElement.classList.add('dark');
-            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.setAttribute('data-theme', 'default-dark');
+          } else if (appTheme && appTheme !== 'auto') {
+            // Custom developer themes (Monokai, Dracula, One Dark, etc.)
+            document.documentElement.classList.remove('light');
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', appTheme);
           } else {
             // Auto
             var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (isDark) {
               document.documentElement.classList.remove('light');
               document.documentElement.classList.add('dark');
-              document.documentElement.setAttribute('data-theme', 'dark');
+              document.documentElement.setAttribute('data-theme', 'default-dark');
             } else {
               document.documentElement.classList.remove('dark');
               document.documentElement.classList.add('light');
-              document.documentElement.setAttribute('data-theme', 'light');
+              document.documentElement.setAttribute('data-theme', 'default-light');
             }
           }
         } catch (e) {}

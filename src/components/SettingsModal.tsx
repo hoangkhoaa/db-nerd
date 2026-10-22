@@ -12,14 +12,17 @@ import {
   Database,
   Sparkles,
   ShieldAlert,
+  Palette,
 } from 'lucide-react';
 import { RowDensity } from '../types';
+import { APP_THEMES } from '../themes/themeRegistry';
 
 export const SettingsModal: React.FC = () => {
   const {
     settings,
     updateSettings,
     setThemeMode,
+    setAppTheme,
     isSettingsModalOpen,
     setSettingsModalOpen,
     showToast,
@@ -49,7 +52,7 @@ export const SettingsModal: React.FC = () => {
       onClick={() => setSettingsModalOpen(false)}
     >
       <div
-        className="w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10 flex flex-col animate-in zoom-in-95 duration-150"
+        className="w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10 flex flex-col animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Titlebar */}
@@ -109,7 +112,7 @@ export const SettingsModal: React.FC = () => {
         </div>
 
         {/* Tab Body */}
-        <div className="p-6 overflow-y-auto max-h-[440px] space-y-6 text-xs">
+        <div className="p-6 overflow-y-auto max-h-[580px] space-y-6 text-xs">
           {activeTab === 'appearance' && (
             <div className="space-y-6">
               {/* Theme Mode Option */}
@@ -190,6 +193,91 @@ export const SettingsModal: React.FC = () => {
                       </span>
                     )}
                   </button>
+                </div>
+              </div>
+
+              {/* Developer Themes & Syntax Highlighting Showcase */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1.5 bg-amber-500/15 text-amber-400 rounded-lg">
+                      <Palette className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-200">Editor & App Themes</h3>
+                      <p className="text-[11px] text-slate-400">
+                        Choose from 11 curated developer themes. Affects SQL editor syntax, background, sidebars, and data grids.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 bg-slate-800 text-sky-400 font-mono text-[10px] rounded-lg border border-slate-700/60 font-semibold shadow-xs">
+                    {APP_THEMES.find((t) => t.id === settings.appTheme)?.name || 'Default Dark'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {APP_THEMES.map((th) => {
+                    const isSelected = (settings.appTheme || 'default-dark') === th.id;
+                    return (
+                      <button
+                        key={th.id}
+                        type="button"
+                        onClick={() => setAppTheme(th.id)}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group ${
+                          isSelected
+                            ? 'border-sky-500 bg-sky-500/10 ring-2 ring-sky-500/25 shadow-md'
+                            : 'border-slate-800/80 bg-slate-950/60 hover:bg-slate-800/60 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-1.5 w-full">
+                          <div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="font-bold text-xs text-slate-200 group-hover:text-white transition">
+                                {th.name}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-medium uppercase inline-block mt-0.5 ${
+                                th.category === 'light'
+                                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700/60'
+                              }`}
+                            >
+                              {th.category}
+                            </span>
+                          </div>
+
+                          {isSelected && (
+                            <span className="w-4 h-4 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center shrink-0">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[10px] text-slate-400 line-clamp-2 mb-2.5 leading-relaxed min-h-[28px]">
+                          {th.description}
+                        </p>
+
+                        {/* Color Swatches Bar */}
+                        <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-800/60 w-full">
+                          {th.swatches.map((color, idx) => (
+                            <span
+                              key={idx}
+                              className="w-4 h-4 rounded-full border border-white/20 shadow-xs inline-block shrink-0"
+                              style={{ backgroundColor: color }}
+                              title={`Theme color ${idx + 1}: ${color}`}
+                            />
+                          ))}
+                          <span
+                            className="ml-auto text-[9px] font-mono font-semibold"
+                            style={{ color: th.accentColor }}
+                          >
+                            ● Accent
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

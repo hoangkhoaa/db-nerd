@@ -23,10 +23,23 @@ export type DatabaseEngine =
   | (string & {});
 export type EnvironmentTag = 'prod' | 'staging' | 'local';
 export type ThemeMode = 'dark' | 'light' | 'auto';
+export type AppThemeId =
+  | 'default-dark'
+  | 'default-light'
+  | 'monokai-pro'
+  | 'dracula'
+  | 'one-dark'
+  | 'material-ocean'
+  | 'nord'
+  | 'catppuccin-mocha'
+  | 'tokyo-night'
+  | 'github-dark'
+  | 'solarized-dark';
 export type RowDensity = 'compact' | 'normal' | 'relaxed';
 
 export interface UserSettings {
   themeMode: ThemeMode;
+  appTheme: AppThemeId;
   editorFontSize: number;
   rowDensity: RowDensity;
   autoFormatSql: boolean;

@@ -27,6 +27,8 @@ import {
   ContextMenuHeader,
   ContextMenuPosition,
 } from './components/ContextMenu';
+import { getThemeDefinition } from './themes/themeRegistry';
+import { AppThemeId } from './types';
 import './App.css';
 
 export function App() {
@@ -161,42 +163,66 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Synchronize Theme Mode (Light / Dark / Auto Device) and URL Query Param Overrides
+  // Synchronize Theme Mode & Custom Themes (Monokai, Dracula, One Dark, Material, etc.)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlTheme = urlParams.get('theme');
 
     const applyTheme = () => {
-      const mode = (urlTheme === 'light' || urlTheme === 'dark') ? urlTheme : settings.themeMode;
-      let resolved: 'dark' | 'light' = 'dark';
-      if (mode === 'auto') {
-        resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      } else {
-        resolved = mode as 'dark' | 'light';
+      let activeThemeId: AppThemeId = settings.appTheme || 'default-dark';
+      if (urlTheme) {
+        if (urlTheme === 'light') activeThemeId = 'default-light';
+        else if (urlTheme === 'dark') activeThemeId = 'default-dark';
+        else if (urlTheme === 'auto') activeThemeId = 'default-dark';
+        else {
+          const def = getThemeDefinition(urlTheme);
+          activeThemeId = def.id;
+        }
       }
-      updateResolvedTheme(resolved);
 
-      if (resolved === 'light') {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-        document.documentElement.setAttribute('data-theme', 'light');
-      } else {
-        document.documentElement.classList.remove('light');
-        document.documentElement.classList.add('dark');
-        document.documentElement.setAttribute('data-theme', 'dark');
+      const themeDef = getThemeDefinition(activeThemeId);
+      let resolvedCategory: 'dark' | 'light' = themeDef.category;
+
+      if (settings.themeMode === 'auto' && !urlTheme) {
+        const isDeviceDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        resolvedCategory = isDeviceDark ? 'dark' : 'light';
+        if (!isDeviceDark && themeDef.category === 'dark') {
+          activeThemeId = 'default-light';
+        }
       }
+
+      updateResolvedTheme(resolvedCategory);
+
+      document.documentElement.classList.remove('dark', 'light');
+      document.documentElement.classList.add(resolvedCategory);
+      document.documentElement.setAttribute('data-theme', activeThemeId);
     };
 
     applyTheme();
 
     const urlTab = urlParams.get('tab');
     if (urlTab) {
-      useAppStore.getState().setSelectedTable(urlTab);
-      useAppStore.getState().openTableGridTab(urlTab);
+      const stateTabs = useAppStore.getState().tabs;
+      const found = stateTabs.find(
+        (t) =>
+          t.id === urlTab ||
+          t.title.toLowerCase() === urlTab.toLowerCase() ||
+          t.tableName?.toLowerCase() === urlTab.toLowerCase()
+      );
+      if (found) {
+        useAppStore.getState().setActiveTabId(found.id);
+      } else {
+        useAppStore.getState().setSelectedTable(urlTab);
+        useAppStore.getState().openTableGridTab(urlTab);
+      }
     }
     const urlMode = urlParams.get('mode');
     if (urlMode === 'structure' || urlMode === 'index' || urlMode === 'data') {
       useAppStore.getState().setTableViewMode(urlMode);
+    }
+    const urlSettings = urlParams.get('settings');
+    if (urlSettings === 'open' || urlSettings === 'true') {
+      useAppStore.getState().setSettingsModalOpen(true);
     }
 
     const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
@@ -209,7 +235,7 @@ export function App() {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
-  }, [settings.themeMode]);
+  }, [settings.themeMode, settings.appTheme]);
 
   const activeTabObj = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const currentTabType = activeTabObj?.type || activeTab;

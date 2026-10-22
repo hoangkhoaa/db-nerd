@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, UserSettings, FunctionItem } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, AppThemeId, UserSettings, FunctionItem } from '../types';
 import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS, getTablesForConnection } from '../data/schemas';
 import { executeRealQuery, getRealTables, getRealFunctions } from '../services/dbService';
+import { getThemeDefinition } from '../themes/themeRegistry';
 
 interface AppState {
   tabs: TabItem[];
@@ -35,13 +36,14 @@ interface AppState {
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;
 
-  // User Settings & Theme Mode (Dark / Light / Auto)
+  // User Settings & Theme Mode (Dark / Light / Auto + 11 Iconic Developer Themes)
   settings: UserSettings;
   resolvedTheme: 'dark' | 'light';
   isSettingsModalOpen: boolean;
   setSettingsModalOpen: (open: boolean) => void;
   updateSettings: (updates: Partial<UserSettings>) => void;
   setThemeMode: (mode: ThemeMode) => void;
+  setAppTheme: (themeId: AppThemeId) => void;
   updateResolvedTheme: (resolved: 'dark' | 'light') => void;
 
   // Multi-Connection Workspaces & Session Isolation
@@ -471,12 +473,26 @@ const INITIAL_SESSIONS: Record<string, ConnectionSession> = {
 
 const getInitialSettings = (): UserSettings => {
   let initialMode: ThemeMode = 'auto';
+  let initialTheme: AppThemeId = 'default-dark';
   try {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      const urlTheme = urlParams.get('theme') as ThemeMode | null;
-      if (urlTheme === 'light' || urlTheme === 'dark' || urlTheme === 'auto') {
-        initialMode = urlTheme;
+      const urlTheme = urlParams.get('theme');
+      if (urlTheme) {
+        if (urlTheme === 'light') {
+          initialMode = 'light';
+          initialTheme = 'default-light';
+        } else if (urlTheme === 'dark') {
+          initialMode = 'dark';
+          initialTheme = 'default-dark';
+        } else if (urlTheme === 'auto') {
+          initialMode = 'auto';
+          initialTheme = 'default-dark';
+        } else {
+          const def = getThemeDefinition(urlTheme);
+          initialTheme = def.id;
+          initialMode = def.category;
+        }
       }
     }
   } catch {}
@@ -484,14 +500,19 @@ const getInitialSettings = (): UserSettings => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('db_nerd_user_settings') : null;
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (initialMode !== 'auto') {
+      if (!parsed.appTheme) {
+        parsed.appTheme = parsed.themeMode === 'light' ? 'default-light' : 'default-dark';
+      }
+      if (initialTheme !== 'default-dark' || initialMode !== 'auto') {
         parsed.themeMode = initialMode;
+        parsed.appTheme = initialTheme;
       }
       return parsed;
     }
   } catch {}
   return {
     themeMode: initialMode,
+    appTheme: initialTheme,
     editorFontSize: 13,
     rowDensity: 'normal',
     autoFormatSql: false,
@@ -500,7 +521,11 @@ const getInitialSettings = (): UserSettings => {
   };
 };
 
-const resolveTheme = (mode: ThemeMode): 'dark' | 'light' => {
+const resolveTheme = (mode: ThemeMode, appTheme?: AppThemeId): 'dark' | 'light' => {
+  if (appTheme) {
+    const def = getThemeDefinition(appTheme);
+    return def.category;
+  }
   if (mode === 'auto') {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -511,7 +536,7 @@ const resolveTheme = (mode: ThemeMode): 'dark' | 'light' => {
 };
 
 const INITIAL_SETTINGS = getInitialSettings();
-const INITIAL_RESOLVED_THEME = resolveTheme(INITIAL_SETTINGS.themeMode);
+const INITIAL_RESOLVED_THEME = resolveTheme(INITIAL_SETTINGS.themeMode, INITIAL_SETTINGS.appTheme);
 
 const getInitialConnId = (): string => {
   try {
@@ -561,10 +586,20 @@ const getInitialSelectedRow = () => {
   return null;
 };
 
+const getInitialSettingsModalOpen = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('settings') === 'open' || urlParams.get('settings') === 'true';
+    }
+  } catch {}
+  return false;
+};
+
 export const useAppStore = create<AppState>((set, get) => ({
   settings: INITIAL_SETTINGS,
   resolvedTheme: INITIAL_RESOLVED_THEME,
-  isSettingsModalOpen: false,
+  isSettingsModalOpen: getInitialSettingsModalOpen(),
   setSettingsModalOpen: (open) => set({ isSettingsModalOpen: open }),
 
   updateSettings: (updates) => {
@@ -573,7 +608,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         localStorage.setItem('db_nerd_user_settings', JSON.stringify(nextSettings));
       } catch {}
-      const nextResolved = resolveTheme(nextSettings.themeMode);
+      const nextResolved = resolveTheme(nextSettings.themeMode, nextSettings.appTheme);
       return {
         settings: nextSettings,
         resolvedTheme: nextResolved,
@@ -582,8 +617,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setThemeMode: (mode) => {
-    get().updateSettings({ themeMode: mode });
-    get().showToast(`🎨 Theme: ${mode === 'auto' ? 'Auto (System)' : mode === 'dark' ? 'Dark Mode' : 'Light Mode'}`);
+    const currentTheme = get().settings.appTheme;
+    let nextTheme = currentTheme;
+    if (mode === 'light') {
+      nextTheme = 'default-light';
+    } else if (mode === 'dark') {
+      nextTheme = currentTheme === 'default-light' ? 'default-dark' : currentTheme;
+    }
+    get().updateSettings({ themeMode: mode, appTheme: nextTheme });
+    get().showToast(`🎨 Theme Mode: ${mode === 'auto' ? 'Auto (System)' : mode === 'dark' ? 'Dark Mode' : 'Light Mode'}`);
+  },
+
+  setAppTheme: (themeId) => {
+    const def = getThemeDefinition(themeId);
+    get().updateSettings({
+      appTheme: themeId,
+      themeMode: def.category,
+    });
+    get().showToast(`🎨 Theme: ${def.name}`);
   },
 
   updateResolvedTheme: (resolved) => set({ resolvedTheme: resolved }),
