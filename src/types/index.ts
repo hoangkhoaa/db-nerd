@@ -41,7 +41,7 @@ export interface ConnectionProfile {
 
 export interface TabItem {
   id: string;
-  type: 'grid' | 'schema' | 'sql' | 'stats' | 'connection';
+  type: 'grid' | 'schema' | 'sql' | 'stats' | 'connection' | 'default';
   title: string;
   tableName?: string;
   queryId?: number;
@@ -58,6 +58,7 @@ export interface SqlTabState {
   rowsCount: number;
   executedAt?: string;
   isExecuting?: boolean;
+  error?: string;
 }
 
 export interface GridRow {

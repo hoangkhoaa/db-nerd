@@ -53,9 +53,11 @@ export const Titlebar = () => {
     setThemeMode(nextTheme);
   };
 
-  const handleCommit = () => {
-    const res = commitTransaction();
-    alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s) in 1.4ms! All locks released.`);
+  const handleCommit = async () => {
+    const res = await commitTransaction();
+    if (res.count > 0) {
+      alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s)! All locks released.`);
+    }
   };
 
   const handleDiscard = () => {
@@ -209,7 +211,7 @@ export const Titlebar = () => {
           </div>
         ) : (
           <button
-            onClick={reloadData}
+            onClick={() => reloadData()}
             className={`no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 ${
               isReloading ? 'text-sky-400 border-sky-500/50 bg-sky-950/30' : ''
             }`}

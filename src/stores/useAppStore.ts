@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, UserSettings } from '../types';
-import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS } from '../data/schemas';
+import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS, getTablesForConnection } from '../data/schemas';
+import { executeRealQuery, getRealTables } from '../services/dbService';
 
 interface AppState {
   tabs: TabItem[];
@@ -18,10 +19,13 @@ interface AppState {
 
   sqlTabStates: Record<string, SqlTabState>;
   setSqlTabQuery: (tabId: string, query: string) => void;
-  runSqlQuery: (tabId: string, customQuery?: string) => void;
+  runSqlQuery: (tabId: string, customQuery?: string) => Promise<void>;
 
-  activeTab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection';
-  setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection') => void;
+  liveTables: Record<string, { name: string; count: string }[]>;
+  fetchLiveTables: (conn?: ConnectionProfile) => Promise<void>;
+
+  activeTab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection' | 'default';
+  setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection' | 'default') => void;
 
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;
@@ -113,10 +117,16 @@ interface AppState {
   rows: GridRow[];
   updateCell: (id: number, field: keyof GridRow, value: any) => void;
   insertRow: () => void;
+  duplicateRow: (sourceRow: GridRow) => void;
   deleteRow: (id: number) => void;
   rollbackTransaction: () => void;
-  commitTransaction: () => { sqlText: string; count: number };
+  commitTransaction: () => Promise<{ sqlText: string; count: number }>;
   getPendingSQL: () => string;
+
+  truncatedTables: Record<string, boolean>;
+  deletedTables: Record<string, string[]>;
+  truncateTable: (tableName: string) => Promise<void>;
+  dropTable: (tableName: string) => Promise<void>;
 
   processes: ProcessItem[];
   killProcess: (pid: number) => void;
@@ -126,7 +136,7 @@ interface AppState {
   isReloading: boolean;
   toastMessage: string | null;
   showToast: (msg: string) => void;
-  reloadData: () => void;
+  reloadData: (tableName?: string) => Promise<void>;
 }
 
 const INITIAL_ROWS: GridRow[] = [
@@ -215,6 +225,29 @@ const TUPLE_ROWS: GridRow[] = [
   { id: 6, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '15453fec-4d45-4954-9dcc-923120562ec6_r2770', relation: 'organisation', _user: 'grantee:user:76adbfc3-ae54-469b', user_type: 'userset', ulid: '01M5FB8XBAJQ406DP5PVW247CR', inserted_at: '2026-10-21 13:48:00+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
 ];
 
+const USERS_ROWS: GridRow[] = [
+  { id: 501, email: 'alex.turner@corp.io', full_name: 'Alex Turner', role: 'admin', status: 'active', created_at: '2026-01-10 09:20:00', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 502, email: 'sarah.connor@cyberdyne.net', full_name: 'Sarah Connor', role: 'member', status: 'active', created_at: '2026-02-15 14:10:00', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 503, email: 'khoa.nguyen@ai.lab', full_name: 'Khoa Nguyen', role: 'superadmin', status: 'active', created_at: '2026-03-01 11:45:00', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+];
+
+const PRODUCTS_ROWS: GridRow[] = [
+  { id: 101, sku: 'PROD-MAC-M4', title: 'MacBook Pro M4 Max', category_id: 1, price: 3499.00, stock: 45, is_active: true, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 102, sku: 'PROD-DISP-5K', title: 'Studio Display 5K Retina', category_id: 2, price: 1599.00, stock: 28, is_active: true, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 103, sku: 'PROD-KEY-TOUCH', title: 'Magic Keyboard with Touch ID', category_id: 3, price: 199.00, stock: 120, is_active: true, dirtyFields: {}, isDirty: false, rowState: 'clean' },
+];
+
+const getDefaultRowsForTable = (tbl: string, isTruncated?: boolean): GridRow[] => {
+  if (isTruncated) return [];
+  if (tbl === 'goose_db_version') return GOOSE_ROWS;
+  if (tbl === 'tuple') return TUPLE_ROWS;
+  if (tbl === 'stock_items') return STOCK_ITEMS_ROWS;
+  if (tbl === 'warehouses') return WAREHOUSES_ROWS;
+  if (tbl === 'users') return USERS_ROWS;
+  if (tbl === 'products') return PRODUCTS_ROWS;
+  return INITIAL_ROWS;
+};
+
 const INITIAL_SQL_TAB_STATES: Record<string, SqlTabState> = {
   'tab-sql-1': {
     tabId: 'tab-sql-1',
@@ -245,46 +278,78 @@ const INITIAL_GROUPS: ConnectionGroup[] = [
 
 const INITIAL_CONNECTIONS: ConnectionProfile[] = [
   {
-    id: 'conn-stock',
-    name: 'stock_movement',
+    id: 'conn-1',
+    name: 'ecom_prod_db (PostgreSQL)',
     groupId: 'group-local',
     engine: 'postgres',
     env: 'local',
     host: 'localhost',
     port: 5432,
-    database: 'stock_movement',
-    databases: ['stock_movement', 'inventory_db', 'postgres'],
-    username: 'postgres',
-    password: '••••••••••••',
+    database: 'ecom_prod_db',
+    databases: [
+      'ecom_prod_db',
+      'postgres',
+      'local_dev',
+    ],
+    username: 'dev_user',
+    password: 'dev_password',
+    useSsh: false,
     active: true,
+    latencyMs: 0.8,
+  },
+  {
+    id: 'conn-4',
+    name: 'analytics-mysql (MySQL 8.0)',
+    groupId: 'group-local',
+    engine: 'mysql',
+    env: 'local',
+    host: 'localhost',
+    port: 3306,
+    database: 'analytics_staging',
+    databases: [
+      'analytics_staging',
+      'information_schema',
+      'performance_schema',
+    ],
+    username: 'dev_user',
+    password: 'dev_password',
+    useSsh: false,
+    active: false,
     latencyMs: 1.1,
   },
   {
-    id: 'conn-1',
-    name: 'postgres',
+    id: 'conn-3',
+    name: 'docker-redis (Port 6379)',
+    groupId: 'group-local',
+    engine: 'redis',
+    env: 'local',
+    host: 'localhost',
+    port: 6379,
+    database: '0',
+    databases: ['0', '1', '2', '3', '4', '5'],
+    username: 'default',
+    password: '',
+    active: false,
+    latencyMs: 0.4,
+  },
+  {
+    id: 'conn-stock',
+    name: 'stock_movement (Postgres)',
     groupId: 'group-local',
     engine: 'postgres',
     env: 'local',
     host: 'localhost',
     port: 5432,
-    database: 'postgres',
-    databases: [
-      'postgres',
-      'ada_openfga',
-      'ecom_prod_db',
-      'agl_login',
-      'airbyte',
-      'airflow',
-    ],
-    username: 'postgres',
-    password: '••••••••••••',
-    useSsh: false,
+    database: 'ecom_prod_db',
+    databases: ['ecom_prod_db', 'postgres'],
+    username: 'dev_user',
+    password: 'dev_password',
     active: false,
-    latencyMs: 1.4,
+    latencyMs: 0.9,
   },
   {
     id: 'conn-2',
-    name: 'analytics-dwh',
+    name: 'analytics-dwh (Cloud)',
     groupId: 'group-prod',
     engine: 'snowflake',
     env: 'prod',
@@ -298,65 +363,6 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     warehouse: 'COMPUTE_WH',
     active: false,
     latencyMs: 24.5,
-  },
-  {
-    id: 'conn-3',
-    name: 'prod-redis-cache',
-    groupId: 'group-prod',
-    engine: 'redis',
-    env: 'prod',
-    host: 'redis-cluster.prod.cache.amazonaws.com',
-    port: 6379,
-    database: '0',
-    databases: ['0', '1', '2', '3', '4', '5'],
-    username: 'default',
-    password: '',
-    active: false,
-    latencyMs: 0.9,
-  },
-  {
-    id: 'conn-4',
-    name: 'staging-mysql-8',
-    groupId: 'group-staging',
-    engine: 'mysql',
-    env: 'staging',
-    host: '10.128.0.4',
-    port: 3306,
-    database: 'staging_main',
-    databases: [
-      'staging_main',
-      'staging_auth',
-      'staging_orders',
-      'staging_analytics',
-      'mysql',
-      'sys',
-    ],
-    username: 'staging_admin',
-    password: '••••••••••••',
-    useSsh: false,
-    active: false,
-    latencyMs: 3.2,
-  },
-  {
-    id: 'conn-5',
-    name: 'local-docker-postgres',
-    groupId: 'group-local',
-    engine: 'postgres',
-    env: 'local',
-    host: 'localhost',
-    port: 5432,
-    database: 'postgres',
-    databases: [
-      'postgres',
-      'local_dev',
-      'test_db',
-      'benchmark_db',
-    ],
-    username: 'postgres',
-    password: '',
-    useSsh: false,
-    active: false,
-    latencyMs: 0.2,
   },
 ];
 
@@ -428,8 +434,8 @@ const createDefaultSessionForConnection = (conn: ConnectionProfile): ConnectionS
 };
 
 const INITIAL_SESSIONS: Record<string, ConnectionSession> = {
-  'conn-stock': createDefaultSessionForConnection(INITIAL_CONNECTIONS[0]),
-  'conn-1': createDefaultSessionForConnection(INITIAL_CONNECTIONS[1]),
+  'conn-1': createDefaultSessionForConnection(INITIAL_CONNECTIONS[0]),
+  'conn-4': createDefaultSessionForConnection(INITIAL_CONNECTIONS[1]),
 };
 
 const getInitialSettings = (): UserSettings => {
@@ -487,7 +493,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateResolvedTheme: (resolved) => set({ resolvedTheme: resolved }),
 
-  openSessionIds: ['conn-stock', 'conn-1'],
+  openSessionIds: ['conn-1', 'conn-4'],
   sessions: INITIAL_SESSIONS,
 
   openSession: (connId) => {
@@ -512,9 +518,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     showToast('Session disconnected');
   },
 
-  tabs: INITIAL_SESSIONS['conn-stock'].tabs,
-  activeTabId: INITIAL_SESSIONS['conn-stock'].activeTabId,
-  activeTab: 'grid',
+  tabs: INITIAL_SESSIONS['conn-1'].tabs,
+  activeTabId: INITIAL_SESSIONS['conn-1'].activeTabId,
+  activeTab: 'sql',
 
   setActiveTabId: (id) => {
     const { tabs } = get();
@@ -567,9 +573,28 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
-  runSqlQuery: (tabId, customQuery) => {
+  liveTables: {},
+  fetchLiveTables: async (conn) => {
+    const targetConn = conn || get().activeConnection;
+    try {
+      const tables = await getRealTables(targetConn);
+      if (tables && tables.length > 0) {
+        set((state) => ({
+          liveTables: {
+            ...state.liveTables,
+            [targetConn.id]: tables,
+          },
+        }));
+      }
+    } catch (e) {
+      console.warn('Fetch live tables failed:', e);
+    }
+  },
+
+  runSqlQuery: async (tabId, customQuery) => {
     const currentState = get().sqlTabStates[tabId];
     const query = customQuery || currentState?.query || '';
+    const activeConn = get().activeConnection;
 
     set((state) => ({
       sqlTabStates: {
@@ -588,31 +613,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
     }));
 
-    setTimeout(() => {
-      let newResults: any[] = [];
-      const qLower = query.toLowerCase();
-
-      if (qLower.includes('tuple')) {
-        newResults = [
-          { id: 1, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2770', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2770#member' },
-          { id: 2, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2782', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2782#member' },
-          { id: 3, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2806', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2806#member' },
-        ];
-      } else if (qLower.includes('goose')) {
-        newResults = [
-          { id: 1, version_id: 0, is_applied: true, tstamp: '2026-09-20 11:05:42.760469' },
-          { id: 2, version_id: 1, is_applied: true, tstamp: '2026-09-20 11:05:42.791719' },
-          { id: 3, version_id: 2, is_applied: true, tstamp: '2026-09-20 11:05:42.919323' },
-        ];
-      } else {
-        newResults = [
-          { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
-          { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
-          { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
-        ];
-      }
-
-      const columns = Object.keys(newResults[0] || {});
+    try {
+      const res = await executeRealQuery(activeConn, query);
+      const isSuccess = res.success && !res.error;
+      const results = isSuccess ? res.rows : (res.error ? [{ error: res.error }] : []);
+      const columns = res.columns && res.columns.length > 0
+        ? res.columns
+        : results[0]
+        ? Object.keys(results[0])
+        : ['result'];
+      const duration = res.duration_ms || 1.1;
 
       set((state) => ({
         sqlTabStates: {
@@ -620,16 +630,52 @@ export const useAppStore = create<AppState>((set, get) => ({
           [tabId]: {
             tabId,
             query,
-            results: newResults,
+            results,
             columns,
-            durationMs: 1.4,
-            rowsCount: newResults.length,
+            durationMs: duration,
+            rowsCount: isSuccess ? results.length : 0,
             executedAt: new Date().toLocaleTimeString(),
             isExecuting: false,
+            error: isSuccess ? undefined : res.error,
+          },
+        },
+        history: [
+          {
+            id: `h-${Date.now()}`,
+            connectionName: activeConn.name,
+            env: activeConn.env,
+            sql: query,
+            timestamp: `Today at ${new Date().toTimeString().slice(0, 8)}`,
+            durationMs: duration,
+            rowsAffected: res.rows_affected || (isSuccess ? results.length : 0),
+            status: isSuccess ? 'success' : 'error',
+            isFavorite: false,
+          },
+          ...state.history,
+        ],
+      }));
+
+      if (isSuccess) {
+        get().showToast(`⚡ Query executed in ${duration}ms (${results.length} rows)`);
+      } else {
+        get().showToast(`❌ Query error: ${res.error || 'Execution failed'}`);
+      }
+    } catch (err: any) {
+      const errMsg = String(err?.message || err);
+      set((state) => ({
+        sqlTabStates: {
+          ...state.sqlTabStates,
+          [tabId]: {
+            ...(state.sqlTabStates[tabId] || { tabId, query, results: [], columns: [], durationMs: 0, rowsCount: 0 }),
+            results: [{ error: errMsg }],
+            columns: ['error'],
+            isExecuting: false,
+            error: errMsg,
           },
         },
       }));
-    }, 200);
+      get().showToast(`❌ ${errMsg}`);
+    }
   },
 
   renameTab: (id, newTitle) => {
@@ -654,24 +700,41 @@ export const useAppStore = create<AppState>((set, get) => ({
         ? `SELECT store, object_type, object_id, relation, _user\nFROM tuple\nWHERE object_type = 'connector_tool'\nORDER BY inserted_at DESC\nLIMIT 20;`
         : `SELECT id, version_id, is_applied, tstamp\nFROM goose_db_version\nORDER BY id ASC;`);
 
-    const initialResults =
-      count === 1
-        ? [
-            { id: 1, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2770', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2770#member' },
-            { id: 2, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '0bef96c9-a2a1-4c42-bd12-e69a59a29647_r2782', relation: 'organisation', _user: 'organisation:5e4d3eb5-53af-4a0f-98a8-355ee55b326b_r2782#member' },
-          ]
-        : count === 2
-        ? [
-            { id: 1, version_id: 0, is_applied: true, tstamp: '2026-09-20 11:05:42.760469' },
-            { id: 2, version_id: 1, is_applied: true, tstamp: '2026-09-20 11:05:42.791719' },
-          ]
-        : [
-            { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
-            { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
-            { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
-          ];
+    // Detect target table to return accurate data
+    let targetTable = '';
+    const match = defaultSql.match(/FROM\s+([a-zA-Z0-9_]+)/i);
+    if (match) targetTable = match[1].toLowerCase();
 
-    const initialColumns = Object.keys(initialResults[0]);
+    let initialResults: any[] = [];
+    if (targetTable === 'goose_db_version') {
+      initialResults = JSON.parse(JSON.stringify(GOOSE_ROWS));
+    } else if (targetTable === 'tuple') {
+      initialResults = JSON.parse(JSON.stringify(TUPLE_ROWS));
+    } else if (targetTable === 'stock_items') {
+      initialResults = JSON.parse(JSON.stringify(STOCK_ITEMS_ROWS));
+    } else if (targetTable === 'warehouses') {
+      initialResults = JSON.parse(JSON.stringify(WAREHOUSES_ROWS));
+    } else if (targetTable === 'users') {
+      initialResults = [
+        { id: 501, email: 'alex.turner@corp.io', full_name: 'Alex Turner', role: 'admin', status: 'active' },
+        { id: 502, email: 'sarah.connor@cyberdyne.net', full_name: 'Sarah Connor', role: 'member', status: 'active' },
+        { id: 503, email: 'khoa.nguyen@ai.lab', full_name: 'Khoa Nguyen', role: 'superadmin', status: 'active' },
+      ];
+    } else if (targetTable === 'products') {
+      initialResults = [
+        { id: 101, sku: 'PROD-MAC-M4', title: 'MacBook Pro M4 Max', category_id: 1, price: 3499.00, stock: 45, is_active: true },
+        { id: 102, sku: 'PROD-DISP-5K', title: 'Studio Display 5K Retina', category_id: 2, price: 1599.00, stock: 28, is_active: true },
+        { id: 103, sku: 'PROD-KEY-TOUCH', title: 'Magic Keyboard with Touch ID', category_id: 3, price: 199.00, stock: 120, is_active: true },
+      ];
+    } else {
+      initialResults = [
+        { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
+        { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
+        { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
+      ];
+    }
+
+    const initialColumns = Object.keys(initialResults[0] || {});
 
     const newTab: TabItem = {
       id: nextTabId,
@@ -708,6 +771,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeTabId: existing.id,
         activeTab: 'grid',
         selectedTable: tableName,
+        tableViewMode: 'data',
       });
       get().setSelectedTable(tableName);
     } else {
@@ -723,19 +787,20 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeTabId: newTab.id,
         activeTab: 'grid',
         selectedTable: tableName,
+        tableViewMode: 'data',
       });
       get().setSelectedTable(tableName);
     }
   },
 
   openTableSchemaTab: (tableName) => {
+    get().setSelectedTable(tableName);
     get().openTableGridTab(tableName);
     set({ tableViewMode: 'structure' });
   },
 
   closeTab: (id) => {
     const { tabs, activeTabId, selectedTable } = get();
-    if (tabs.length <= 1) return;
     const tabToClose = tabs.find((t) => t.id === id);
     if (tabToClose && tabToClose.canClose === false) return;
 
@@ -743,8 +808,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (idx === -1) return;
 
     const nextTabs = tabs.filter((t) => t.id !== id);
-    let nextActiveId = activeTabId;
 
+    if (nextTabs.length === 0) {
+      set({
+        tabs: [],
+        activeTabId: '',
+        activeTab: 'default',
+      });
+      return;
+    }
+
+    let nextActiveId = activeTabId;
     if (activeTabId === id) {
       const newIdx = Math.min(idx, nextTabs.length - 1);
       nextActiveId = nextTabs[newIdx].id;
@@ -784,31 +858,29 @@ export const useAppStore = create<AppState>((set, get) => ({
     const nextActive = nextTabs.find((t) => t.id === nextActiveId) || nextTabs[0];
     set({
       tabs: nextTabs,
-      activeTabId: nextActive.id,
-      activeTab: nextActive.type,
-      selectedTable: nextActive.tableName || selectedTable,
+      activeTabId: nextActive ? nextActive.id : '',
+      activeTab: nextActive ? nextActive.type : 'default',
+      selectedTable: nextActive?.tableName || selectedTable,
     });
   },
 
   closeAllTabs: () => {
-    const { tabs, selectedTable } = get();
-    let nextTabs = tabs.filter((t) => t.canClose === false);
-    if (nextTabs.length === 0) {
-      const defaultTab: TabItem = {
-        id: `tab-sql-${Date.now()}`,
-        type: 'sql',
-        title: 'Console 1',
-        canClose: true,
-      };
-      nextTabs = [defaultTab];
+    const { tabs } = get();
+    const remaining = tabs.filter((t) => t.canClose === false);
+    if (remaining.length === 0) {
+      set({
+        tabs: [],
+        activeTabId: '',
+        activeTab: 'default',
+      });
+    } else {
+      set({
+        tabs: remaining,
+        activeTabId: remaining[0].id,
+        activeTab: remaining[0].type,
+        selectedTable: remaining[0].tableName || get().selectedTable,
+      });
     }
-    const nextActive = nextTabs[0];
-    set({
-      tabs: nextTabs,
-      activeTabId: nextActive.id,
-      activeTab: nextActive.type,
-      selectedTable: nextActive.tableName || selectedTable,
-    });
   },
 
   duplicateTab: (id) => {
@@ -1033,6 +1105,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
 
     state.showToast(`⚡ Switched to "${targetConn.name}"`);
+    get().fetchLiveTables(targetConn);
+    get().reloadData();
   },
 
   isDatabaseModalOpen: false,
@@ -1049,6 +1123,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       connections: nextConnections,
       isDatabaseModalOpen: false,
     });
+    get().fetchLiveTables(nextConn);
+    get().reloadData();
   },
 
   createDatabase: (dbName) => {
@@ -1089,13 +1165,105 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingEditsCount: 0,
   resetPending: () => set({ pendingEditsCount: 0, isTransactionOpen: false }),
 
-  selectedTable: 'stock_items',
+  truncatedTables: {},
+  deletedTables: {},
+
+  truncateTable: async (tableName: string) => {
+    const { activeConnection, selectedTable } = get();
+    try {
+      const quote = activeConnection.engine === 'mysql' ? '`' : '"';
+      await executeRealQuery(activeConnection, `TRUNCATE TABLE ${quote}${tableName}${quote};`);
+    } catch (e) {
+      console.warn('Real truncate failed:', e);
+    }
+
+    set((state) => ({
+      truncatedTables: { ...state.truncatedTables, [tableName]: true },
+      ...(selectedTable === tableName
+        ? {
+            rows: [],
+            originalRows: [],
+            pendingEditsCount: 0,
+            selectedRowData: null,
+            isTransactionOpen: false,
+          }
+        : {}),
+      history: [
+        {
+          id: `hist-${Date.now()}`,
+          connectionName: state.activeConnection.name,
+          env: state.activeConnection.env,
+          sql: `TRUNCATE TABLE "${tableName}";`,
+          timestamp: 'Just now',
+          durationMs: 1.1,
+          rowsAffected: 0,
+          status: 'success',
+          isFavorite: false,
+        },
+        ...state.history,
+      ],
+    }));
+    get().showToast(`⚡ Truncated table "${tableName}" (0 rows)`);
+  },
+
+  dropTable: async (tableName: string) => {
+    const { activeConnection, selectedTable, tabs, closeTab, showToast } = get();
+    const connId = activeConnection.id;
+
+    try {
+      const quote = activeConnection.engine === 'mysql' ? '`' : '"';
+      await executeRealQuery(activeConnection, `DROP TABLE IF EXISTS ${quote}${tableName}${quote};`);
+    } catch (e) {
+      console.warn('Real drop failed:', e);
+    }
+
+    // Close any tabs for this table
+    const tabsToClose = tabs.filter((t) => t.tableName === tableName);
+    tabsToClose.forEach((t) => closeTab(t.id));
+
+    set((state) => {
+      const prevDeleted = state.deletedTables[connId] || [];
+      const nextDeleted = Array.from(new Set([...prevDeleted, tableName]));
+
+      return {
+        deletedTables: {
+          ...state.deletedTables,
+          [connId]: nextDeleted,
+        },
+        history: [
+          {
+            id: `hist-${Date.now()}`,
+            connectionName: state.activeConnection.name,
+            env: state.activeConnection.env,
+            sql: `DROP TABLE "${tableName}";`,
+            timestamp: 'Just now',
+            durationMs: 1.8,
+            rowsAffected: 0,
+            status: 'success',
+            isFavorite: false,
+          },
+          ...state.history,
+        ],
+      };
+    });
+
+    // If current selectedTable was dropped, switch to next available table
+    if (selectedTable === tableName) {
+      const allTables = getTablesForConnection(activeConnection.name, activeConnection.engine);
+      const deletedForConn = get().deletedTables[connId] || [];
+      const remaining = allTables.filter((t) => !deletedForConn.includes(t.name));
+      const nextTbl = remaining.length > 0 ? remaining[0].name : 'user_orders';
+      get().setSelectedTable(nextTbl);
+      get().openTableGridTab(nextTbl);
+    }
+
+    showToast(`🗑️ Dropped table "${tableName}"`);
+  },
+
+  selectedTable: 'users',
   setSelectedTable: (tbl) => {
-    let targetRows = INITIAL_ROWS;
-    if (tbl === 'goose_db_version') targetRows = GOOSE_ROWS;
-    else if (tbl === 'tuple') targetRows = TUPLE_ROWS;
-    else if (tbl === 'stock_items') targetRows = STOCK_ITEMS_ROWS;
-    else if (tbl === 'warehouses') targetRows = WAREHOUSES_ROWS;
+    const { truncatedTables } = get();
+    const targetRows = getDefaultRowsForTable(tbl, truncatedTables[tbl]);
     set({
       selectedTable: tbl,
       selectedRowData: null,
@@ -1103,6 +1271,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       originalRows: JSON.parse(JSON.stringify(targetRows)),
       pendingEditsCount: 0,
     });
+    // Asynchronously fetch live rows from Docker database
+    get().reloadData(tbl);
   },
 
   isReloading: false,
@@ -1113,36 +1283,66 @@ export const useAppStore = create<AppState>((set, get) => ({
       set((state) => (state.toastMessage === msg ? { toastMessage: null } : {}));
     }, 2500);
   },
-  reloadData: () => {
-    const { activeTabId, tabs, selectedTable, sqlTabStates, runSqlQuery, showToast } = get();
+  reloadData: async (tableName?: string) => {
+    const { activeTabId, tabs, selectedTable, runSqlQuery, showToast, truncatedTables, activeConnection } = get();
     const activeTab = tabs.find((t) => t.id === activeTabId);
 
     set({ isReloading: true });
 
-    if (activeTab?.type === 'sql') {
-      runSqlQuery(activeTabId);
-      const rowsCount = sqlTabStates[activeTabId]?.results?.length || 0;
-      showToast(`⚡ Query re-executed in 1.4ms (${rowsCount} rows)`);
-    } else {
-      let targetRows = INITIAL_ROWS;
-      if (selectedTable === 'goose_db_version') targetRows = GOOSE_ROWS;
-      else if (selectedTable === 'tuple') targetRows = TUPLE_ROWS;
-
-      const duration = +(Math.random() * 0.8 + 0.8).toFixed(1);
-
-      set({
-        selectedRowData: null,
-        rows: JSON.parse(JSON.stringify(targetRows)),
-        originalRows: JSON.parse(JSON.stringify(targetRows)),
-        pendingEditsCount: 0,
-      });
-
-      showToast(`⚡ Refreshed table '${selectedTable}' (${targetRows.length} records • ${duration}ms)`);
+    if (activeTab?.type === 'sql' && !tableName) {
+      await runSqlQuery(activeTabId);
+      set({ isReloading: false });
+      return;
     }
 
-    setTimeout(() => {
-      set({ isReloading: false });
-    }, 250);
+    const targetTable = tableName || (activeTab?.type === 'grid' && activeTab.tableName) || selectedTable;
+
+    try {
+      const quote = activeConnection.engine === 'mysql' ? '`' : '"';
+      const sql = activeConnection.engine === 'redis'
+        ? `KEYS *`
+        : `SELECT * FROM ${quote}${targetTable}${quote} LIMIT 100;`;
+
+      const res = await executeRealQuery(activeConnection, sql);
+
+      if (res.success && res.rows && res.rows.length > 0) {
+        const liveRows: GridRow[] = res.rows.map((r, idx) => ({
+          ...r,
+          id: r.id !== undefined ? r.id : idx + 1,
+          isDirty: false,
+          dirtyFields: {},
+          rowState: 'clean',
+        }));
+
+        set({
+          selectedTable: targetTable,
+          selectedRowData: null,
+          rows: liveRows,
+          originalRows: JSON.parse(JSON.stringify(liveRows)),
+          pendingEditsCount: 0,
+          isReloading: false,
+        });
+
+        showToast(`⚡ Refreshed table '${targetTable}' (${liveRows.length} live records • ${res.duration_ms}ms)`);
+        return;
+      }
+    } catch (e) {
+      console.warn('Live table load failed, fallback:', e);
+    }
+
+    const targetRows = getDefaultRowsForTable(targetTable, truncatedTables[targetTable]);
+    const duration = +(Math.random() * 0.8 + 0.8).toFixed(1);
+
+    set({
+      selectedTable: targetTable,
+      selectedRowData: null,
+      rows: JSON.parse(JSON.stringify(targetRows)),
+      originalRows: JSON.parse(JSON.stringify(targetRows)),
+      pendingEditsCount: 0,
+      isReloading: false,
+    });
+
+    showToast(`⚡ Refreshed table '${targetTable}' (${targetRows.length} records • ${duration}ms)`);
   },
 
   isSidebarOpen: true,
@@ -1232,23 +1432,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  insertRow: () => {
-    const { rows } = get();
-    const maxId = rows.reduce((max, r) => Math.max(max, r.id), 1000);
+  duplicateRow: (sourceRow: GridRow) => {
+    const { rows, selectedTable } = get();
+    const maxId = rows.reduce((max, r) => Math.max(max, Number(r.id) || 0), 1000);
     const newId = maxId + 1;
-    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    const cleanRow = { ...sourceRow };
+    delete (cleanRow as any).isDirty;
+    delete (cleanRow as any).dirtyFields;
+    delete (cleanRow as any).rowState;
+
+    if (selectedTable === 'goose_db_version' && 'version_id' in cleanRow) {
+      cleanRow.version_id = (Number(cleanRow.version_id) || 0) + 1;
+      cleanRow.tstamp = new Date().toISOString().replace('T', ' ').slice(0, 23);
+    }
 
     const newRow: GridRow = {
+      ...cleanRow,
       id: newId,
-      user_id: 501,
-      customer_name: 'New Customer',
-      product_sku: 'SKU-NEW-01',
-      order_details: { items: 1, total: 50.0 },
-      total_amount: 50.0,
-      created_at: now,
-      status: 'pending',
       isDirty: true,
-      dirtyFields: { id: true, customer_name: true, product_sku: true, total_amount: true, status: true },
+      dirtyFields: { id: true },
       rowState: 'inserted',
     };
 
@@ -1263,6 +1466,101 @@ export const useAppStore = create<AppState>((set, get) => ({
       rows: nextRows,
       pendingEditsCount: dirtyCount,
       isTransactionOpen: true,
+      selectedRowData: newRow,
+    });
+  },
+
+  insertRow: () => {
+    const { rows, selectedTable } = get();
+    const maxId = rows.reduce((max, r) => Math.max(max, Number(r.id) || 0), 1000);
+    const newId = maxId + 1;
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    let template: Partial<GridRow> = {};
+    if (selectedTable === 'goose_db_version') {
+      const maxVer = rows.reduce((max, r) => Math.max(max, Number(r.version_id) || 0), 0);
+      template = {
+        version_id: maxVer + 1,
+        is_applied: true,
+        tstamp: now,
+      };
+    } else if (selectedTable === 'tuple') {
+      template = {
+        store: '01M2Z8794GWTS8MMZKGD922YX9',
+        object_type: 'connector_tool',
+        object_id: `obj_${newId}_r2800`,
+        relation: 'organisation',
+        _user: 'organisation:5e4d3eb5#member',
+        user_type: 'userset',
+        ulid: `01M${Date.now().toString(36).toUpperCase()}`,
+        inserted_at: now,
+      };
+    } else if (selectedTable === 'stock_items') {
+      template = {
+        sku: `SKU-${newId}`,
+        name: 'New Inventory Item',
+        quantity: 100,
+        warehouse_id: 1,
+      };
+    } else if (selectedTable === 'warehouses') {
+      template = {
+        code: `WH-NEW-${newId}`,
+        name: 'New Regional Hub',
+        location: 'Singapore',
+        capacity: 50000,
+        active_pallets: 0,
+        manager: 'New Manager',
+        status: 'operational',
+      };
+    } else if (selectedTable === 'users') {
+      template = {
+        email: `user${newId}@example.com`,
+        full_name: 'New User',
+        role: 'member',
+        status: 'active',
+        created_at: now,
+      };
+    } else if (selectedTable === 'products') {
+      template = {
+        sku: `PROD-${newId}`,
+        title: 'New Product Title',
+        category_id: 1,
+        price: 99.0,
+        stock: 50,
+        is_active: true,
+      };
+    } else {
+      template = {
+        user_id: 501,
+        customer_name: 'New Customer',
+        product_sku: 'SKU-NEW-01',
+        order_details: { items: 1, total: 50.0 },
+        total_amount: 50.0,
+        created_at: now,
+        status: 'pending',
+      };
+    }
+
+    const newRow: GridRow = {
+      ...template,
+      id: newId,
+      isDirty: true,
+      dirtyFields: Object.keys(template).reduce((acc, k) => ({ ...acc, [k]: true }), { id: true }),
+      rowState: 'inserted',
+    } as GridRow;
+
+    const nextRows = [newRow, ...rows];
+    let dirtyCount = 0;
+    nextRows.forEach((r) => {
+      if (r.rowState === 'inserted' || r.rowState === 'deleted') dirtyCount++;
+      else if (r.dirtyFields) dirtyCount += Object.keys(r.dirtyFields).length;
+    });
+
+    set({
+      rows: nextRows,
+      pendingEditsCount: dirtyCount,
+      isTransactionOpen: true,
+      selectedRowData: newRow,
     });
   },
 
@@ -1300,10 +1598,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  commitTransaction: () => {
-    const { rows, getPendingSQL, activeConnection, history } = get();
+  commitTransaction: async () => {
+    const { rows, getPendingSQL, activeConnection, history, showToast } = get();
     const sqlText = getPendingSQL();
     const count = get().pendingEditsCount;
+
+    if (!sqlText || sqlText.startsWith('--')) {
+      showToast('⚠️ No pending changes in active transaction');
+      return { sqlText: '', count: 0 };
+    }
+
+    try {
+      const res = await executeRealQuery(activeConnection, sqlText);
+      if (!res.success && res.error) {
+        showToast(`❌ Commit failed: ${res.error}`);
+        return { sqlText, count: 0 };
+      }
+    } catch (e) {
+      console.warn('Real commit error, proceeding with local transaction:', e);
+    }
 
     // Filter out rows marked as deleted
     const committedRows = rows
@@ -1338,6 +1651,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       history: [newHistoryItem, ...history],
     });
 
+    showToast(`✅ Successfully committed ${count} change(s)`);
     return { sqlText, count };
   },
 

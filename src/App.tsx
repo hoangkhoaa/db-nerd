@@ -12,6 +12,7 @@ import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
 import { SettingsModal } from './components/SettingsModal';
 import { TableSchemaView } from './components/TableSchemaView';
+import { DefaultWorkspaceView } from './components/DefaultWorkspaceView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy } from 'lucide-react';
@@ -108,8 +109,9 @@ export function App() {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         if (useAppStore.getState().pendingEditsCount > 0) {
-          const res = commitTransaction();
-          alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s) in 1.4ms! All locks released.`);
+          commitTransaction().then((res) => {
+            alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s)! All locks released.`);
+          });
         }
       }
       // ⌘Z: Rollback Transaction (when not in input/textarea)
@@ -245,9 +247,11 @@ export function App() {
                 <span>Rollback (⌘Z)</span>
               </button>
               <button
-                onClick={() => {
-                  const res = commitTransaction();
-                  alert(`✅ Transaction Committed!\n\nExecuted ${res.count} change(s) in 1.4ms.`);
+                onClick={async () => {
+                  const res = await commitTransaction();
+                  if (res.count > 0) {
+                    alert(`✅ Transaction Committed!\n\nExecuted ${res.count} change(s).`);
+                  }
                 }}
                 className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded text-[11px] flex items-center space-x-1 shadow-sm transition-all active:scale-95"
               >
@@ -396,10 +400,16 @@ export function App() {
 
           {/* Active Tab View */}
           <div className="flex-1 flex overflow-hidden">
-            {currentTabType === 'grid' && <TableGrid key={activeTabObj?.tableName || 'grid'} />}
-            {currentTabType === 'schema' && <TableSchemaView key={activeTabObj?.tableName || 'schema'} />}
-            {currentTabType === 'sql' && <SqlEditor key={activeTabId} />}
-            {currentTabType === 'stats' && <Observability />}
+            {tabs.length === 0 || currentTabType === 'default' ? (
+              <DefaultWorkspaceView />
+            ) : (
+              <>
+                {currentTabType === 'grid' && <TableGrid key={activeTabObj?.tableName || 'grid'} />}
+                {currentTabType === 'schema' && <TableSchemaView key={activeTabObj?.tableName || 'schema'} />}
+                {currentTabType === 'sql' && <SqlEditor key={activeTabId} />}
+                {currentTabType === 'stats' && <Observability />}
+              </>
+            )}
           </div>
 
         </main>

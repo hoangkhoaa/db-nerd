@@ -16,9 +16,11 @@ export const SqlDiffModal = () => {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleCommitNow = () => {
-    const result = commitTransaction();
-    alert(`✅ Transaction Committed Successfully!\n\nExecuted ${result.count} statements in 1.4ms.\nAll locks released.`);
+  const handleCommitNow = async () => {
+    const result = await commitTransaction();
+    if (result.count > 0) {
+      alert(`✅ Transaction Committed Successfully!\n\nExecuted ${result.count} statements.\nAll locks released.`);
+    }
   };
 
   return (

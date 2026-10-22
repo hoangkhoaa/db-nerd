@@ -253,6 +253,7 @@ export const SqlEditor: React.FC = () => {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
+  const [contextMenuRows, setContextMenuRows] = useState<any[]>([]);
   const [editorContextPos, setEditorContextPos] = useState<ContextMenuPosition | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
   const [inspectingRow, setInspectingRow] = useState<any | null>(null);
@@ -587,7 +588,9 @@ export const SqlEditor: React.FC = () => {
                       }}
                       onContextMenu={(e) => {
                         e.preventDefault();
-                        setSelectedRowIds(new Set([r.id]));
+                        const rowId = r.id !== undefined ? r.id : index;
+                        setContextMenuRows([r]);
+                        setSelectedRowIds(new Set([rowId]));
                         setContextMenuPos({ x: e.clientX, y: e.clientY });
                       }}
                       className={`cursor-pointer transition-colors ${
@@ -629,9 +632,20 @@ export const SqlEditor: React.FC = () => {
       {/* Right-Click Context Menu for Results */}
       <TableContextMenu
         position={contextMenuPos}
-        selectedRows={results.filter((r) => selectedRowIds.has(r.id))}
+        selectedRows={
+          contextMenuRows.length > 0
+            ? contextMenuRows
+            : selectedRowIds.size > 0
+            ? results.filter((r, idx) => selectedRowIds.has(r.id !== undefined ? r.id : idx))
+            : results[0]
+            ? [results[0]]
+            : []
+        }
         tableName="query_results"
-        onClose={() => setContextMenuPos(null)}
+        onClose={() => {
+          setContextMenuPos(null);
+          setContextMenuRows([]);
+        }}
         onDuplicateRow={() => {}}
         onDeleteRows={() => {}}
         onQuickLook={(row) => setInspectingRow(row)}

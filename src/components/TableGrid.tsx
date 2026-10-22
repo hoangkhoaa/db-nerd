@@ -36,6 +36,7 @@ export const TableGrid: React.FC = () => {
     rows,
     updateCell,
     insertRow,
+    duplicateRow,
     deleteRow,
     selectedTable,
     selectedRowData,
@@ -57,6 +58,7 @@ export const TableGrid: React.FC = () => {
   const [editValue, setEditValue] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
+  const [targetContextMenuRows, setTargetContextMenuRows] = useState<GridRow[]>([]);
   const [colContextPos, setColContextPos] = useState<ContextMenuPosition | null>(null);
   const [targetCol, setTargetCol] = useState<any | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
@@ -80,7 +82,7 @@ export const TableGrid: React.FC = () => {
   };
 
   const handleDuplicateRow = (r: GridRow) => {
-    insertRow();
+    duplicateRow(r);
     showToast(`✨ Duplicated row #${r.id}`);
   };
 
@@ -268,8 +270,15 @@ export const TableGrid: React.FC = () => {
                     onClick={(e) => handleRowClick(row, e)}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      setContextMenuPos({ x: e.clientX, y: e.clientY });
+                      let nextSelected = selectedRowIds;
+                      if (!selectedRowIds.has(row.id)) {
+                        nextSelected = new Set([row.id]);
+                        setSelectedRowIds(nextSelected);
+                      }
                       setSelectedRowData(row);
+                      const matched = rows.filter((r) => nextSelected.has(r.id));
+                      setTargetContextMenuRows(matched.length > 0 ? matched : [row]);
+                      setContextMenuPos({ x: e.clientX, y: e.clientY });
                     }}
                     className={`cursor-pointer transition-colors ${
                       isSelected
@@ -578,9 +587,20 @@ export const TableGrid: React.FC = () => {
       {/* Right-Click Context Menu */}
       <TableContextMenu
         position={contextMenuPos}
-        selectedRows={rows.filter((r) => selectedRowIds.has(r.id))}
+        selectedRows={
+          targetContextMenuRows.length > 0
+            ? targetContextMenuRows
+            : selectedRowIds.size > 0
+            ? rows.filter((r) => selectedRowIds.has(r.id))
+            : selectedRowData
+            ? [selectedRowData]
+            : []
+        }
         tableName={selectedTable}
-        onClose={() => setContextMenuPos(null)}
+        onClose={() => {
+          setContextMenuPos(null);
+          setTargetContextMenuRows([]);
+        }}
         onDuplicateRow={handleDuplicateRow}
         onDeleteRows={handleDeleteRows}
         onQuickLook={(row) => setInspectingRow(row)}

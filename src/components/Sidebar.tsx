@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import {
   Search,
@@ -20,7 +20,8 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
-import { TABLE_SCHEMAS, getTablesForConnection } from '../data/schemas';
+import { getTablesForConnection, getTableSchema } from '../data/schemas';
+import { ColumnDefinition } from '../types';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -75,6 +76,13 @@ export const Sidebar = () => {
     history,
     showToast,
     reloadData,
+    truncateTable,
+    dropTable,
+    deletedTables,
+    settings,
+    setTableViewMode,
+    liveTables,
+    fetchLiveTables,
   } = useAppStore();
 
   const [sidebarTab, setSidebarTab] = useState<'items' | 'queries' | 'history'>('items');
@@ -89,7 +97,16 @@ export const Sidebar = () => {
   const [queryContextPos, setQueryContextPos] = useState<ContextMenuPosition | null>(null);
   const [targetQuery, setTargetQuery] = useState<{ id: string; title?: string; sql: string } | null>(null);
 
-  const connectionTables = getTablesForConnection(activeConnection.name, activeConnection.engine);
+  useEffect(() => {
+    fetchLiveTables(activeConnection);
+  }, [activeConnection.id, activeConnection.database]);
+
+  const deletedForConn = deletedTables[activeConnection.id] || [];
+  const liveForConn = liveTables[activeConnection.id];
+  const connectionTables = (liveForConn && liveForConn.length > 0
+    ? liveForConn
+    : getTablesForConnection(activeConnection.name, activeConnection.engine)
+  ).filter((t) => !deletedForConn.includes(t.name));
 
   const filteredTables = connectionTables.filter((t) =>
     t.name.toLowerCase().includes(searchFilter.toLowerCase())
@@ -377,7 +394,7 @@ export const Sidebar = () => {
             onClick={() => {
               setSelectedTable(targetTable);
               openTableGridTab(targetTable);
-              setTableContextPos(null);
+              setTableViewMode('data');
             }}
           />
           <ContextMenuItem
@@ -386,7 +403,6 @@ export const Sidebar = () => {
             onClick={() => {
               setSelectedTable(targetTable);
               openTableSchemaTab(targetTable);
-              setTableContextPos(null);
             }}
           />
           <ContextMenuItem
@@ -394,8 +410,7 @@ export const Sidebar = () => {
             label="Reload Table Data"
             shortcut="⌘R"
             onClick={() => {
-              reloadData();
-              setTableContextPos(null);
+              reloadData(targetTable);
             }}
           />
           <ContextMenuItem
@@ -403,8 +418,8 @@ export const Sidebar = () => {
             label="Query in New Tab"
             shortcut="⌘E"
             onClick={() => {
-              openNewQueryTab(`SELECT * FROM ${targetTable} LIMIT 100;`);
-              setTableContextPos(null);
+              const limit = settings.defaultQueryLimit || 100;
+              openNewQueryTab(`SELECT * FROM ${targetTable} LIMIT ${limit};`);
             }}
           />
           <ContextMenuDivider />
@@ -414,46 +429,65 @@ export const Sidebar = () => {
             onClick={() => {
               navigator.clipboard.writeText(targetTable);
               showToast(`📋 Copied "${targetTable}"`);
-              setTableContextPos(null);
             }}
           />
           <ContextMenuItem
             icon={<FileCode className="w-3.5 h-3.5 text-slate-400" />}
             label="Copy SELECT Query"
             onClick={() => {
-              const query = `SELECT * FROM ${targetTable} LIMIT 50;`;
+              const limit = settings.defaultQueryLimit || 100;
+              const query = `SELECT * FROM ${targetTable} LIMIT ${limit};`;
               navigator.clipboard.writeText(query);
               showToast(`📋 Copied SELECT query for "${targetTable}"`);
-              setTableContextPos(null);
             }}
           />
           <ContextMenuItem
             icon={<Code className="w-3.5 h-3.5 text-slate-400" />}
             label="Copy INSERT Template"
             onClick={() => {
-              const cols = TABLE_SCHEMAS[targetTable]?.columns || [];
-              const colNames = cols.map((c) => c.name).join(', ');
-              const valPlaceholders = cols
-                .map((c) => (c.type.includes('int') ? '0' : c.type.includes('bool') ? 'true' : "'value'"))
+              const schema = getTableSchema(targetTable);
+              const cols: ColumnDefinition[] = schema?.columns && schema.columns.length > 0
+                ? schema.columns
+                : [
+                    { name: 'id', type: 'integer', isNullable: false },
+                    { name: 'name', type: 'varchar', isNullable: false },
+                    { name: 'created_at', type: 'timestamp', isNullable: false },
+                  ];
+              
+              const insertCols = cols.filter((c) => !c.defaultValue?.includes('generated always'));
+              const colNames = insertCols.map((c) => c.name).join(', ');
+              const valPlaceholders = insertCols
+                .map((c) => {
+                  const type = (c.type || '').toLowerCase();
+                  if (type.includes('int') || type.includes('serial')) return '1';
+                  if (type.includes('bool')) return 'TRUE';
+                  if (type.includes('json')) return "'{}'::jsonb";
+                  if (type.includes('time') || type.includes('date')) return "'2026-10-22 18:30:00'";
+                  if (type.includes('num') || type.includes('float') || type.includes('dec')) return '99.99';
+                  return "'sample_value'";
+                })
                 .join(', ');
+              
               const insertSql = `INSERT INTO ${targetTable} (${colNames})\nVALUES (${valPlaceholders});`;
               navigator.clipboard.writeText(insertSql);
               showToast(`📋 Copied INSERT template for "${targetTable}"`);
-              setTableContextPos(null);
             }}
           />
           <ContextMenuItem
             icon={<Database className="w-3.5 h-3.5 text-slate-400" />}
             label="Copy CREATE TABLE DDL"
             onClick={() => {
-              const cols = TABLE_SCHEMAS[targetTable]?.columns || [];
-              const colDefs = cols
-                .map((c) => `  ${c.name} ${c.type.toUpperCase()}${c.isPrimaryKey ? ' PRIMARY KEY' : ''}`)
-                .join(',\n');
-              const ddlSql = `CREATE TABLE ${targetTable} (\n${colDefs}\n);`;
-              navigator.clipboard.writeText(ddlSql);
+              const schema = getTableSchema(targetTable);
+              let ddlSql = schema?.ddl;
+              if (!ddlSql) {
+                const cols = schema?.columns || [];
+                const colDefs = cols
+                  .map((c) => `  "${c.name}" ${c.type.toUpperCase()}${c.isPrimaryKey ? ' PRIMARY KEY' : ''}${c.isNullable ? '' : ' NOT NULL'}`)
+                  .join(',\n');
+                ddlSql = `CREATE TABLE "${targetTable}" (\n${colDefs}\n);`;
+              }
+              navigator.clipboard.writeText(ddlSql.trim());
               showToast(`📋 Copied CREATE TABLE DDL for "${targetTable}"`);
-              setTableContextPos(null);
             }}
           />
           <ContextMenuDivider />
@@ -462,10 +496,10 @@ export const Sidebar = () => {
             label="Truncate Table..."
             danger
             onClick={() => {
-              if (confirm(`Are you sure you want to TRUNCATE table "${targetTable}"? All data will be deleted.`)) {
-                showToast(`⚡ Truncated table "${targetTable}" (0 rows)`);
+              const shouldConfirm = settings.confirmDestructive;
+              if (!shouldConfirm || confirm(`Are you sure you want to TRUNCATE table "${targetTable}"? All data will be deleted.`)) {
+                truncateTable(targetTable);
               }
-              setTableContextPos(null);
             }}
           />
           <ContextMenuItem
@@ -473,10 +507,10 @@ export const Sidebar = () => {
             label="Drop Table..."
             danger
             onClick={() => {
-              if (confirm(`Are you sure you want to DROP table "${targetTable}"? This action cannot be undone.`)) {
-                showToast(`🗑️ Dropped table "${targetTable}"`);
+              const shouldConfirm = settings.confirmDestructive;
+              if (!shouldConfirm || confirm(`Are you sure you want to DROP table "${targetTable}"? This action cannot be undone.`)) {
+                dropTable(targetTable);
               }
-              setTableContextPos(null);
             }}
           />
         </ContextMenuContainer>
