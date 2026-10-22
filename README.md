@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="media/app-icon.jpg" width="128" height="128" alt="db-nerd Logo" style="border-radius: 28px;" />
+  <img src="media/app-icon.jpg" width="128" height="128" alt="DBNerd Logo" style="border-radius: 28px;" />
 </p>
 
-<h1 align="center">db-nerd 🤓 🗄️</h1>
+<h1 align="center">DBNerd 🤓 🗄️</h1>
 
 <p align="center">
   <strong>The fast, lightweight, native-feel database studio for developers who care about milliseconds.</strong>
@@ -21,24 +21,24 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="media/studio-preview.jpg" alt="db-nerd Studio Preview" width="100%" />
+  <img src="media/studio-preview.jpg" alt="DBNerd Studio Preview" width="100%" />
 </p>
 
 ---
 
-## ⚡ Why db-nerd?
+## ⚡ Why DBNerd?
 
 Most database management tools force you into an agonizing trade-off:
 * **The Bloat Trapped:** Heavy Java-based clients (JVM) consume 1.5GB–3GB of RAM, take 10 seconds to cold start, and drop frames due to garbage collection freezes.
 * **The Web-Wrap Lag:** Generic Electron wrappers bundle hundreds of megabytes of Chromium, eating up battery on your MacBook.
 
-**db-nerd** is built from scratch with **Tauri v2 + Rust Core + HTML5 Canvas** to deliver an uncompromisingly fast, native-feel studio that idles at **~50MB RAM** and opens in **under 0.4 seconds**.
+**DBNerd** is built from scratch with **Tauri v2 + Rust Core + HTML5 Canvas** to deliver an uncompromisingly fast, native-feel studio that idles at **~50MB RAM** and opens in **under 0.4 seconds**.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        PERFORMANCE BENCHMARK                           │
 ├──────────────────────┬─────────────┬─────────────┬─────────────────────┤
-│ Metric               │ Typical JVM │ Electron    │ db-nerd 🤓          │
+│ Metric               │ Typical JVM │ Electron    │ DBNerd 🤓           │
 ├──────────────────────┼─────────────┼─────────────┼─────────────────────┤
 │ 📦 Installer Size    │ ~1,200 MB   │ ~180 MB     │ 🟢 ~20 MB (.dmg)    │
 │ ⏱ Cold Start Time    │ 5 – 10s     │ 2 – 4s      │ 🟢 < 0.4s           │
@@ -53,7 +53,7 @@ Most database management tools force you into an agonizing trade-off:
 ## ✨ Features
 
 ### 1. 120 FPS Virtualized Canvas Data Grid
-Say goodbye to DOM lag. db-nerd renders millions of rows using hardware-accelerated Canvas with in-place cell editing, Foreign Key navigation pills (`🔗 501 (Alex Turner)`), inline JSON inspectors, and dirty state tracking with atomic commits.
+Say goodbye to DOM lag. DBNerd renders millions of rows using hardware-accelerated Canvas with in-place cell editing, Foreign Key navigation pills (`🔗 501 (Alex Turner)`), inline JSON inspectors, and dirty state tracking with atomic commits.
 
 ### 2. Multi-Engine Connection Manager with Nested Groups
 Organize databases into hierarchical folders with custom color-coded environment tags:
@@ -141,4 +141,4 @@ pnpm tauri build --target universal-apple-darwin
 
 ## 📄 License
 
-Distributed under the **MIT License**. Created with 💖 for developers by Khoa Nguyen and the `db-nerd` community.
+Distributed under the **MIT License**. Created with 💖 for developers by Khoa Nguyen and the `DBNerd` community.

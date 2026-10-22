@@ -37,46 +37,24 @@ export const DefaultWorkspaceView: React.FC = () => {
       {/* Main Container */}
       <div className="relative z-10 max-w-xl w-full flex flex-col items-center text-center space-y-6">
         
-        {/* TablePlus Style Cute Mascot Illustration (Handcrafted SVG) */}
-        <div className="relative group">
-          <div className="w-36 h-36 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/80 shadow-2xl flex items-center justify-center p-5 ring-1 ring-white/10 group-hover:border-sky-500/40 transition-all duration-300">
+        {/* DBNerd Cute Mascot Illustration with Speech Bubble */}
+        <div className="relative group flex flex-col items-center">
+          {/* Speech Bubble: "DBNerd" */}
+          <div className="relative mb-2 px-3.5 py-1 bg-teal-500/20 border border-teal-400/40 text-teal-200 rounded-full text-xs font-mono font-bold shadow-lg flex items-center space-x-1 select-none">
+            <span>DBNerd</span>
+            {/* Small speech bubble tail */}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-950 border-r border-b border-teal-400/40 rotate-45" />
+          </div>
+
+          <div className="w-32 h-32 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/80 shadow-2xl flex items-center justify-center p-3 ring-1 ring-white/10 group-hover:border-teal-500/40 transition-all duration-300 relative">
             {/* Ambient pulse */}
-            <div className="absolute inset-0 rounded-3xl bg-sky-500/5 blur-xl group-hover:bg-sky-500/10 transition-colors" />
+            <div className="absolute inset-0 rounded-3xl bg-teal-500/10 blur-xl group-hover:bg-teal-500/20 transition-colors" />
 
-            <svg
-              viewBox="0 0 120 120"
-              className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Database Cylinder Stack Base */}
-              <ellipse cx="60" cy="90" rx="36" ry="12" fill="#1E293B" stroke="#334155" strokeWidth="2" />
-              <path d="M24 75 C24 87 96 87 96 75 L96 90 C96 102 24 102 24 90 Z" fill="#0F172A" stroke="#334155" strokeWidth="2" />
-              <ellipse cx="60" cy="75" rx="36" ry="12" fill="#1E293B" stroke="#38BDF8" strokeWidth="2" strokeDasharray="3 3" />
-
-              {/* Glowing Energy Ring */}
-              <ellipse cx="60" cy="60" rx="42" ry="14" stroke="#0284C7" strokeWidth="1.5" strokeOpacity="0.4" />
-
-              {/* Middle Layer */}
-              <path d="M24 45 C24 57 96 57 96 45 L96 60 C96 72 24 72 24 60 Z" fill="#0F172A" stroke="#475569" strokeWidth="2" />
-              <ellipse cx="60" cy="45" rx="36" ry="12" fill="#334155" stroke="#64748B" strokeWidth="2" />
-
-              {/* TablePlus Character / Robot Mascot */}
-              <circle cx="60" cy="36" r="16" fill="#38BDF8" />
-              {/* Cute Visor / Eyes */}
-              <rect x="50" y="32" width="20" height="8" rx="4" fill="#0F172A" />
-              <circle cx="55" cy="36" r="2" fill="#38BDF8" />
-              <circle cx="65" cy="36" r="2" fill="#38BDF8" />
-
-              {/* Antenna with green connection LED */}
-              <path d="M60 20 L60 12" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="60" cy="10" r="3" fill="#10B981" />
-
-              {/* Data Sparkles */}
-              <circle cx="92" cy="30" r="1.5" fill="#F59E0B" />
-              <circle cx="28" cy="38" r="1.5" fill="#38BDF8" />
-              <circle cx="85" cy="80" r="2" fill="#10B981" />
-            </svg>
+            <img
+              src="/app-icon.png"
+              alt="DBNerd Mascot"
+              className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
 
           {/* Engine Badge */}

@@ -1,6 +1,6 @@
-# Development & Testing Guide — db-nerd 🤓
+# Development & Testing Guide — DBNerd 🤓
 
-This guide explains how to set up, develop, and test db-nerd locally on macOS.
+This guide explains how to set up, develop, and test DBNerd locally on macOS.
 
 ---
 
@@ -80,5 +80,5 @@ pnpm tauri build --target universal-apple-darwin
 ```
 
 The resulting release artifacts will be saved at:
-* **DMG Installer:** `src-tauri/target/release/bundle/dmg/db-nerd_0.1.0_aarch64.dmg`
-* **Application Bundle:** `src-tauri/target/release/bundle/macos/db-nerd.app`
+* **DMG Installer:** `src-tauri/target/release/bundle/dmg/DBNerd_0.1.0_aarch64.dmg`
+* **Application Bundle:** `src-tauri/target/release/bundle/macos/DBNerd.app`

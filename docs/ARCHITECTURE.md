@@ -1,6 +1,6 @@
-# Architecture Blueprint — db-nerd 🤓 🗄️
+# Architecture Blueprint — DBNerd 🤓 🗄️
 
-This document details the high-performance system architecture of **db-nerd**, explaining how it achieves a **< 0.4s cold start**, **~50MB RAM footprint**, and **120 FPS data grid virtualization**.
+This document details the high-performance system architecture of **DBNerd**, explaining how it achieves a **< 0.4s cold start**, **~50MB RAM footprint**, and **120 FPS data grid virtualization**.
 
 ---
 
@@ -13,13 +13,13 @@ This document details the high-performance system architecture of **db-nerd**, e
 │  • SQL Editor: CodeMirror 6 with Lezer AST & Autocomplete   │
 │  • UI System: Tailwind CSS v4 + Lucide Icons                │
 │  • State: Zustand (Dirty Delta Tracker, Connection Tree)   │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ High-Speed IPC (Binary Stream / Arrow)
+│└──────────────────────────────┬──────────────────────────────┘
+                                │ High-Speed IPC (Binary Stream / Arrow)
 ┌──────────────────────────────▼──────────────────────────────┐
 │                    NATIVE SHELL: Tauri v2                   │
 │         (macOS WebKit runtime, binary ~20MB, RAM ~50MB)     │
 └──────────────────────────────┬──────────────────────────────┘
-                               │ Native Rust System Calls
+                                │ Native Rust System Calls
 ┌──────────────────────────────▼──────────────────────────────┐
 │                     BACKEND CORE (Rust)                     │
 │  • Connection Pool: sqlx (Postgres, MySQL, SQLite)          │
@@ -35,12 +35,12 @@ This document details the high-performance system architecture of **db-nerd**, e
 ## 2. Core Pillars of Performance
 
 ### A. The 50MB RAM Budget (No JVM, No Bundled Chromium)
-* **Zero JVM Overhead:** Unlike Java-based clients that demand 1.5GB+ heap allocations and cause Garbage Collection (GC) pauses, db-nerd's backend is 100% native Rust with zero GC latency.
+* **Zero JVM Overhead:** Unlike Java-based clients that demand 1.5GB+ heap allocations and cause Garbage Collection (GC) pauses, DBNerd's backend is 100% native Rust with zero GC latency.
 * **OS-Provided WebKit:** Tauri v2 reuses the system-level WebKit framework already resident in macOS memory, eliminating the 150MB+ footprint of an embedded Chromium browser.
 
 ### B. Canvas Virtualized Data Grid (120 FPS)
 * Standard HTML table clients instantiate tens of thousands of DOM `<div>` nodes, causing severe layout thrashing and dropped frames.
-* db-nerd draws table cells directly onto an **HTML5 Canvas using Apple Metal GPU acceleration**. Memory is proportional only to the visible viewport (typically ~40–50 visible rows), rendering millions of rows effortlessly.
+* DBNerd draws table cells directly onto an **HTML5 Canvas using Apple Metal GPU acceleration**. Memory is proportional only to the visible viewport (typically ~40–50 visible rows), rendering millions of rows effortlessly.
 
 ### C. In-Memory Schema Indexer (< 0.8ms Autocomplete)
 * Queries `information_schema` and `pg_constraint` exactly once on connection.

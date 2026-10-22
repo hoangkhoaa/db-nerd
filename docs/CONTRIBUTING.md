@@ -1,4 +1,4 @@
-# Contributing to db-nerd 🤓
+# Contributing to DBNerd 🤓
 
 We welcome contributions from developers who care about native speed, clean code, and zero bloat!
 

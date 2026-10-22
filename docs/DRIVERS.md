@@ -1,6 +1,6 @@
-# Database Drivers & Connection Guide — db-nerd 🤓
+# Database Drivers & Connection Guide — DBNerd 🤓
 
-db-nerd provides first-class support for SQL, In-Memory NoSQL, and Cloud Data Warehouses out of the box.
+DBNerd provides first-class support for SQL, In-Memory NoSQL, and Cloud Data Warehouses out of the box.
 
 ---
 
@@ -17,7 +17,7 @@ db-nerd provides first-class support for SQL, In-Memory NoSQL, and Cloud Data Wa
 
 ## 2. SSH Bastion & Tunneling
 
-For databases running inside isolated VPCs (AWS RDS, GCP Cloud SQL, private on-premise servers), db-nerd supports direct SSH tunneling through Bastion jump hosts:
+For databases running inside isolated VPCs (AWS RDS, GCP Cloud SQL, private on-premise servers), DBNerd supports direct SSH tunneling through Bastion jump hosts:
 
 * **Authentication Modes:**
   * Password
