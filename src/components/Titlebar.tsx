@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
+import { LedMatrixBanner } from './LedMatrixBanner';
 import { ThemeMode } from '../types';
 
 export const Titlebar = () => {
@@ -25,7 +26,6 @@ export const Titlebar = () => {
     setDatabaseModalOpen,
     setHistoryModalOpen,
     pendingEditsCount,
-    selectedTable,
     commitTransaction,
     rollbackTransaction,
     isRightInspectorOpen,
@@ -88,15 +88,6 @@ export const Titlebar = () => {
     }
   };
 
-  const engineLabel =
-    activeConnection.engine === 'postgres'
-      ? 'PostgreSQL 17.7'
-      : activeConnection.engine === 'mysql'
-      ? 'MySQL 8.0.36'
-      : activeConnection.engine === 'snowflake'
-      ? 'Snowflake 8.2'
-      : 'Redis 7.2';
-
   return (
     <header 
       data-tauri-drag-region
@@ -158,29 +149,9 @@ export const Titlebar = () => {
         </button>
       </div>
 
-      {/* Center: Environment Safety Pill Banner (TablePlus iconic layout) */}
+      {/* Center: TablePlus Iconic LED Dot-Matrix Banner with Live Telemetry */}
       <div className="flex items-center justify-center pointer-events-auto min-w-0 max-w-xl mx-2">
-        <button
-          onClick={() => setDatabaseModalOpen(true)}
-          className={`no-drag h-7 px-3.5 rounded-full text-xs font-mono font-bold transition shadow-sm active:scale-95 flex items-center space-x-2 whitespace-nowrap leading-none shrink-0 cursor-pointer ${
-            activeConnection.env === 'prod'
-              ? 'bg-rose-600/90 hover:bg-rose-600 text-white shadow-rose-950/40 border border-rose-400/40'
-              : activeConnection.env === 'staging'
-              ? 'bg-amber-600/90 hover:bg-amber-600 text-white shadow-amber-950/40 border border-amber-400/40'
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 border border-emerald-400/40'
-          }`}
-          title="Click to Switch Database (⌘O)"
-        >
-          <span className="shrink-0 leading-none">{engineLabel}</span>
-          <span className="opacity-60 shrink-0 leading-none">:</span>
-          <span className="shrink-0 leading-none">TLSv1.3</span>
-          <span className="opacity-60 shrink-0 leading-none">:</span>
-          <span className="truncate max-w-[130px] leading-none">{activeConnection.name}</span>
-          <span className="opacity-60 shrink-0 leading-none">:</span>
-          <span className="underline decoration-white/40 underline-offset-2 truncate max-w-[110px] leading-none">{activeConnection.database || 'postgres'}</span>
-          <span className="opacity-60 shrink-0 leading-none">:</span>
-          <span className="truncate max-w-[130px] leading-none">public.{selectedTable}</span>
-        </button>
+        <LedMatrixBanner onOpenDatabaseModal={() => setDatabaseModalOpen(true)} />
       </div>
 
       {/* Right: Clean, un-cluttered actions matching TablePlus */}

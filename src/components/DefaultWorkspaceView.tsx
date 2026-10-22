@@ -5,6 +5,8 @@ import {
   Table as TableIcon,
   Layers,
   ShieldCheck,
+  Zap,
+  Activity,
 } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
 
@@ -13,6 +15,11 @@ export const DefaultWorkspaceView: React.FC = () => {
     activeConnection,
     openNewQueryTab,
     openTableGridTab,
+    isConnecting,
+    connectingPhase,
+    connectingLogs,
+    networkSpeed,
+    triggerConnectingAnimation,
   } = useAppStore();
 
   const isPostgres = activeConnection.engine === 'postgres';
@@ -35,31 +42,67 @@ export const DefaultWorkspaceView: React.FC = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-950/20 via-slate-950 to-slate-950 pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 max-w-xl w-full flex flex-col items-center text-center space-y-6">
+      <div className="relative z-10 max-w-xl w-full flex flex-col items-center text-center space-y-5">
         
         {/* DBNerd Cute Mascot Illustration with Speech Bubble */}
         <div className="relative group flex flex-col items-center">
-          {/* Speech Bubble: "DBNerd" */}
-          <div className="relative mb-2 px-3.5 py-1 bg-teal-500/20 border border-teal-400/40 text-teal-200 rounded-full text-xs font-mono font-bold shadow-lg flex items-center space-x-1 select-none">
-            <span>DBNerd</span>
+          {/* Speech Bubble: "DBNerd" or Connecting Status */}
+          <div
+            className={`relative mb-2 px-3.5 py-1 rounded-full text-xs font-mono font-bold shadow-lg flex items-center space-x-1.5 select-none transition-all duration-200 ${
+              isConnecting
+                ? 'bg-sky-500/25 border border-sky-400 text-sky-200 shadow-sky-500/30 animate-pulse'
+                : 'bg-teal-500/20 border border-teal-400/40 text-teal-200'
+            }`}
+          >
+            {isConnecting ? (
+              <span className="flex items-center space-x-1.5 text-sky-300">
+                <Zap className="w-3.5 h-3.5 fill-sky-400 text-sky-400 animate-bounce" />
+                <span className="font-extrabold">{connectingPhase || 'Connecting to DB...'}</span>
+              </span>
+            ) : (
+              <span>DBNerd</span>
+            )}
             {/* Small speech bubble tail */}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-950 border-r border-b border-teal-400/40 rotate-45" />
+            <div
+              className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-950 border-r border-b rotate-45 ${
+                isConnecting ? 'border-sky-400' : 'border-teal-400/40'
+              }`}
+            />
           </div>
 
-          <div className="w-32 h-32 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/80 shadow-2xl flex items-center justify-center p-3 ring-1 ring-white/10 group-hover:border-teal-500/40 transition-all duration-300 relative">
+          <div
+            className={`w-32 h-32 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border shadow-2xl flex items-center justify-center p-3 ring-1 ring-white/10 transition-all duration-300 relative overflow-hidden ${
+              isConnecting
+                ? 'border-sky-400/80 shadow-[0_0_25px_rgba(56,189,248,0.5)] ring-sky-400/30'
+                : 'border-slate-800/80 group-hover:border-teal-500/40'
+            }`}
+          >
             {/* Ambient pulse */}
-            <div className="absolute inset-0 rounded-3xl bg-teal-500/10 blur-xl group-hover:bg-teal-500/20 transition-colors" />
+            <div
+              className={`absolute inset-0 rounded-3xl blur-xl transition-colors ${
+                isConnecting
+                  ? 'bg-sky-500/30 animate-pulse'
+                  : 'bg-teal-500/10 group-hover:bg-teal-500/20'
+              }`}
+            />
+
+            {/* Laser scanning beam during connecting */}
+            {isConnecting && (
+              <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-sky-300 to-transparent shadow-[0_0_12px_rgba(56,189,248,1)] animate-laser-scan pointer-events-none z-20" />
+            )}
 
             <img
               src="/app-icon.png"
               alt="DBNerd Mascot"
-              className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] group-hover:scale-105 transition-transform duration-300"
+              className={`w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+                isConnecting ? 'scale-105 brightness-110' : 'group-hover:scale-105'
+              }`}
             />
           </div>
 
           {/* Engine Badge */}
           <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-slate-900 border border-slate-700/80 rounded-full flex items-center space-x-1.5 shadow-md">
-            <HeartbeatDot color="green" size="xs" showWave={true} />
+            <HeartbeatDot color={isConnecting ? 'amber' : 'green'} size="xs" showWave={true} />
             <span className="text-[10px] font-mono font-bold text-slate-200 uppercase tracking-wider">
               {activeConnection.engine}
             </span>
@@ -67,7 +110,7 @@ export const DefaultWorkspaceView: React.FC = () => {
         </div>
 
         {/* Database & Connection Header */}
-        <div className="space-y-1.5 pt-2">
+        <div className="space-y-1.5 pt-1">
           <div className="flex items-center justify-center space-x-2">
             <h1 className="text-base font-bold text-slate-100 font-mono tracking-tight">
               {activeConnection.database || 'postgres'}
@@ -90,8 +133,34 @@ export const DefaultWorkspaceView: React.FC = () => {
           </p>
         </div>
 
+        {/* Live Cyber Telemetry Console (Appears during connection or benchmark) */}
+        {isConnecting ? (
+          <div className="w-full max-w-md bg-slate-950/90 border border-sky-500/40 rounded-xl p-3 shadow-xl text-left space-y-1.5 font-mono text-xs animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between text-[11px] pb-1 border-b border-sky-500/20 text-sky-300 font-bold">
+              <span className="flex items-center space-x-1.5">
+                <Activity className="w-3 h-3 animate-spin text-sky-400" />
+                <span>HANDSHAKE TELEMETRY</span>
+              </span>
+              <span className="text-amber-300">{networkSpeed || '355 KB/s'}</span>
+            </div>
+            <div className="space-y-1 text-[11px] max-h-32 overflow-y-auto font-mono text-slate-300">
+              {connectingLogs.map((log, idx) => (
+                <div key={idx} className="leading-snug animate-in fade-in slide-in-from-left-2 duration-100">
+                  {log.includes('🟢') ? (
+                    <span className="text-emerald-400 font-bold">{log}</span>
+                  ) : log.includes('TLS') ? (
+                    <span className="text-sky-300">{log}</span>
+                  ) : (
+                    <span>{log}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* Quick Action Tiles */}
-        <div className="grid grid-cols-2 gap-3 w-full max-w-md pt-2">
+        <div className="grid grid-cols-2 gap-3 w-full max-w-md">
           {/* Action 1: New SQL Console */}
           <button
             onClick={() => openNewQueryTab()}
@@ -120,6 +189,19 @@ export const DefaultWorkspaceView: React.FC = () => {
               <kbd className="text-[10px] font-mono text-slate-500 group-hover:text-emerald-300 font-bold">⌘O</kbd>
             </div>
             <span className="text-[11px] text-slate-400 mt-0.5">Explore {defaultSuggestedTable} data grid</span>
+          </button>
+        </div>
+
+        {/* Hype Ping Benchmark & Shortcuts Banner */}
+        <div className="w-full max-w-md flex items-center justify-between space-x-2">
+          <button
+            onClick={() => triggerConnectingAnimation(activeConnection.id)}
+            disabled={isConnecting}
+            className="flex-1 py-2 px-3 rounded-xl bg-slate-900/70 hover:bg-slate-850 border border-slate-800 hover:border-sky-500/40 text-xs font-mono text-sky-400 flex items-center justify-center space-x-1.5 transition active:scale-95 cursor-pointer shadow-sm group"
+            title="Trigger connection handshake animation & ping benchmark"
+          >
+            <Zap className="w-3.5 h-3.5 group-hover:scale-110 transition-transform fill-current" />
+            <span>⚡ Test Connection & Latency</span>
           </button>
         </div>
 

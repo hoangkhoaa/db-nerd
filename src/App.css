@@ -366,3 +366,50 @@ html.light body,
   color: #94a3b8 !important;
 }
 
+/* ==========================================================================
+   TablePlus Iconic LED Matrix & Connecting Cyber Animations
+   ========================================================================== */
+
+@keyframes led-sweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes cyber-hologram {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.8), inset 0 0 25px rgba(56, 189, 248, 0.5);
+    border-color: rgba(14, 165, 233, 0.9);
+  }
+}
+
+@keyframes laser-scan {
+  0% {
+    top: -5%;
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 105%;
+    opacity: 0.2;
+  }
+}
+
+.animate-laser-scan {
+  animation: laser-scan 1.5s ease-in-out infinite;
+}
+
+.animate-cyber-hologram {
+  animation: cyber-hologram 2s ease-in-out infinite;
+}
+
+

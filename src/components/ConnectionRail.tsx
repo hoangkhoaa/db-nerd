@@ -16,6 +16,7 @@ export const ConnectionRail: React.FC = () => {
     connections,
     openSessionIds,
     activeConnection,
+    isConnecting,
     switchActiveConnection,
     closeSession,
     setConnectionModalOpen,
@@ -84,6 +85,11 @@ export const ConnectionRail: React.FC = () => {
                 }`}
                 title={`${conn.name} (${conn.engine}) • ${conn.database} • ${conn.host}:${conn.port}`}
               >
+                {/* Connecting Neon Energy Ring */}
+                {isActive && isConnecting && (
+                  <div className="absolute inset-0 rounded-xl border-2 border-sky-400 border-t-transparent animate-spin pointer-events-none" />
+                )}
+
                 {/* Engine Icon & Status LED */}
                 <div className="relative flex items-center justify-center mb-0.5">
                   <span className="text-base select-none leading-none">{getEngineEmoji(conn.engine)}</span>
