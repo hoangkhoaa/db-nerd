@@ -197,3 +197,172 @@ code.select-text,
 .heartbeat-wave {
   animation: heartbeat-wave 2.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
+
+/* ==========================================================================
+   Light Mode Theme Overrides (TablePlus / macOS Light Aesthetic)
+   ========================================================================== */
+html.light body,
+.light body,
+[data-theme="light"] body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Backgrounds */
+.light .bg-slate-950,
+.light [class*="bg-slate-950"],
+.light .bg-\[\#0a0f1d\],
+.light [class*="bg-\[\#0a0f1d\]"] {
+  background-color: #ffffff !important;
+}
+
+.light .bg-\[\#070b14\],
+.light [class*="bg-\[\#070b14\]"] {
+  background-color: #f1f5f9 !important;
+}
+
+.light .bg-slate-900,
+.light [class*="bg-slate-900"] {
+  background-color: #f8fafc !important;
+}
+
+.light .bg-slate-800,
+.light [class*="bg-slate-800"] {
+  background-color: #e2e8f0 !important;
+}
+
+/* Borders */
+.light .border-slate-800,
+.light [class*="border-slate-800"],
+.light .border-slate-700,
+.light [class*="border-slate-700"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text Colors */
+.light .text-slate-100,
+.light [class*="text-slate-100"],
+.light .text-slate-200,
+.light [class*="text-slate-200"] {
+  color: #0f172a !important;
+}
+
+.light .text-slate-300,
+.light [class*="text-slate-300"] {
+  color: #1e293b !important;
+}
+
+.light .text-slate-400,
+.light [class*="text-slate-400"] {
+  color: #475569 !important;
+}
+
+.light .text-slate-500,
+.light [class*="text-slate-500"] {
+  color: #64748b !important;
+}
+
+.light .text-slate-600,
+.light [class*="text-slate-600"] {
+  color: #94a3b8 !important;
+}
+
+/* Hover States */
+.light .hover\:bg-slate-800:hover,
+.light .hover\:bg-slate-900:hover,
+.light .hover\:bg-slate-850:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.light .hover\:bg-slate-900\/60:hover,
+.light .hover\:bg-slate-800\/50:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.light .hover\:text-white:hover,
+.light .hover\:text-slate-200:hover,
+.light .hover\:text-slate-100:hover {
+  color: #0284c7 !important;
+}
+
+/* Table Grid in Light Mode */
+.light table thead {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light table thead th {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light table tbody tr.bg-slate-900\/40 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.light table tbody tr.bg-slate-950\/60 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.light table tbody tr:hover {
+  background-color: #f0f9ff !important;
+}
+
+.light table tbody tr.bg-sky-600\/30 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.light table td {
+  border-color: #e2e8f0 !important;
+}
+
+/* Active Tabs in Light Mode */
+.light button[class*="bg-sky-500\/20"] {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #38bdf8 !important;
+}
+
+/* CodeMirror SQL Editor in Light Mode */
+.light .cm-editor {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.light .cm-gutters {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+}
+
+.light .cm-activeLine {
+  background-color: #f8fafc !important;
+}
+
+.light .cm-selectionBackground,
+.light .cm-focused .cm-selectionBackground,
+.light ::selection {
+  background-color: #bae6fd !important;
+  color: #0f172a !important;
+}
+
+/* Input elements in Light Mode */
+.light input[type="text"],
+.light input[type="search"],
+.light input[type="password"],
+.light select,
+.light textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.light input::placeholder {
+  color: #94a3b8 !important;
+}
+

@@ -1,5 +1,16 @@
 export type DatabaseEngine = 'postgres' | 'mysql' | 'redis' | 'snowflake';
 export type EnvironmentTag = 'prod' | 'staging' | 'local';
+export type ThemeMode = 'dark' | 'light' | 'auto';
+export type RowDensity = 'compact' | 'normal' | 'relaxed';
+
+export interface UserSettings {
+  themeMode: ThemeMode;
+  editorFontSize: number;
+  rowDensity: RowDensity;
+  autoFormatSql: boolean;
+  confirmDestructive: boolean;
+  defaultQueryLimit: number;
+}
 
 export interface ConnectionGroup {
   id: string;

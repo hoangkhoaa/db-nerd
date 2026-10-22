@@ -10,6 +10,7 @@ import { ConnectionModal } from './components/ConnectionModal';
 import { OpenDatabaseModal } from './components/OpenDatabaseModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
+import { SettingsModal } from './components/SettingsModal';
 import { TableSchemaView } from './components/TableSchemaView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
@@ -44,6 +45,9 @@ export function App() {
     setDatabaseModalOpen,
     setHistoryModalOpen,
     setSqlDiffModalOpen,
+    settings,
+    setSettingsModalOpen,
+    updateResolvedTheme,
     commitTransaction,
     rollbackTransaction,
     toastMessage,
@@ -117,6 +121,11 @@ export function App() {
           }
         }
       }
+      // ⌘, : Preferences & Settings
+      if ((e.metaKey || e.ctrlKey) && (e.key === ',' || e.code === 'Comma')) {
+        e.preventDefault();
+        setSettingsModalOpen(true);
+      }
       // ⌘1 - ⌘9: Switch directly to tab index
       if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
         const tabIndex = parseInt(e.key, 10) - 1;
@@ -130,6 +139,43 @@ export function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Synchronize Theme Mode (Light / Dark / Auto Device)
+  useEffect(() => {
+    const applyTheme = () => {
+      const mode = settings.themeMode;
+      let resolved: 'dark' | 'light' = 'dark';
+      if (mode === 'auto') {
+        resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      } else {
+        resolved = mode;
+      }
+      updateResolvedTheme(resolved);
+
+      if (resolved === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    };
+
+    applyTheme();
+
+    const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (mediaQuery) {
+      const handleChange = () => {
+        if (useAppStore.getState().settings.themeMode === 'auto') {
+          applyTheme();
+        }
+      };
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [settings.themeMode]);
 
   const activeTabObj = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const currentTabType = activeTabObj?.type || activeTab;
@@ -468,6 +514,7 @@ export function App() {
       <OpenDatabaseModal />
       <QueryHistoryModal />
       <SqlDiffModal />
+      <SettingsModal />
 
     </div>
   );

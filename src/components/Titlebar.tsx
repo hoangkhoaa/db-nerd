@@ -9,9 +9,14 @@ import {
   Database,
   Filter,
   History,
+  Sliders,
+  Sun,
+  Moon,
+  Laptop,
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
+import { ThemeMode } from '../types';
 
 export const Titlebar = () => {
   const {
@@ -32,7 +37,21 @@ export const Titlebar = () => {
     openNewQueryTab,
     isReloading,
     reloadData,
+    settings,
+    resolvedTheme,
+    setThemeMode,
+    setSettingsModalOpen,
   } = useAppStore();
+
+  const handleCycleTheme = () => {
+    const nextTheme: ThemeMode =
+      settings.themeMode === 'auto'
+        ? 'dark'
+        : settings.themeMode === 'dark'
+        ? 'light'
+        : 'auto';
+    setThemeMode(nextTheme);
+  };
 
   const handleCommit = () => {
     const res = commitTransaction();
@@ -223,6 +242,30 @@ export const Titlebar = () => {
         </button>
 
         <div className="h-4 w-[1px] bg-slate-800 mx-0.5" />
+
+        {/* Quick Theme Mode Toggle */}
+        <button
+          onClick={handleCycleTheme}
+          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 flex items-center justify-center cursor-pointer"
+          title={`Theme: ${settings.themeMode === 'auto' ? `Auto (System: ${resolvedTheme})` : settings.themeMode === 'dark' ? 'Dark' : 'Light'} (Click to cycle)`}
+        >
+          {settings.themeMode === 'auto' ? (
+            <Laptop className="w-3.5 h-3.5 text-sky-400" />
+          ) : settings.themeMode === 'light' ? (
+            <Sun className="w-3.5 h-3.5 text-amber-400" />
+          ) : (
+            <Moon className="w-3.5 h-3.5 text-indigo-400" />
+          )}
+        </button>
+
+        {/* Preferences & Settings */}
+        <button
+          onClick={() => setSettingsModalOpen(true)}
+          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95 cursor-pointer"
+          title="Preferences & Settings (⌘,)"
+        >
+          <Sliders className="w-3.5 h-3.5" />
+        </button>
 
         {/* AI Assistant */}
         <button 

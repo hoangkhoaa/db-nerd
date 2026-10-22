@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, UserSettings } from '../types';
 import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS } from '../data/schemas';
 
 interface AppState {
@@ -25,6 +25,15 @@ interface AppState {
 
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;
+
+  // User Settings & Theme Mode (Dark / Light / Auto)
+  settings: UserSettings;
+  resolvedTheme: 'dark' | 'light';
+  isSettingsModalOpen: boolean;
+  setSettingsModalOpen: (open: boolean) => void;
+  updateSettings: (updates: Partial<UserSettings>) => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  updateResolvedTheme: (resolved: 'dark' | 'light') => void;
 
   // Multi-Connection Workspaces & Session Isolation
   openSessionIds: string[];
@@ -423,7 +432,61 @@ const INITIAL_SESSIONS: Record<string, ConnectionSession> = {
   'conn-1': createDefaultSessionForConnection(INITIAL_CONNECTIONS[1]),
 };
 
+const getInitialSettings = (): UserSettings => {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('db_nerd_user_settings') : null;
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {
+    themeMode: 'auto',
+    editorFontSize: 13,
+    rowDensity: 'normal',
+    autoFormatSql: false,
+    confirmDestructive: true,
+    defaultQueryLimit: 100,
+  };
+};
+
+const resolveTheme = (mode: ThemeMode): 'dark' | 'light' => {
+  if (mode === 'auto') {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'dark';
+  }
+  return mode;
+};
+
+const INITIAL_SETTINGS = getInitialSettings();
+const INITIAL_RESOLVED_THEME = resolveTheme(INITIAL_SETTINGS.themeMode);
+
 export const useAppStore = create<AppState>((set, get) => ({
+  settings: INITIAL_SETTINGS,
+  resolvedTheme: INITIAL_RESOLVED_THEME,
+  isSettingsModalOpen: false,
+  setSettingsModalOpen: (open) => set({ isSettingsModalOpen: open }),
+
+  updateSettings: (updates) => {
+    set((state) => {
+      const nextSettings = { ...state.settings, ...updates };
+      try {
+        localStorage.setItem('db_nerd_user_settings', JSON.stringify(nextSettings));
+      } catch {}
+      const nextResolved = resolveTheme(nextSettings.themeMode);
+      return {
+        settings: nextSettings,
+        resolvedTheme: nextResolved,
+      };
+    });
+  },
+
+  setThemeMode: (mode) => {
+    get().updateSettings({ themeMode: mode });
+    get().showToast(`🎨 Theme: ${mode === 'auto' ? 'Auto (System)' : mode === 'dark' ? 'Dark Mode' : 'Light Mode'}`);
+  },
+
+  updateResolvedTheme: (resolved) => set({ resolvedTheme: resolved }),
+
   openSessionIds: ['conn-stock', 'conn-1'],
   sessions: INITIAL_SESSIONS,
 
