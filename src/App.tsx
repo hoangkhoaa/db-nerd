@@ -19,7 +19,7 @@ import { AllFunctionsView } from './components/AllFunctionsView';
 import { RightInspector } from './components/RightInspector';
 import { BottomPanel } from './components/BottomPanel';
 import { HeartbeatDot } from './components/HeartbeatDot';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy, Code } from 'lucide-react';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy, Code } from 'lucide-react';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -55,7 +55,6 @@ export function App() {
     rightInspectorWidth,
     setRightInspectorWidth,
     isBottomPanelOpen,
-    toggleBottomPanel,
     bottomPanelHeight,
     setBottomPanelHeight,
     setConnectionModalOpen,
@@ -106,13 +105,13 @@ export function App() {
         setDatabaseModalOpen(true);
       }
       // ⌘T or ⌘E: New SQL Query Tab (TablePlus standard)
-      if ((e.metaKey || e.ctrlKey) && (e.key === 't' || e.key === 'T' || e.key === 'e' || e.key === 'E')) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 't' || e.key === 'T' || e.code === 'KeyT' || e.key === 'e' || e.key === 'E' || e.code === 'KeyE')) {
         e.preventDefault();
         e.stopPropagation();
         openNewQueryTab();
       }
       // ⌘W: Close Active Tab
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'W')) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'W' || e.code === 'KeyW')) {
         e.preventDefault();
         e.stopPropagation();
         const activeId = useAppStore.getState().activeTabId;
@@ -423,7 +422,7 @@ export function App() {
         ) : (
           <button
             onClick={toggleSidebar}
-            className="w-4 hover:w-5 bg-slate-900/90 hover:bg-slate-800 border-r border-slate-800 text-slate-500 hover:text-sky-300 flex items-center justify-center transition-all cursor-pointer group flex-shrink-0 z-10"
+            className="w-4 hover:w-5 bg-slate-100 dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 border-r border-slate-300 dark:border-slate-800 text-slate-500 hover:text-sky-600 dark:hover:text-sky-300 flex items-center justify-center transition-all cursor-pointer group flex-shrink-0 z-10"
             title="Expand Sidebar (⌘B)"
           >
             <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
@@ -545,27 +544,8 @@ export function App() {
 
             </div>
 
-            {/* Right Controls: Split Editor, Console Toggle & Engine Stats */}
+            {/* Right Controls: Engine Stats */}
             <div className="flex items-center space-x-2 flex-shrink-0 pl-2 h-full">
-              <button
-                onClick={toggleBottomPanel}
-                className={`h-7 px-2 flex items-center space-x-1.5 rounded-md border text-xs font-semibold transition cursor-pointer ${
-                  isBottomPanelOpen
-                    ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/50 shadow-xs'
-                    : 'bg-white/80 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-                title="Toggle Console Log & Query History (⌘J)"
-              >
-                <Terminal className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline text-[11px]">Console</span>
-              </button>
-              <button
-                onClick={() => {}}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
-                title="Toggle Split Editor (⌘\)"
-              >
-                <Columns2 className="w-3.5 h-3.5" />
-              </button>
               <div className="text-[11px] text-slate-600 dark:text-slate-500 font-mono hidden md:flex items-center space-x-2 leading-none">
                 <span>Tabs: <strong className="text-slate-800 dark:text-slate-300">{tabs.length}</strong></span>
                 <span>•</span>
@@ -636,7 +616,7 @@ export function App() {
         ) : (
           <button
             onClick={toggleRightInspector}
-            className="w-4 hover:w-5 bg-slate-900/90 hover:bg-slate-800 border-l border-slate-800 text-slate-500 hover:text-sky-300 flex items-center justify-center transition-all cursor-pointer group flex-shrink-0 z-10"
+            className="w-4 hover:w-5 bg-slate-100 dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 border-l border-slate-300 dark:border-slate-800 text-slate-500 hover:text-sky-600 dark:hover:text-sky-300 flex items-center justify-center transition-all cursor-pointer group flex-shrink-0 z-10"
             title="Expand Right Inspector (⌘I)"
           >
             <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
@@ -644,13 +624,13 @@ export function App() {
         )}
       </div>
 
-      {/* Global Floating Toast */}
+      {/* Global Floating Toast - Sleek, Non-Intrusive Pastel Pill */}
       {toastMessage && (
-        <div className="fixed bottom-12 right-6 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-800 dark:text-slate-100 font-medium px-4 py-2.5 rounded-xl shadow-xl flex items-center space-x-2.5 text-xs border border-slate-200/90 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-150 pointer-events-none select-none ring-1 ring-black/5">
-          <div className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+        <div className="fixed bottom-6 right-6 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-800 dark:text-slate-100 font-medium px-3.5 py-2 rounded-xl shadow-lg border border-slate-200/90 dark:border-slate-800/80 flex items-center space-x-2.5 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150 pointer-events-none select-none ring-1 ring-black/5">
+          <div className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-3 h-3 stroke-[2.5]" />
           </div>
-          <span className="font-sans">{toastMessage}</span>
+          <span className="font-sans leading-none">{toastMessage}</span>
         </div>
       )}
 

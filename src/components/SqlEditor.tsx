@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2, AlertCircle } from 'lucide-react';
+import { Play, Sparkles, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2, AlertCircle } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -112,6 +112,9 @@ export const SqlEditor: React.FC = () => {
     toggleSqlResultsCollapsed,
     resolvedTheme,
     settings,
+    openNewQueryTab,
+    closeTab,
+    showToast,
   } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -154,19 +157,11 @@ export const SqlEditor: React.FC = () => {
     isExecuting: false,
   };
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [contextMenuRows, setContextMenuRows] = useState<any[]>([]);
   const [editorContextPos, setEditorContextPos] = useState<ContextMenuPosition | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
   const [inspectingRow, setInspectingRow] = useState<any | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 2500);
-  };
 
   const handleRun = () => {
     if (activeConnection?.connectionStatus === 'failed') {
@@ -320,6 +315,27 @@ export const SqlEditor: React.FC = () => {
             },
           },
           {
+            key: 'Mod-t',
+            run: () => {
+              openNewQueryTab();
+              return true;
+            },
+          },
+          {
+            key: 'Mod-e',
+            run: () => {
+              openNewQueryTab();
+              return true;
+            },
+          },
+          {
+            key: 'Mod-w',
+            run: () => {
+              closeTab(activeTabId);
+              return true;
+            },
+          },
+          {
             key: 'Alt-Shift-f',
             run: () => {
               handleFormat();
@@ -360,14 +376,6 @@ export const SqlEditor: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900/60 overflow-hidden relative">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="absolute top-12 right-6 z-40 bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Editor Top Toolbar */}
       <div className="h-10 bg-white dark:bg-slate-950/80 border-b border-slate-300 dark:border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
         <div className="flex items-center space-x-2 h-full">
@@ -492,11 +500,11 @@ export const SqlEditor: React.FC = () => {
             </button>
             <div className="h-3.5 w-px bg-slate-800" />
             <button
-              onClick={() => setSqlEditorSplitHeight(sqlEditorSplitHeight > 300 ? 160 : 450)}
-              className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition cursor-pointer"
-              title={sqlEditorSplitHeight > 300 ? 'Restore Split' : 'Maximize Results'}
+              onClick={() => setSqlEditorSplitHeight(sqlEditorSplitHeight <= 100 ? 220 : 80)}
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition cursor-pointer"
+              title={sqlEditorSplitHeight <= 100 ? 'Restore Split' : 'Maximize Results'}
             >
-              {sqlEditorSplitHeight > 300 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              {sqlEditorSplitHeight <= 100 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={toggleSqlResultsCollapsed}
@@ -591,7 +599,7 @@ export const SqlEditor: React.FC = () => {
                       {columns.map((col) => {
                         const val = r[col];
                         return (
-                          <td key={col} className="p-2 border-r border-slate-200 dark:border-slate-800/60 truncate max-w-xs">
+                          <td key={col} className="px-3 py-2 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap overflow-hidden text-ellipsis max-w-md select-text">
                             {val === null || val === undefined ? (
                               <span className="text-slate-400 dark:text-slate-500 italic select-none font-mono">NULL</span>
                             ) : typeof val === 'boolean' ? (

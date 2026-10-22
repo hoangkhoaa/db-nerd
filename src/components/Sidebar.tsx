@@ -90,6 +90,8 @@ export const Sidebar = () => {
     fetchLiveFunctions,
     sidebarWidth,
     toggleSidebar,
+    tabs,
+    activeTabId,
   } = useAppStore();
 
   const [sidebarTab, setSidebarTab] = useState<'items' | 'queries' | 'history'>('items');
@@ -141,6 +143,10 @@ export const Sidebar = () => {
   const filteredHistory = history.filter((h) =>
     h.sql.toLowerCase().includes(searchFilter.toLowerCase())
   );
+
+  const activeTabObj = tabs.find((t) => t.id === activeTabId);
+  const isAllTablesActive = activeTabObj?.type === 'stats' && (activeTabObj?.tableName === '__all_tables__' || activeTabObj?.title.startsWith('Tables.'));
+  const isAllFunctionsActive = activeTabObj?.type === 'stats' && (activeTabObj?.tableName === '__all_functions__' || activeTabObj?.title.startsWith('Functions.'));
 
   return (
     <aside
@@ -230,7 +236,11 @@ export const Sidebar = () => {
                 onClick={() => {
                   openAllFunctionsTab();
                 }}
-                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer rounded hover:bg-slate-200/60 dark:hover:bg-slate-900/50 transition-colors group"
+                className={`flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold cursor-pointer rounded transition-colors group ${
+                  isAllFunctionsActive
+                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-900/50 shadow-2xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-900/50'
+                }`}
                 title="Click to view All Functions (Functions.public)"
               >
                 <div className="flex items-center space-x-1">
@@ -290,7 +300,11 @@ export const Sidebar = () => {
                 onClick={() => {
                   openAllTableStatsTab();
                 }}
-                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer rounded hover:bg-slate-200/60 dark:hover:bg-slate-900/50 transition-colors group"
+                className={`flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold cursor-pointer rounded transition-colors group ${
+                  isAllTablesActive
+                    ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 font-bold border border-sky-200 dark:border-sky-900/50 shadow-2xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-900/50'
+                }`}
                 title="Click to view All Tables Statistics (Tables.public)"
               >
                 <div className="flex items-center space-x-1">

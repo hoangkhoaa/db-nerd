@@ -82,28 +82,28 @@ export const OpenDatabaseModal: React.FC = () => {
       onClick={() => setDatabaseModalOpen(false)}
     >
       <div
-        className="w-[380px] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10 flex flex-col animate-in zoom-in-95 duration-150 font-sans"
+        className="w-[380px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex flex-col animate-in zoom-in-95 duration-150 font-sans"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Title Header */}
-        <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between">
+        <div className="h-10 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold text-slate-100">Open database</span>
-            <span className="text-[10px] px-1.5 py-0.2 bg-slate-800 text-slate-400 border border-slate-700 rounded font-mono">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Open database</span>
+            <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded font-mono">
               {activeConnection.name}
             </span>
           </div>
           <button
             onClick={() => setDatabaseModalOpen(false)}
-            className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Search Bar */}
-        <div className="p-3 border-b border-slate-800/80 bg-slate-950/40">
+        <div className="p-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40">
           <div className="relative">
             <input
               ref={inputRef}
@@ -111,9 +111,9 @@ export const OpenDatabaseModal: React.FC = () => {
               placeholder="Search for database..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 font-sans transition-colors"
+              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 font-sans transition-colors"
             />
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2 pointer-events-none" />
           </div>
         </div>
 
@@ -121,22 +121,22 @@ export const OpenDatabaseModal: React.FC = () => {
         {isCreatingNew && (
           <form
             onSubmit={handleCreateSubmit}
-            className="p-3 bg-slate-950/80 border-b border-sky-500/30 space-y-2 animate-in fade-in duration-100"
+            className="p-3 bg-slate-50 dark:bg-slate-950/80 border-b border-sky-500/30 space-y-2 animate-in fade-in duration-100"
           >
-            <span className="text-[11px] font-bold text-sky-300">Create New Database</span>
+            <span className="text-[11px] font-bold text-sky-600 dark:text-sky-300">Create New Database</span>
             <input
               type="text"
               placeholder="Database name (e.g. analytics_staging)..."
               value={newDbName}
               onChange={(e) => setNewDbName(e.target.value)}
               autoFocus
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
             />
             <div className="flex items-center justify-end space-x-2 pt-1">
               <button
                 type="button"
                 onClick={() => setIsCreatingNew(false)}
-                className="px-2.5 py-1 text-[11px] text-slate-400 hover:text-slate-200 transition"
+                className="px-2.5 py-1 text-[11px] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -169,14 +169,14 @@ export const OpenDatabaseModal: React.FC = () => {
                   onDoubleClick={() => handleOpenSelected(db)}
                   className={`px-3 py-1.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors select-none ${
                     isSelected
-                      ? 'bg-sky-600 text-white font-semibold shadow-sm'
-                      : 'hover:bg-slate-800 text-slate-200'
+                      ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200'
                   }`}
                 >
                   <div className="flex items-center space-x-2 truncate">
                     <Database
                       className={`w-3.5 h-3.5 flex-shrink-0 ${
-                        isSelected ? 'text-white fill-white/20' : 'text-sky-400 fill-sky-400/20'
+                        isSelected ? 'text-white fill-white/20' : 'text-sky-600 dark:text-sky-400 fill-sky-500/20'
                       }`}
                     />
                     <span className="truncate">{db}</span>
@@ -186,7 +186,7 @@ export const OpenDatabaseModal: React.FC = () => {
                     {isActive && (
                       <span className="flex items-center space-x-1">
                         <HeartbeatDot color="green" size="xs" showWave={false} />
-                        <span className={`text-[10px] font-mono uppercase ${isSelected ? 'text-white/90' : 'text-emerald-400'}`}>
+                        <span className={`text-[10px] font-mono uppercase font-semibold ${isSelected ? 'text-white/90' : 'text-emerald-600 dark:text-emerald-400'}`}>
                           ACTIVE
                         </span>
                       </span>
@@ -199,10 +199,10 @@ export const OpenDatabaseModal: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="h-12 bg-slate-950 border-t border-slate-800 px-3.5 flex items-center justify-between">
+        <div className="h-12 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-3.5 flex items-center justify-between">
           <button
             onClick={() => setDatabaseModalOpen(false)}
-            className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition active:scale-95"
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition active:scale-95 cursor-pointer"
           >
             Cancel
           </button>
@@ -211,7 +211,7 @@ export const OpenDatabaseModal: React.FC = () => {
             {!isCreatingNew && (
               <button
                 onClick={() => setIsCreatingNew(true)}
-                className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition flex items-center space-x-1 active:scale-95"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition flex items-center space-x-1 active:scale-95 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>New...</span>
@@ -220,7 +220,7 @@ export const OpenDatabaseModal: React.FC = () => {
 
             <button
               onClick={() => handleOpenSelected()}
-              className="px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 active:scale-95"
+              className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition shadow-xs active:scale-95 cursor-pointer"
             >
               Open
             </button>

@@ -291,6 +291,17 @@ html.light body,
   border-color: #f1f5f9 !important;
 }
 
+.cm-editor {
+  height: 100% !important;
+  width: 100% !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+.cm-scroller {
+  overflow: auto !important;
+  height: 100% !important;
+}
+
 /* CodeMirror SQL Editor in Light Mode */
 .light .cm-editor {
   background-color: #ffffff !important;
@@ -392,7 +403,7 @@ html.light body,
 
 .border-chase-root {
   position: absolute;
-  inset: -1px;
+  inset: 0;
   box-sizing: border-box;
   border-radius: inherit;
   padding: 1.5px;

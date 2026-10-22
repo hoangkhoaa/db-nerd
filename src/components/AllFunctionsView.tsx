@@ -200,42 +200,42 @@ export const AllFunctionsView: React.FC = () => {
 
               <th
                 onClick={() => handleSort('schema')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[100px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[100px]"
               >
                 <div className="flex items-center justify-between">
                   <span>schema</span>
                   {sortField === 'schema' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-600 dark:text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('kind')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[110px]"
               >
                 <div className="flex items-center justify-between">
                   <span>kind</span>
                   {sortField === 'kind' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-600 dark:text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('owner')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[110px]"
               >
                 <div className="flex items-center justify-between">
                   <span>owner</span>
                   {sortField === 'owner' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-600 dark:text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   )}
                 </div>
               </th>
 
               <th
-                className="py-1.5 px-3 border-r border-slate-800/80 text-right w-[120px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 text-right w-[120px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>estimated_row</span>
@@ -243,7 +243,7 @@ export const AllFunctionsView: React.FC = () => {
               </th>
 
               <th
-                className="py-1.5 px-3 border-r border-slate-800/80 text-right w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 text-right w-[110px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>total_size</span>
@@ -251,7 +251,7 @@ export const AllFunctionsView: React.FC = () => {
               </th>
 
               <th
-                className="py-1.5 px-3 border-r border-slate-800/80 text-right w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 text-right w-[110px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>data_size</span>
@@ -259,7 +259,7 @@ export const AllFunctionsView: React.FC = () => {
               </th>
 
               <th
-                className="py-1.5 px-3 border-r border-slate-800/80 text-right w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 text-right w-[110px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>index_size</span>
@@ -268,12 +268,12 @@ export const AllFunctionsView: React.FC = () => {
 
               <th
                 onClick={() => handleSort('comment')}
-                className="py-1.5 px-3 cursor-pointer hover:bg-slate-800/60 transition-colors"
+                className="py-1.5 px-3 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span>comment</span>
                   {sortField === 'comment' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-amber-600 dark:text-amber-400" /> : <ArrowDown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   )}
                 </div>
               </th>

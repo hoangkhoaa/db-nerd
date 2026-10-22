@@ -325,96 +325,96 @@ export const AllTableStatsView: React.FC = () => {
 
               <th
                 onClick={() => handleSort('schema')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[100px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[100px]"
               >
                 <div className="flex items-center justify-between">
                   <span>schema</span>
                   {sortField === 'schema' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('kind')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[110px]"
               >
                 <div className="flex items-center justify-between">
                   <span>kind</span>
                   {sortField === 'kind' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('owner')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors w-[110px]"
               >
                 <div className="flex items-center justify-between">
                   <span>owner</span>
                   {sortField === 'owner' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('estimated_row')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors text-right w-[120px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-right w-[120px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>estimated_row</span>
                   {sortField === 'estimated_row' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('total_size')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors text-right w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-right w-[110px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>total_size</span>
                   {sortField === 'total_size' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('data_size')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors text-right w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-right w-[110px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>data_size</span>
                   {sortField === 'data_size' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('index_size')}
-                className="py-1.5 px-3 border-r border-slate-800/80 cursor-pointer hover:bg-slate-800/60 transition-colors text-right w-[110px]"
+                className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800/80 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors text-right w-[110px]"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>index_size</span>
                   {sortField === 'index_size' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('comment')}
-                className="py-1.5 px-3 cursor-pointer hover:bg-slate-800/60 transition-colors"
+                className="py-1.5 px-3 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span>comment</span>
                   {sortField === 'comment' && (
-                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-400" />
+                    sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-sky-600 dark:text-sky-400" /> : <ArrowDown className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                   )}
                 </div>
               </th>

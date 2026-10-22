@@ -5,7 +5,6 @@ import {
   Key,
   Plus,
   FileCode,
-  CheckCircle2,
   Columns as ColumnsIcon,
   Eye,
   Copy,
@@ -58,12 +57,12 @@ export const TableGrid: React.FC = () => {
     activeConnection,
     setConnectionModalOpen,
     triggerConnectingAnimation,
+    showToast,
   } = useAppStore();
 
   const schemaInfo = getTableSchema(selectedTable);
 
   const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [targetContextMenuRows, setTargetContextMenuRows] = useState<GridRow[]>([]);
   const [colContextPos, setColContextPos] = useState<ContextMenuPosition | null>(null);
@@ -80,13 +79,6 @@ export const TableGrid: React.FC = () => {
   React.useEffect(() => {
     setVisibleColumns(new Set(schemaInfo.columns.map((c) => c.name)));
   }, [selectedTable]);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 2500);
-  };
 
   const handleDuplicateRow = (r: GridRow) => {
     duplicateRow(r);
@@ -145,7 +137,7 @@ export const TableGrid: React.FC = () => {
   const activeCols = schemaInfo.columns.filter((c) => visibleColumns.has(c.name));
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-900/60 overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-white dark:bg-slate-900/60 overflow-hidden relative">
       {/* Live Table Reloading Overlay with Border Chase */}
       {isReloading && (
         <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs z-30 flex items-center justify-center p-4">
@@ -209,19 +201,11 @@ export const TableGrid: React.FC = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="absolute top-12 right-6 z-40 bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Inline Filter Bar (TablePlus style: WHERE ... ORDER BY ...) */}
       {tableViewMode === 'data' && isFilterBarOpen && (
-        <div className="bg-slate-950/70 border-b border-slate-800/80 px-4 py-2 flex items-center justify-between text-xs select-none flex-shrink-0 animate-in fade-in duration-100">
+        <div className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800/80 px-4 py-2 flex items-center justify-between text-xs select-none flex-shrink-0 animate-in fade-in duration-100">
           <div className="flex items-center space-x-2 flex-1 max-w-2xl font-mono text-[11px]">
-            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded font-bold text-[10px]">
+            <span className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 rounded font-bold text-[10px]">
               WHERE
             </span>
             <input
@@ -229,9 +213,9 @@ export const TableGrid: React.FC = () => {
               value={filterWhereText}
               onChange={(e) => setFilterWhereText(e.target.value)}
               placeholder="e.g. status = 'pending' AND total_amount > 50"
-              className="flex-1 bg-slate-900 border border-slate-700/70 rounded px-2.5 py-1 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/70 rounded px-2.5 py-1 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 shadow-2xs font-mono"
             />
-            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/40 rounded font-bold text-[10px]">
+            <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/40 rounded font-bold text-[10px]">
               ORDER BY
             </span>
             <input
@@ -239,11 +223,11 @@ export const TableGrid: React.FC = () => {
               value={filterOrderByText}
               onChange={(e) => setFilterOrderByText(e.target.value)}
               placeholder="e.g. id DESC"
-              className="w-28 bg-slate-900 border border-slate-700/70 rounded px-2 py-1 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              className="w-28 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/70 rounded px-2 py-1 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 shadow-2xs font-mono"
             />
             <button
               onClick={() => showToast('⚡ Filter applied in 1.2ms (4 records returned)')}
-              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded text-[11px] font-sans font-semibold transition active:scale-95 flex items-center space-x-1"
+              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded text-[11px] font-sans font-semibold transition active:scale-95 flex items-center space-x-1 cursor-pointer shadow-2xs"
             >
               <Zap className="w-3 h-3" />
               <span>Run</span>
@@ -254,15 +238,15 @@ export const TableGrid: React.FC = () => {
                 setFilterOrderByText('');
                 showToast('Filter cleared');
               }}
-              className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition"
+              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition cursor-pointer"
               title="Clear Filter"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="flex items-center space-x-2 font-mono text-[11px] text-slate-400">
-            <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+          <div className="flex items-center space-x-2 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1">
               <span>⚡ 1.2ms</span>
             </span>
           </div>
@@ -538,16 +522,17 @@ export const TableGrid: React.FC = () => {
       </div>
 
       {/* Columns Visibility Popup */}
+      {/* Columns Visibility Popup */}
       {isColumnsModalOpen && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => setIsColumnsModalOpen(false)}
         >
           <div
-            className="absolute bottom-11 right-12 w-48 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50 text-xs font-sans animate-in zoom-in-95 duration-100"
+            className="absolute bottom-11 right-12 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-2xl p-2 z-50 text-xs font-sans animate-in zoom-in-95 duration-100 ring-1 ring-black/5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="font-bold text-slate-200 px-2 py-1 border-b border-slate-800 text-[11px]">
+            <div className="font-bold text-slate-800 dark:text-slate-200 px-2 py-1 border-b border-slate-200 dark:border-slate-800 text-[11px]">
               Toggle Columns
             </div>
             <div className="max-h-48 overflow-y-auto py-1 space-y-0.5">
@@ -556,15 +541,15 @@ export const TableGrid: React.FC = () => {
                 return (
                   <label
                     key={col.name}
-                    className="flex items-center space-x-2 px-2 py-1 hover:bg-slate-800 rounded cursor-pointer"
+                    className="flex items-center space-x-2 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={isVis}
                       onChange={() => toggleColumnVisibility(col.name)}
-                      className="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0"
+                      className="rounded bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sky-600 focus:ring-0"
                     />
-                    <span className="truncate text-slate-300 font-mono text-[11px]">{col.name}</span>
+                    <span className="truncate text-slate-700 dark:text-slate-300 font-mono text-[11px]">{col.name}</span>
                   </label>
                 );
               })}
@@ -576,33 +561,33 @@ export const TableGrid: React.FC = () => {
       {/* Raw DDL Modal */}
       {isDdlModalOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100"
+          className="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100"
           onClick={() => setIsDdlModalOpen(false)}
         >
           <div
-            className="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans"
+            className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans ring-1 ring-black/5 dark:ring-white/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-100">DDL — {selectedTable}</span>
+            <div className="h-10 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-100">DDL — {selectedTable}</span>
               <button
                 onClick={() => setIsDdlModalOpen(false)}
-                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400"
+                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <pre className="p-4 bg-slate-950 text-emerald-400 font-mono text-xs max-h-96 overflow-auto select-text">
+            <pre className="p-4 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-emerald-400 font-mono text-xs max-h-96 overflow-auto select-text leading-relaxed border-y border-slate-200 dark:border-slate-800/80">
               {schemaInfo.ddl}
             </pre>
-            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-end space-x-2">
+            <div className="h-11 bg-slate-50 dark:bg-slate-950 px-4 flex items-center justify-end space-x-2">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(schemaInfo.ddl);
-                  showToast('Copied DDL script!');
+                  showToast('📋 Copied DDL script!');
                   setIsDdlModalOpen(false);
                 }}
-                className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition"
+                className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition cursor-pointer shadow-2xs active:scale-95"
               >
                 Copy DDL
               </button>
@@ -714,26 +699,26 @@ export const TableGrid: React.FC = () => {
 
       {/* Quick Look Inspector Dialog */}
       {inspectingRow && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10 flex flex-col animate-in zoom-in-95 duration-100">
-            <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between select-none">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-100">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex flex-col animate-in zoom-in-95 duration-100">
+            <div className="h-10 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between select-none">
               <div className="flex items-center space-x-2">
-                <Eye className="w-4 h-4 text-sky-400" />
-                <span className="text-xs font-bold text-slate-100">
+                <Eye className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
                   Quick Look Inspector — {selectedTable} #{inspectingRow.id}
                 </span>
               </div>
               <button
                 onClick={() => setInspectingRow(null)}
-                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
+                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-sky-300 bg-slate-950 select-text">
+            <div className="p-4 max-h-[420px] overflow-auto font-mono text-xs text-slate-800 dark:text-sky-300 bg-slate-50 dark:bg-slate-950 select-text leading-relaxed border-y border-slate-200 dark:border-slate-800/80">
               <pre>{JSON.stringify(inspectingRow, null, 2)}</pre>
             </div>
-            <div className="h-11 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between select-none">
+            <div className="h-11 bg-slate-50 dark:bg-slate-950 px-4 flex items-center justify-between select-none">
               <span className="text-[11px] text-slate-500 font-mono">Format: JSON Object</span>
               <div className="flex items-center space-x-2">
                 <button
@@ -741,14 +726,14 @@ export const TableGrid: React.FC = () => {
                     navigator.clipboard.writeText(JSON.stringify(inspectingRow, null, 2));
                     showToast('📋 Copied row JSON to clipboard!');
                   }}
-                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 active:scale-95"
+                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   <span>Copy JSON</span>
                 </button>
                 <button
                   onClick={() => setInspectingRow(null)}
-                  className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition active:scale-95"
+                  className="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   Done
                 </button>

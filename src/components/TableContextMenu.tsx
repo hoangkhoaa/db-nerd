@@ -213,7 +213,7 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${left}px`, top: `${top}px` }}
-      className="fixed z-50 w-60 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-xl shadow-2xl p-1 text-xs select-none ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-100 font-sans"
+      className="fixed z-50 w-60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-xl p-1 text-xs select-none ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in zoom-in-95 duration-100 font-sans"
     >
       {/* Quick Look */}
       {onQuickLook && selectedRows[0] && (
@@ -222,13 +222,13 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
             onQuickLook(selectedRows[0]);
             onClose();
           }}
-          className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group"
+          className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group cursor-pointer"
         >
           <div className="flex items-center space-x-2">
             <Eye className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
             <span>Quick Look Inspector</span>
           </div>
-          <span className="text-[10px] text-slate-500 group-hover:text-sky-200 font-mono">⌘↩</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-sky-200 font-mono">⌘↩</span>
         </button>
       )}
 
@@ -238,13 +238,13 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
           useAppStore.getState().reloadData();
           onClose();
         }}
-        className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group"
+        className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group cursor-pointer"
       >
         <div className="flex items-center space-x-2">
           <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
           <span>Refresh</span>
         </div>
-        <span className="text-[10px] text-slate-500 group-hover:text-sky-200 font-mono">⌘R</span>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-sky-200 font-mono">⌘R</span>
       </button>
 
       {/* Duplicate Row */}
@@ -254,28 +254,28 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
             onDuplicateRow(selectedRows[0]);
             onClose();
           }}
-          className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group"
+          className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group cursor-pointer"
         >
           <div className="flex items-center space-x-2">
             <CopyPlus className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
             <span>Duplicate Row</span>
           </div>
-          <span className="text-[10px] text-slate-500 group-hover:text-sky-200 font-mono">⌘D</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-sky-200 font-mono">⌘D</span>
         </button>
       )}
 
-      <div className="h-[1px] bg-slate-800 my-1 mx-1"></div>
+      <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-1 mx-1"></div>
 
       {/* Copy Rows (Default Plain text) */}
       <button
         onClick={handleCopyPlainText}
-        className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group"
+        className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors group cursor-pointer"
       >
         <div className="flex items-center space-x-2">
           <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
           <span>Copy {selectedRows.length > 1 ? `${selectedRows.length} Rows` : 'Row'}</span>
         </div>
-        <span className="text-[10px] text-slate-500 group-hover:text-sky-200 font-mono">⌘C</span>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-sky-200 font-mono">⌘C</span>
       </button>
 
       {/* Copy Rows As > (Hover or Click expands submenu) */}
@@ -286,8 +286,8 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
       >
         <button
           onClick={() => setActiveSubmenu(activeSubmenu === 'copyAs' ? null : 'copyAs')}
-          className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors group ${
-            activeSubmenu === 'copyAs' ? 'bg-sky-600 text-white font-medium' : 'text-slate-200 hover:bg-sky-600 hover:text-white'
+          className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors group cursor-pointer ${
+            activeSubmenu === 'copyAs' ? 'bg-sky-600 text-white font-medium' : 'text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white'
           }`}
         >
           <div className="flex items-center space-x-2">
@@ -301,91 +301,91 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
         {activeSubmenu === 'copyAs' && (
           <div
             style={{ [isSubmenuLeft ? 'right' : 'left']: '100%', top: '-4px' }}
-            className="absolute z-50 w-52 bg-slate-900/98 backdrop-blur-2xl border border-slate-700/80 rounded-xl shadow-2xl p-1 text-xs select-none ring-1 ring-white/10 animate-in fade-in duration-100"
+            className="absolute z-50 w-52 bg-white/98 dark:bg-slate-900/98 backdrop-blur-2xl border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-xl p-1 text-xs select-none ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
           >
             {/* Plain Text */}
             <button
               onClick={handleCopyPlainText}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors cursor-pointer"
             >
               <span>Plain Text (TSV)</span>
-              {copiedFormat === 'Plain Text (TSV)' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'Plain Text (TSV)' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
 
             {/* JSON (Auto Object / Array) */}
             <button
               onClick={handleCopyJson}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium cursor-pointer"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium cursor-pointer"
             >
               <div className="flex items-center space-x-1.5">
-                <Code className="w-3 h-3 text-purple-400" />
+                <Code className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                 <span>JSON</span>
               </div>
-              {copiedFormat === 'JSON' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'JSON' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
 
             {/* HTML */}
             <button
               onClick={handleCopyHtml}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors cursor-pointer"
             >
               <span>HTML Table</span>
-              {copiedFormat === 'HTML Table' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'HTML Table' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
 
             {/* Markdown Table */}
             <button
               onClick={handleCopyMarkdown}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors cursor-pointer"
             >
               <span>Markdown Table</span>
-              {copiedFormat === 'Markdown Table' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'Markdown Table' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
 
-            <div className="h-[1px] bg-slate-800 my-1 mx-1"></div>
+            <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-1 mx-1"></div>
 
             {/* CSV */}
             <button
               onClick={handleCopyCsv}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium cursor-pointer"
             >
               <div className="flex items-center space-x-1.5">
-                <TableIcon className="w-3 h-3 text-emerald-400" />
+                <TableIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 <span>CSV</span>
               </div>
-              {copiedFormat === 'CSV' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'CSV' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
 
             {/* CSV with Header */}
             <button
               onClick={handleCopyCsvWithHeader}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium cursor-pointer"
             >
               <div className="flex items-center space-x-1.5">
-                <TableIcon className="w-3 h-3 text-emerald-400" />
+                <TableIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 <span>CSV with Header</span>
               </div>
-              {copiedFormat === 'CSV with Header' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'CSV with Header' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
 
-            <div className="h-[1px] bg-slate-800 my-1 mx-1"></div>
+            <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-1 mx-1"></div>
 
             {/* INSERT Statement */}
             <button
               onClick={handleCopyInsert}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors"
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-700 dark:text-slate-200 hover:bg-sky-600 hover:text-white transition-colors cursor-pointer"
             >
               <div className="flex items-center space-x-1.5">
-                <Database className="w-3 h-3 text-amber-400" />
+                <Database className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                 <span>INSERT Statement</span>
               </div>
-              {copiedFormat === 'INSERT Statements' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'INSERT Statements' && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             </button>
           </div>
         )}
       </div>
 
-      <div className="h-[1px] bg-slate-800 my-1 mx-1"></div>
+      <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-1 mx-1"></div>
 
       {/* Delete Rows */}
       {onDeleteRows && (
@@ -394,13 +394,13 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
             onDeleteRows(selectedRows);
             onClose();
           }}
-          className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-rose-400 hover:bg-rose-600 hover:text-white transition-colors group"
+          className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white transition-colors group cursor-pointer"
         >
           <div className="flex items-center space-x-2">
-            <Trash2 className="w-3.5 h-3.5 text-rose-400 group-hover:text-white" />
+            <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 group-hover:text-white" />
             <span>Delete Row{selectedRows.length > 1 ? 's' : ''}</span>
           </div>
-          <span className="text-[10px] text-rose-400/80 group-hover:text-white font-mono">⌫</span>
+          <span className="text-[10px] text-rose-500/80 group-hover:text-white font-mono">⌫</span>
         </button>
       )}
     </div>

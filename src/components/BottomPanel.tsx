@@ -179,17 +179,17 @@ export const BottomPanel: React.FC = () => {
                         navigator.clipboard.writeText(item.sql);
                         showToast('📋 Copied SQL to clipboard');
                       }}
-                      className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition"
+                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded transition cursor-pointer"
                       title="Copy SQL Query"
                     >
                       <Copy className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => {
-                        openNewQueryTab();
+                        openNewQueryTab(item.sql);
                         showToast('✨ Opened in new Query Editor');
                       }}
-                      className="p-1 hover:bg-slate-800 text-slate-400 hover:text-sky-300 rounded transition"
+                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300 rounded transition cursor-pointer"
                       title="Open in new Query Tab"
                     >
                       <Play className="w-3 h-3" />
@@ -202,31 +202,31 @@ export const BottomPanel: React.FC = () => {
         ) : (
           /* Server Diagnostics Tab */
           <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-sans">
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 space-y-1">
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Active Connection</span>
-              <div className="font-bold text-slate-100">{activeConnection?.name || 'Local DB'}</div>
+            <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-1 shadow-2xs">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider font-semibold">Active Connection</span>
+              <div className="font-bold text-slate-900 dark:text-slate-100">{activeConnection?.name || 'Local DB'}</div>
               <div className="text-[11px] text-slate-500 font-mono">{activeConnection?.engine} • :{activeConnection?.port}</div>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 space-y-1">
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Network Latency</span>
-              <div className="font-bold text-emerald-400 flex items-center space-x-1.5">
+            <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-1 shadow-2xs">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider font-semibold">Network Latency</span>
+              <div className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{activeConnection?.latencyMs || 1.2} ms</span>
               </div>
-              <div className="text-[11px] text-emerald-500 font-mono">Real-time Ping OK</div>
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-500 font-mono">Real-time Ping OK</div>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 space-y-1">
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Client Memory</span>
-              <div className="font-bold text-slate-100">46.8 MB / 120 FPS</div>
+            <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-1 shadow-2xs">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider font-semibold">Client Memory</span>
+              <div className="font-bold text-slate-900 dark:text-slate-100">46.8 MB / 120 FPS</div>
               <div className="text-[11px] text-slate-500 font-mono">Zero Memory Leaks</div>
             </div>
 
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 space-y-1">
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Buffer Cache Hit</span>
-              <div className="font-bold text-sky-400">99.8% Efficiency</div>
-              <div className="text-[11px] text-sky-500/80 font-mono">Shared buffers primed</div>
+            <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-1 shadow-2xs">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider font-semibold">Buffer Cache Hit</span>
+              <div className="font-bold text-sky-600 dark:text-sky-400">99.8% Efficiency</div>
+              <div className="text-[11px] text-sky-600/80 dark:text-sky-500/80 font-mono">Shared buffers primed</div>
             </div>
           </div>
         )}

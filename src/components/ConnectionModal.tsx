@@ -53,11 +53,11 @@ const PRIMARY_ENGINES: DatabaseEngine[] = ['postgres', 'mysql', 'sqlite', 'redis
 
 
 const COLOR_MAP: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  rose: { bg: 'bg-rose-950/30', text: 'text-rose-300', border: 'border-rose-500/30', dot: 'bg-rose-500' },
-  amber: { bg: 'bg-amber-950/30', text: 'text-amber-300', border: 'border-amber-500/30', dot: 'bg-amber-500' },
-  emerald: { bg: 'bg-emerald-950/30', text: 'text-emerald-300', border: 'border-emerald-500/30', dot: 'bg-emerald-500' },
-  sky: { bg: 'bg-sky-950/30', text: 'text-sky-300', border: 'border-sky-500/30', dot: 'bg-sky-500' },
-  purple: { bg: 'bg-purple-950/30', text: 'text-purple-300', border: 'border-purple-500/30', dot: 'bg-purple-500' },
+  rose: { bg: 'bg-rose-50 dark:bg-rose-950/30', text: 'text-rose-700 dark:text-rose-300', border: 'border-rose-200 dark:border-rose-500/30', dot: 'bg-rose-500' },
+  amber: { bg: 'bg-amber-50 dark:bg-amber-950/30', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-500/30', dot: 'bg-amber-500' },
+  emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/30', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-500/30', dot: 'bg-emerald-500' },
+  sky: { bg: 'bg-sky-50 dark:bg-sky-950/30', text: 'text-sky-700 dark:text-sky-300', border: 'border-sky-200 dark:border-sky-500/30', dot: 'bg-sky-500' },
+  purple: { bg: 'bg-purple-50 dark:bg-purple-950/30', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-500/30', dot: 'bg-purple-500' },
 };
 
 const GROUP_COLOR_MAP: Record<string, HeartbeatColor> = {
@@ -465,14 +465,14 @@ export const ConnectionModal = () => {
 
   return (
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-150">
-      <div className="w-full max-w-4xl h-[650px] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 animate-in zoom-in-95 duration-150">
+      <div className="w-full max-w-4xl h-[650px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-black/5 dark:ring-white/10 animate-in zoom-in-95 duration-150 font-sans">
         
         {/* Titlebar */}
-        <div className="h-11 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between select-none">
+        <div className="h-11 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between select-none">
           <div className="flex items-center space-x-2">
-            <Server className="w-4 h-4 text-sky-400" />
-            <span className="text-xs font-bold text-slate-100">Connection Manager</span>
-            <span className="text-[10px] px-2 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded font-mono">
+            <Server className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Connection Manager</span>
+            <span className="text-[10px] px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded font-mono font-medium">
               OSS Edition
             </span>
           </div>
@@ -480,13 +480,13 @@ export const ConnectionModal = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => alert("📥 Auto-Discovery:\nScanned local configurations.\nImported all profiles successfully!")}
-              className="px-2.5 py-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer"
+              className="px-2.5 py-1 bg-purple-50 dark:bg-purple-500/15 hover:bg-purple-100 dark:hover:bg-purple-500/25 border border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer"
             >
               Import XML / JSON
             </button>
             <button
               onClick={() => setConnectionModalOpen(false)}
-              className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95 cursor-pointer"
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition active:scale-95 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -497,8 +497,8 @@ export const ConnectionModal = () => {
         <div className="flex-1 flex overflow-hidden">
           
           {/* Left Tree */}
-          <div className="w-72 bg-slate-950/70 border-r border-slate-800 p-3 space-y-3 select-none overflow-y-auto">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="w-72 bg-slate-50 dark:bg-slate-950/70 border-r border-slate-200 dark:border-slate-800 p-3 space-y-3 select-none overflow-y-auto">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               <span>Groups & Databases</span>
               <div className="flex items-center space-x-1">
                 {/* New Group Button */}
@@ -817,8 +817,8 @@ export const ConnectionModal = () => {
                                   }}
                                   className={`relative px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing font-medium flex items-center justify-between transition-all duration-150 select-none group ${
                                     isSelected
-                                      ? 'bg-sky-500/20 text-sky-200 border border-sky-500/40 shadow-sm'
-                                      : 'hover:bg-slate-800 text-slate-300'
+                                      ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-900 dark:text-sky-200 border border-sky-300 dark:border-sky-500/40 shadow-xs'
+                                      : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                                   } ${
                                     isConnDragged
                                       ? 'opacity-40 scale-[0.98] border border-dashed border-sky-400 bg-sky-950/20'
@@ -837,7 +837,7 @@ export const ConnectionModal = () => {
                                   <div className="flex items-center space-x-1.5 truncate">
                                     <span title="Drag to reorder or move to another group" className="inline-flex items-center">
                                       <GripVertical
-                                        className="w-3 h-3 text-slate-500 group-hover:text-slate-300 opacity-20 group-hover:opacity-90 transition-opacity flex-shrink-0 cursor-grab active:cursor-grabbing"
+                                        className="w-3 h-3 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 opacity-20 group-hover:opacity-90 transition-opacity flex-shrink-0 cursor-grab active:cursor-grabbing"
                                       />
                                     </span>
                                     <ConnectorIcon engine={conn.engine} size="xs" />
@@ -852,7 +852,7 @@ export const ConnectionModal = () => {
                                       type="button"
                                       draggable={false}
                                       onClick={(e) => handleDeleteConnection(conn.id, e)}
-                                      className="p-0.5 hover:bg-slate-700 text-slate-500 hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition ml-1 active:scale-95 cursor-pointer"
+                                      className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded opacity-0 group-hover:opacity-100 transition ml-1 active:scale-95 cursor-pointer"
                                       title="Delete connection"
                                     >
                                       <Trash2 className="w-3 h-3" />
@@ -873,7 +873,7 @@ export const ConnectionModal = () => {
             {/* Quick button to create new connection at bottom */}
             <button
               onClick={() => handleStartNewConnection()}
-              className="w-full py-2 px-3 border border-dashed border-slate-700 hover:border-sky-500/60 rounded-xl text-slate-400 hover:text-sky-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all duration-150 active:scale-[0.98] cursor-pointer"
+              className="w-full py-2 px-3 border border-dashed border-slate-300 dark:border-slate-700 hover:border-sky-400 dark:hover:border-sky-500/60 rounded-xl text-slate-500 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all duration-150 active:scale-[0.98] cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Connection</span>
@@ -1183,12 +1183,12 @@ export const ConnectionModal = () => {
         </div>
 
         {/* Footer Actions with smooth heartbeat test feedback */}
-        <div className="h-12 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between select-none">
+        <div className="h-14 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-5 flex items-center justify-between select-none">
           <div className="flex items-center space-x-2">
             <button
               onClick={handleTestConnection}
               disabled={isTesting}
-              className="relative overflow-hidden px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition active:scale-95 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="relative overflow-hidden px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition active:scale-95 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed border border-slate-300 dark:border-transparent"
             >
               {isTesting && (
                 <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
@@ -1207,15 +1207,15 @@ export const ConnectionModal = () => {
                 navigator.clipboard.writeText(url);
                 showToast('📋 Copied Connection URL');
               }}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs rounded-xl transition active:scale-95 cursor-pointer flex items-center space-x-1.5"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs rounded-xl transition active:scale-95 cursor-pointer flex items-center space-x-1.5 border border-slate-300 dark:border-transparent"
               title="Copy connection as TablePlus / standard URL"
             >
-              <Link className="w-3.5 h-3.5 text-amber-400" />
+              <Link className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span>Copy as URL</span>
             </button>
 
             {testSuccess && (
-              <span className="text-xs text-emerald-400 font-semibold flex items-center space-x-1.5 animate-in fade-in duration-200">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1.5 animate-in fade-in duration-200">
                 <HeartbeatDot color="green" size="xs" showWave={true} />
                 <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Connected in {testLatency}ms (TLSv1.3 Handshake OK)</span>
@@ -1223,8 +1223,8 @@ export const ConnectionModal = () => {
             )}
 
             {testError && (
-              <span className="text-xs text-rose-400 font-medium flex items-center space-x-1.5 animate-in fade-in duration-200 max-w-sm truncate" title={testError}>
-                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-medium flex items-center space-x-1.5 animate-in fade-in duration-200 max-w-sm truncate" title={testError}>
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
                 <span className="truncate">{testError}</span>
               </span>
             )}
@@ -1233,13 +1233,13 @@ export const ConnectionModal = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setConnectionModalOpen(false)}
-              className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition active:scale-95 cursor-pointer"
+              className="px-3.5 py-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition active:scale-95 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveAndConnect}
-              className="px-4 py-1.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 active:scale-95 cursor-pointer"
+              className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition shadow-xs active:scale-95 cursor-pointer"
             >
               {isCreatingNew ? 'Create & Connect' : 'Save & Connect'}
             </button>

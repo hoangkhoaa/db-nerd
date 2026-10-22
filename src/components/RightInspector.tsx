@@ -604,27 +604,27 @@ export const RightInspector: React.FC = () => {
         {/* ========================================================================= */}
         {isStatsTab && (
           <div className="space-y-3 font-sans">
-            <div className="p-3 bg-purple-950/20 border border-purple-500/30 rounded-xl space-y-2">
-              <span className="font-bold text-purple-300 text-xs flex items-center space-x-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <div className="p-3 bg-purple-50/80 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-500/30 rounded-xl space-y-2 shadow-2xs">
+              <span className="font-bold text-purple-700 dark:text-purple-300 text-xs flex items-center space-x-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Instance Health</span>
               </span>
-              <div className="space-y-1 font-mono text-[11px] text-slate-300">
+              <div className="space-y-1 font-mono text-[11px] text-slate-700 dark:text-slate-300">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Connections:</span>
-                  <span className="text-slate-100 font-semibold">14 / 100</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-sans">Connections:</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">14 / 100</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Buffer Cache Hit:</span>
-                  <span className="text-emerald-400 font-semibold">99.82%</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-sans">Buffer Cache Hit:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">99.82%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Transactions/sec:</span>
-                  <span className="text-sky-300 font-semibold">2,840 TPS</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-sans">Transactions/sec:</span>
+                  <span className="text-sky-600 dark:text-sky-300 font-semibold">2,840 TPS</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Locks waiting:</span>
-                  <span className="text-emerald-400 font-semibold">0 (Clean)</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-sans">Locks waiting:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">0 (Clean)</span>
                 </div>
               </div>
             </div>
