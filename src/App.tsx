@@ -161,15 +161,18 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Synchronize Theme Mode (Light / Dark / Auto Device)
+  // Synchronize Theme Mode (Light / Dark / Auto Device) and URL Query Param Overrides
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlTheme = urlParams.get('theme');
+
     const applyTheme = () => {
-      const mode = settings.themeMode;
+      const mode = (urlTheme === 'light' || urlTheme === 'dark') ? urlTheme : settings.themeMode;
       let resolved: 'dark' | 'light' = 'dark';
       if (mode === 'auto') {
         resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       } else {
-        resolved = mode;
+        resolved = mode as 'dark' | 'light';
       }
       updateResolvedTheme(resolved);
 
@@ -186,10 +189,20 @@ export function App() {
 
     applyTheme();
 
+    const urlTab = urlParams.get('tab');
+    if (urlTab) {
+      useAppStore.getState().setSelectedTable(urlTab);
+      useAppStore.getState().openTableGridTab(urlTab);
+    }
+    const urlMode = urlParams.get('mode');
+    if (urlMode === 'structure' || urlMode === 'index' || urlMode === 'data') {
+      useAppStore.getState().setTableViewMode(urlMode);
+    }
+
     const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
     if (mediaQuery) {
       const handleChange = () => {
-        if (useAppStore.getState().settings.themeMode === 'auto') {
+        if (!urlTheme && useAppStore.getState().settings.themeMode === 'auto') {
           applyTheme();
         }
       };

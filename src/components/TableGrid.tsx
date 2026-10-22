@@ -307,10 +307,10 @@ export const TableGrid: React.FC = () => {
                     }}
                     className={`cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-sky-100 dark:bg-sky-600/30 text-sky-950 dark:text-white font-medium shadow-inner'
+                        ? 'bg-[#eff6ff] dark:bg-sky-600/30 text-[#1d4ed8] dark:text-white font-medium shadow-2xs border-y border-[#dbeafe] dark:border-sky-500/30'
                         : isEven
-                        ? 'bg-slate-50/60 dark:bg-slate-900/40 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
-                        : 'bg-white dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
+                        ? 'bg-[#fcfdfd] dark:bg-slate-900/40 hover:bg-[#f0f7ff] dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
+                        : 'bg-white dark:bg-slate-950/60 hover:bg-[#f0f7ff] dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
                     }`}
                   >
                     {/* Row Index */}
@@ -399,7 +399,7 @@ export const TableGrid: React.FC = () => {
               onClick={() => setTableViewMode('data')}
               className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'data'
-                  ? 'bg-sky-600 dark:bg-sky-500 text-white dark:text-slate-950 font-bold shadow-sm'
+                  ? 'bg-white dark:bg-sky-500 text-sky-800 dark:text-slate-950 font-bold shadow-xs border border-slate-300/80 dark:border-transparent'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -409,7 +409,7 @@ export const TableGrid: React.FC = () => {
               onClick={() => setTableViewMode('structure')}
               className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'structure'
-                  ? 'bg-sky-600 dark:bg-sky-500 text-white dark:text-slate-950 font-bold shadow-sm'
+                  ? 'bg-white dark:bg-sky-500 text-sky-800 dark:text-slate-950 font-bold shadow-xs border border-slate-300/80 dark:border-transparent'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -419,7 +419,7 @@ export const TableGrid: React.FC = () => {
               onClick={() => setTableViewMode('index')}
               className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'index'
-                  ? 'bg-sky-600 dark:bg-sky-500 text-white dark:text-slate-950 font-bold shadow-sm'
+                  ? 'bg-white dark:bg-sky-500 text-sky-800 dark:text-slate-950 font-bold shadow-xs border border-slate-300/80 dark:border-transparent'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >

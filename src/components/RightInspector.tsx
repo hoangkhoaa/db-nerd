@@ -21,6 +21,24 @@ import {
 } from 'lucide-react';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
 
+// 2026 Best of Color: Soft Digital Pastel type badges
+const getTypeBadgeClass = (type: string) => {
+  const t = type.toLowerCase();
+  if (t.includes('int') || t.includes('num') || t.includes('serial') || t.includes('float') || t.includes('money')) {
+    return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/40';
+  }
+  if (t.includes('date') || t.includes('time')) {
+    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/40';
+  }
+  if (t.includes('bool')) {
+    return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/40';
+  }
+  if (t.includes('json') || t.includes('uuid')) {
+    return 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/40';
+  }
+  return 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/40';
+};
+
 export const RightInspector: React.FC = () => {
   const {
     isRightInspectorOpen,
@@ -250,7 +268,7 @@ export const RightInspector: React.FC = () => {
                       </div>
 
                       <div className="flex items-center space-x-1">
-                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-sans px-1.5 py-0.2 bg-slate-100 dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-800 font-medium">
+                        <span className={`text-[10px] font-sans px-1.5 py-0.2 rounded border font-medium ${getTypeBadgeClass(colType)}`}>
                           {colType}
                         </span>
                       </div>
@@ -406,77 +424,77 @@ export const RightInspector: React.FC = () => {
           <div className="space-y-3 font-sans">
             {selectedStructureColumn ? (
               <div className="space-y-3">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-800/80 font-mono">
-                  <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800/80 font-mono">
+                  <span className="text-[10px] uppercase font-bold text-sky-600 dark:text-sky-400 tracking-wider">
                     Column Definition
                   </span>
-                  <span className="px-1.5 py-0.2 bg-sky-950 border border-sky-600/60 text-sky-300 rounded text-[10px]">
+                  <span className={`text-[10px] font-sans px-1.5 py-0.2 rounded border font-medium ${getTypeBadgeClass(selectedStructureColumn.type)}`}>
                     {selectedStructureColumn.type}
                   </span>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-semibold uppercase">Column Name</label>
-                  <div className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-100 font-mono font-semibold">
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Column Name</label>
+                  <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-100 font-mono font-semibold">
                     {selectedStructureColumn.name}
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-semibold uppercase">Data Type</label>
-                  <div className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-sky-300 font-mono">
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Data Type</label>
+                  <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 text-sky-700 dark:text-sky-300 font-mono">
                     {selectedStructureColumn.type}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-semibold uppercase">Nullable</label>
-                    <div className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 font-mono">
+                    <label className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Nullable</label>
+                    <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 font-mono">
                       {selectedStructureColumn.isNullable ? (
-                        <span className="text-emerald-400 font-semibold">YES</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">YES</span>
                       ) : (
-                        <span className="text-rose-400 font-semibold">NO</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-semibold">NO</span>
                       )}
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 font-semibold uppercase">Primary Key</label>
-                    <div className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 font-mono">
+                    <label className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Primary Key</label>
+                    <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 font-mono">
                       {selectedStructureColumn.isPrimaryKey ? (
-                        <span className="text-amber-400 font-semibold">YES 🔑</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">YES 🔑</span>
                       ) : (
-                        <span className="text-slate-500">NO</span>
+                        <span className="text-slate-400 dark:text-slate-500">NO</span>
                       )}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-semibold uppercase">Default Value</label>
-                  <div className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-300 font-mono">
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Default Value</label>
+                  <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-600 dark:text-slate-300 font-mono">
                     {selectedStructureColumn.defaultValue || 'NULL'}
                   </div>
                 </div>
 
                 {selectedStructureColumn.isForeignKey && (
-                  <div className="p-2 bg-sky-950/40 border border-sky-600/40 rounded-lg space-y-1">
-                    <span className="text-[10px] font-bold text-sky-300 uppercase">Foreign Key Target</span>
-                    <div className="text-[11px] font-mono text-sky-200">
+                  <div className="p-2 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-600/40 rounded-lg space-y-1">
+                    <span className="text-[10px] font-bold text-sky-700 dark:text-sky-300 uppercase">Foreign Key Target</span>
+                    <div className="text-[11px] font-mono text-sky-800 dark:text-sky-200">
                       → {selectedStructureColumn.foreignTable}({selectedStructureColumn.foreignColumn})
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-semibold uppercase">Comment</label>
-                  <div className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-400 text-xs italic">
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Comment</label>
+                  <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-500 dark:text-slate-400 text-xs italic">
                     {selectedStructureColumn.comment || 'No comment provided for this column.'}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-500 text-xs">
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs">
                 Click any column in the structure grid to inspect its detailed attributes.
               </div>
             )}
@@ -488,33 +506,33 @@ export const RightInspector: React.FC = () => {
         {/* ========================================================================= */}
         {isIndexMode && (
           <div className="space-y-3 font-sans">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-800/80 font-mono">
-              <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+            <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800/80 font-mono">
+              <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 tracking-wider">
                 Index Summary
               </span>
-              <span className="text-xs text-slate-400 font-semibold">{schemaInfo.indexes.length} total</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{schemaInfo.indexes.length} total</span>
             </div>
 
             {schemaInfo.indexes.map((idx) => (
               <div
                 key={idx.name}
-                className="p-2.5 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1.5 hover:border-slate-700 transition"
+                className="p-2.5 bg-slate-50/80 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-2xs"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1.5 font-mono text-slate-200 font-bold truncate">
-                    <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <div className="flex items-center space-x-1.5 font-mono text-slate-800 dark:text-slate-200 font-bold truncate">
+                    <Key className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" />
                     <span className="truncate">{idx.name}</span>
                   </div>
-                  <span className="text-[10px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded font-mono">
+                  <span className="text-[10px] px-1.5 py-0.2 bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 rounded font-mono">
                     {idx.type}
                   </span>
                 </div>
 
-                <div className="text-[11px] font-mono text-sky-300">
+                <div className="text-[11px] font-mono text-sky-700 dark:text-sky-300">
                   Columns: {idx.columns.join(', ')}
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/60">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800/60">
                   <span>Unique: {idx.isUnique ? 'YES' : 'NO'}</span>
                   <span>Size: {idx.size || '16 KB'}</span>
                 </div>

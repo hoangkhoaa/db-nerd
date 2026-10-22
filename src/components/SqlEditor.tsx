@@ -113,20 +113,20 @@ const sqlHighlightStyleDark = HighlightStyle.define([
   { tag: t.variableName, color: '#f8fafc' },
 ]);
 
-// Crisp, readable Light SQL Syntax Highlighting Theme (macOS / TablePlus style)
+// Best of Color 2026: Soft Digital Pastels & Neo-Mints Light SQL Syntax Highlighting
 const sqlHighlightStyleLight = HighlightStyle.define([
-  { tag: t.keyword, color: '#0284c7', fontWeight: 'bold' },
-  { tag: t.standard(t.name), color: '#7c3aed', fontWeight: 'bold' },
-  { tag: t.special(t.string), color: '#b45309' },
-  { tag: t.string, color: '#15803d' },
-  { tag: t.number, color: '#dc2626', fontWeight: 'semibold' },
-  { tag: t.bool, color: '#be123c', fontWeight: 'bold' },
-  { tag: t.null, color: '#be123c', fontWeight: 'bold' },
-  { tag: t.function(t.variableName), color: '#b45309', fontWeight: 'bold' },
-  { tag: t.operator, color: '#2563eb' },
-  { tag: t.punctuation, color: '#475569' },
-  { tag: t.comment, color: '#64748b', fontStyle: 'italic' },
-  { tag: t.variableName, color: '#0f172a' },
+  { tag: t.keyword, color: '#2563eb', fontWeight: 'bold' }, // Soft Glacier Blue
+  { tag: t.standard(t.name), color: '#7c3aed', fontWeight: 'bold' }, // Lavender Haze
+  { tag: t.special(t.string), color: '#d97706' }, // Warm Apricot Honey
+  { tag: t.string, color: '#059669' }, // Neo-Mint Matcha
+  { tag: t.number, color: '#ea580c', fontWeight: 'semibold' }, // Soft Warm Coral Amber
+  { tag: t.bool, color: '#e11d48', fontWeight: 'bold' }, // Soft Blush Coral
+  { tag: t.null, color: '#e11d48', fontWeight: 'bold' },
+  { tag: t.function(t.variableName), color: '#6366f1', fontWeight: 'bold' }, // Soft Iris
+  { tag: t.operator, color: '#3b82f6' },
+  { tag: t.punctuation, color: '#64748b' },
+  { tag: t.comment, color: '#94a3b8', fontStyle: 'italic' },
+  { tag: t.variableName, color: '#1e293b' },
 ]);
 
 const sqlEditorThemeDark = EditorView.theme(
@@ -249,54 +249,55 @@ const sqlEditorThemeDark = EditorView.theme(
 const sqlEditorThemeLight = EditorView.theme(
   {
     '&': {
-      color: '#0f172a',
+      color: '#1e293b',
       backgroundColor: '#ffffff',
       fontSize: '13px',
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
       height: '100%',
     },
     '.cm-content': {
-      caretColor: '#0284c7',
+      caretColor: '#2563eb',
       padding: '10px 0',
       lineHeight: '1.6',
     },
     '&.cm-focused .cm-cursor': {
-      borderLeftColor: '#0284c7',
+      borderLeftColor: '#2563eb',
       borderLeftWidth: '2px',
     },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
-      backgroundColor: 'rgba(2, 132, 199, 0.22) !important',
+      backgroundColor: 'rgba(59, 130, 246, 0.16) !important',
     },
     '.cm-selectionLayer .cm-selectionBackground': {
-      backgroundColor: 'rgba(2, 132, 199, 0.22) !important',
+      backgroundColor: 'rgba(59, 130, 246, 0.16) !important',
     },
     '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-      backgroundColor: 'rgba(2, 132, 199, 0.22) !important',
+      backgroundColor: 'rgba(59, 130, 246, 0.16) !important',
     },
     '::selection, .cm-content ::selection': {
-      backgroundColor: 'rgba(2, 132, 199, 0.25) !important',
-      color: '#0f172a !important',
+      backgroundColor: '#dbeafe !important',
+      color: '#1e293b !important',
     },
     '&:not(.cm-focused) .cm-selectionBackground': {
-      backgroundColor: 'rgba(2, 132, 199, 0.12) !important',
+      backgroundColor: 'rgba(59, 130, 246, 0.08) !important',
     },
     '.cm-selectionMatch': {
-      backgroundColor: 'rgba(2, 132, 199, 0.15) !important',
-      outline: '1px solid rgba(2, 132, 199, 0.5) !important',
+      backgroundColor: 'rgba(59, 130, 246, 0.12) !important',
+      outline: '1px solid rgba(59, 130, 246, 0.35) !important',
       borderRadius: '2px',
     },
     '.cm-gutters': {
-      backgroundColor: '#f8fafc',
-      color: '#64748b',
+      backgroundColor: '#f8fafd',
+      color: '#94a3b8',
       borderRight: '1px solid #e2e8f0',
       paddingRight: '6px',
     },
     '.cm-activeLine': {
-      backgroundColor: '#f1f5f9',
+      backgroundColor: '#f8fafd',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: '#e2e8f0',
-      color: '#0f172a',
+      backgroundColor: '#f1f5f9',
+      color: '#1e293b',
+      fontWeight: '600',
     },
     '.cm-scroller': {
       overflow: 'auto',
@@ -618,7 +619,7 @@ export const SqlEditor: React.FC = () => {
   const results = tabState.results;
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-900/60 overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900/60 overflow-hidden relative">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="absolute top-12 right-6 z-40 bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
@@ -628,35 +629,35 @@ export const SqlEditor: React.FC = () => {
       )}
 
       {/* Editor Top Toolbar */}
-      <div className="h-10 bg-slate-950/80 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
+      <div className="h-10 bg-white dark:bg-slate-950/80 border-b border-slate-300 dark:border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
         <div className="flex items-center space-x-2 h-full">
           <button
             onClick={handleRun}
             disabled={tabState.isExecuting}
-            className="relative overflow-hidden h-7 px-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer leading-none"
+            className="relative overflow-hidden h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer leading-none"
           >
             {tabState.isExecuting && (
               <BorderChase color="emerald" dual={true} speed="fast" borderWidth={2} glow={true} />
             )}
-            <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-slate-900' : ''}`} />
+            <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-white' : ''}`} />
             <span className="leading-none">{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
-            <kbd className="px-1.5 py-0.5 bg-slate-950/20 rounded text-[9px] font-mono text-slate-950 font-extrabold leading-none">⌘↵</kbd>
+            <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘↵</kbd>
           </button>
 
           <button
             onClick={handleFormat}
-            className="h-7 px-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium cursor-pointer active:scale-95 leading-none"
+            className="h-7 px-2.5 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium cursor-pointer active:scale-95 leading-none shadow-2xs"
             title="Beautify SQL Query or Selected Block (⇧⌥F / ⇧⌘F)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <Sparkles className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
             <span className="leading-none">Format</span>
-            <kbd className="px-1.5 py-0.5 bg-slate-800/80 border border-slate-700 rounded text-[9px] font-mono text-slate-400 leading-none">⇧⌥F</kbd>
+            <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded text-[9px] font-mono text-slate-600 dark:text-slate-400 leading-none">⇧⌥F</kbd>
           </button>
         </div>
 
         {/* Execution Performance Badge */}
-        <div className="flex items-center space-x-3 text-slate-400 font-mono text-[11px] leading-none">
-          <span className="flex items-center space-x-1 text-emerald-400 font-semibold leading-none">
+        <div className="flex items-center space-x-3 text-slate-600 dark:text-slate-400 font-mono text-[11px] leading-none">
+          <span className="flex items-center space-x-1 text-emerald-700 dark:text-emerald-400 font-semibold leading-none">
             <Clock className="w-3 h-3 shrink-0" />
             <span className="leading-none">{tabState.durationMs || 1.4}ms</span>
           </span>
@@ -672,7 +673,7 @@ export const SqlEditor: React.FC = () => {
           setEditorContextPos({ x: e.clientX, y: e.clientY });
         }}
         style={!isSqlResultsCollapsed ? { height: `${sqlEditorSplitHeight}px` } : undefined}
-        className={`${isSqlResultsCollapsed ? 'flex-1' : ''} border-b border-slate-800/80 relative flex flex-col bg-slate-950 flex-shrink-0 overflow-hidden`}
+        className={`${isSqlResultsCollapsed ? 'flex-1' : ''} border-b border-slate-300 dark:border-slate-800/80 relative flex flex-col bg-white dark:bg-slate-950 flex-shrink-0 overflow-hidden`}
       >
         <div ref={editorRef} className="flex-1 w-full h-full overflow-hidden" />
       </div>
@@ -682,18 +683,18 @@ export const SqlEditor: React.FC = () => {
         <div
           onMouseDown={handleSplitterResizeStart}
           onDoubleClick={() => setSqlEditorSplitHeight(220)}
-          className="h-1 hover:h-1.5 bg-slate-800/80 hover:bg-sky-500/60 active:bg-sky-500 cursor-row-resize transition-all duration-100 relative group flex-shrink-0 z-20 select-none"
+          className="h-1 hover:h-1.5 bg-slate-200 dark:bg-slate-800/80 hover:bg-sky-500/60 active:bg-sky-500 cursor-row-resize transition-all duration-100 relative group flex-shrink-0 z-20 select-none"
           title="Drag to resize SQL editor & results • Double-click to reset (220px)"
         >
           <div className="absolute left-1/2 -translate-x-1/2 -top-1 -bottom-1 w-12 rounded-full bg-sky-400/0 group-hover:bg-sky-400/40 transition-colors pointer-events-none flex items-center justify-center">
-            <div className="h-0.5 w-6 bg-sky-300 rounded-full opacity-0 group-hover:opacity-100" />
+            <div className="h-0.5 w-6 bg-sky-400 rounded-full opacity-0 group-hover:opacity-100" />
           </div>
         </div>
       )}
 
       {/* Bottom Split: Query Result Grid (Collapsible & Resizable) */}
       {!isSqlResultsCollapsed ? (
-        <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 select-text relative">
+        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-950/90 select-text relative">
         {/* Live Executing Overlay (TablePlus High-Tech System) */}
         {tabState.isExecuting && (
           <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs z-30 flex items-center justify-center p-4">
@@ -718,10 +719,10 @@ export const SqlEditor: React.FC = () => {
         )}
 
         {/* Results Sub-header */}
-        <div className="h-8 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
+        <div className="h-8 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <Terminal className="w-3.5 h-3.5 text-sky-400" />
-            <span className="font-bold text-slate-200">Query Results</span>
+            <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+            <span className="font-bold text-slate-800 dark:text-slate-200">Query Results</span>
             <span className="text-[10px] text-slate-500 font-mono">({results.length} records)</span>
           </div>
           <div className="flex items-center space-x-2 text-[11px] text-slate-400">
@@ -823,10 +824,10 @@ export const SqlEditor: React.FC = () => {
                       }}
                       className={`cursor-pointer transition-colors ${
                         isSelected
-                          ? 'bg-sky-100 dark:bg-sky-600/30 text-sky-950 dark:text-white font-medium shadow-inner'
+                          ? 'bg-[#eff6ff] dark:bg-sky-600/30 text-[#1d4ed8] dark:text-white font-medium shadow-2xs border-y border-[#dbeafe] dark:border-sky-500/30'
                           : isEven
-                          ? 'bg-slate-50/60 dark:bg-slate-900/40 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
-                          : 'bg-white dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
+                          ? 'bg-[#fcfdfd] dark:bg-slate-900/40 hover:bg-[#f0f7ff] dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
+                          : 'bg-white dark:bg-slate-950/60 hover:bg-[#f0f7ff] dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
                       }`}
                     >
                       <td className="p-2 border-r border-slate-200 dark:border-slate-800/60 text-center text-slate-500 select-none font-medium">
