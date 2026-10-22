@@ -1,4 +1,4 @@
-import { TableSchemaInfo } from '../types';
+import { TableSchemaInfo, FunctionItem } from '../types';
 
 export const TABLE_SCHEMAS: Record<string, TableSchemaInfo> = {
   user_orders: {
@@ -611,3 +611,74 @@ export const getTablesForConnection = (connName: string, engine: string = 'postg
 export const getTableSchema = (tableName: string): TableSchemaInfo => {
   return TABLE_SCHEMAS[tableName] || TABLE_SCHEMAS.user_orders;
 };
+
+export const getFunctionsForConnection = (_connName?: string, engine: string = 'postgres'): FunctionItem[] => {
+  if (engine === 'mysql') {
+    return [
+      { name: 'calculate_order_tax', schema: 'analytics_staging', kind: 'function', owner: 'root@localhost', estimated_row: '--', total_size: '--', data_size: '--', index_size: '--', comment: 'Calculates local sales tax (8.25%)', definition: 'CREATE FUNCTION calculate_order_tax(subtotal DECIMAL(10,2)) RETURNS DECIMAL(10,2) DETERMINISTIC BEGIN RETURN subtotal * 0.0825; END' },
+      { name: 'generate_monthly_invoice_report', schema: 'analytics_staging', kind: 'procedure', owner: 'root@localhost', estimated_row: '--', total_size: '--', data_size: '--', index_size: '--', comment: 'Generates billing report for accounting', definition: 'CREATE PROCEDURE generate_monthly_invoice_report(IN target_year INT, IN target_month INT) BEGIN SELECT * FROM invoices; END' },
+      { name: 'mask_email', schema: 'analytics_staging', kind: 'function', owner: 'root@localhost', estimated_row: '--', total_size: '--', data_size: '--', index_size: '--', comment: 'Masks PII email address', definition: "CREATE FUNCTION mask_email(email VARCHAR(255)) RETURNS VARCHAR(255) DETERMINISTIC BEGIN RETURN CONCAT(LEFT(email, 2), '***@***', RIGHT(email, 4)); END" },
+    ];
+  }
+
+  // Postgres default functions matching TablePlus screenshot exactly
+  const pgFuncs = [
+    { name: 'gin_extract_query_trgm', comment: 'Trigram query index extractor' },
+    { name: 'gin_extract_value_trgm', comment: 'Trigram value index extractor' },
+    { name: 'gin_trgm_consistent', comment: 'Trigram GIN consistency check' },
+    { name: 'gin_trgm_triconsistent', comment: 'Trigram ternary consistency check' },
+    { name: 'gtrgm_compress', comment: 'GiST trigram compression routine' },
+    { name: 'gtrgm_consistent', comment: 'GiST trigram consistency check' },
+    { name: 'gtrgm_decompress', comment: 'GiST trigram decompression routine' },
+    { name: 'gtrgm_distance', comment: 'GiST trigram distance metric' },
+    { name: 'gtrgm_in', comment: 'GiST trigram input parser' },
+    { name: 'gtrgm_options', comment: 'GiST trigram index options' },
+    { name: 'gtrgm_out', comment: 'GiST trigram output formatter' },
+    { name: 'gtrgm_penalty', comment: 'GiST trigram penalty calculation' },
+    { name: 'gtrgm_picksplit', comment: 'GiST trigram split algorithm' },
+    { name: 'gtrgm_same', comment: 'GiST trigram equality check' },
+    { name: 'gtrgm_union', comment: 'GiST trigram union algorithm' },
+    { name: 'pg_relpages', comment: 'Relation page count estimator' },
+    { name: 'pg_stat_statements', comment: 'Query execution telemetry provider' },
+    { name: 'pg_stat_statements_info', comment: 'Telemetry collector status' },
+    { name: 'pg_stat_statements_reset', comment: 'Reset telemetry counters' },
+    { name: 'pgstatginindex', comment: 'GIN index statistics' },
+    { name: 'pgstathashindex', comment: 'Hash index statistics' },
+    { name: 'pgstatindex', comment: 'B-tree index statistics' },
+    { name: 'pgstattuple', comment: 'Tuple fragmentation statistics' },
+    { name: 'pgstattuple_approx', comment: 'Approximate tuple statistics' },
+    { name: 'set_limit', comment: 'Set similarity threshold' },
+    { name: 'show_limit', comment: 'Current similarity threshold' },
+    { name: 'show_trgm', comment: 'Extract trigrams from text' },
+    { name: 'similarity', comment: 'Trigram similarity calculation' },
+    { name: 'similarity_dist', comment: 'Trigram distance calculation' },
+    { name: 'similarity_op', comment: 'Trigram similarity operator' },
+    { name: 'strict_word_similarity', comment: 'Strict word similarity calculation' },
+    { name: 'strict_word_similarity_dist', comment: 'Strict word similarity distance' },
+    { name: 'strict_word_similarity_op', comment: 'Strict word similarity operator' },
+    { name: 'word_similarity', comment: 'Word similarity calculation' },
+    { name: 'word_similarity_dist', comment: 'Word similarity distance' },
+    { name: 'word_similarity_op', comment: 'Word similarity operator' },
+    { name: 'gen_random_uuid', comment: 'Generates UUID v4' },
+    { name: 'gen_random_bytes', comment: 'Generates cryptographically strong random bytes' },
+    { name: 'gen_salt', comment: 'Generates cryptographic salt' },
+    { name: 'crypt', comment: 'Calculates cryptographic hash' },
+    { name: 'armor', comment: 'Encodes binary to ASCII-armor' },
+    { name: 'dearmor', comment: 'Decodes ASCII-armor to binary' },
+    { name: 'digest', comment: 'Calculates binary cryptographic digest' },
+  ];
+
+  return pgFuncs.map((f) => ({
+    name: f.name,
+    schema: 'public',
+    kind: 'function',
+    owner: 'rdsadmin',
+    estimated_row: '--',
+    total_size: '--',
+    data_size: '--',
+    index_size: '--',
+    comment: f.comment || '--',
+    definition: `CREATE OR REPLACE FUNCTION public.${f.name}()\nRETURNS text\nLANGUAGE c\nIMMUTABLE PARALLEL SAFE\nAS '$libdir/pg_trgm', '${f.name}';`,
+  }));
+};
+

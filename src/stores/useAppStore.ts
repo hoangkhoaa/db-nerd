@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, UserSettings } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, UserSettings, FunctionItem } from '../types';
 import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS, getTablesForConnection } from '../data/schemas';
-import { executeRealQuery, getRealTables } from '../services/dbService';
+import { executeRealQuery, getRealTables, getRealFunctions } from '../services/dbService';
 
 interface AppState {
   tabs: TabItem[];
@@ -11,6 +11,7 @@ interface AppState {
   openTableGridTab: (tableName: string) => void;
   openTableSchemaTab: (tableName: string) => void;
   openAllTableStatsTab: () => void;
+  openAllFunctionsTab: () => void;
   closeTab: (id: string) => void;
   closeOtherTabs: (id: string) => void;
   closeTabsToRight: (id: string) => void;
@@ -24,6 +25,9 @@ interface AppState {
 
   liveTables: Record<string, { name: string; count: string }[]>;
   fetchLiveTables: (conn?: ConnectionProfile) => Promise<void>;
+
+  liveFunctions: Record<string, FunctionItem[]>;
+  fetchLiveFunctions: (conn?: ConnectionProfile) => Promise<void>;
 
   activeTab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection' | 'default';
   setActiveTab: (tab: 'grid' | 'schema' | 'sql' | 'stats' | 'connection' | 'default') => void;
@@ -598,6 +602,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  liveFunctions: {},
+  fetchLiveFunctions: async (conn) => {
+    const targetConn = conn || get().activeConnection;
+    try {
+      const funcs = await getRealFunctions(targetConn);
+      if (funcs && funcs.length > 0) {
+        set((state) => ({
+          liveFunctions: {
+            ...state.liveFunctions,
+            [targetConn.id]: funcs,
+          },
+        }));
+      }
+    } catch (e) {
+      console.warn('Fetch live functions failed:', e);
+    }
+  },
+
   runSqlQuery: async (tabId, customQuery) => {
     const currentState = get().sqlTabStates[tabId];
     const query = customQuery || currentState?.query || '';
@@ -824,6 +846,34 @@ export const useAppStore = create<AppState>((set, get) => ({
         type: 'stats',
         title: tabTitle,
         tableName: '__all_tables__',
+        canClose: true,
+      };
+      set({
+        tabs: [...tabs, newTab],
+        activeTabId: newTab.id,
+        activeTab: 'stats',
+      });
+    }
+  },
+
+  openAllFunctionsTab: () => {
+    const { tabs, activeConnection } = get();
+    const schemaName = activeConnection.engine === 'postgres' ? 'public' : activeConnection.database || 'public';
+    const tabTitle = `Functions.${schemaName}`;
+    const tabId = `tab-functions-${activeConnection.id}`;
+
+    const existing = tabs.find((t) => t.id === tabId || (t.type === 'stats' && t.title.startsWith('Functions.')));
+    if (existing) {
+      set({
+        activeTabId: existing.id,
+        activeTab: 'stats',
+      });
+    } else {
+      const newTab: TabItem = {
+        id: tabId,
+        type: 'stats',
+        title: tabTitle,
+        tableName: '__all_functions__',
         canClose: true,
       };
       set({

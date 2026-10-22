@@ -82,6 +82,7 @@ export const AllTableStatsView: React.FC = () => {
     openTableGridTab,
     openTableSchemaTab,
     openNewQueryTab,
+    setSelectedRowData,
     showToast,
   } = useAppStore();
 
@@ -181,9 +182,10 @@ export const AllTableStatsView: React.FC = () => {
     setStats(loadedStats);
     if (loadedStats.length > 0 && !selectedRowName) {
       setSelectedRowName(loadedStats[0].name);
+      setSelectedRowData(loadedStats[0]);
     }
     setLoading(false);
-  }, [activeConnection]);
+  }, [activeConnection, selectedRowName, setSelectedRowData]);
 
   useEffect(() => {
     fetchStats();
@@ -237,11 +239,15 @@ export const AllTableStatsView: React.FC = () => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       const nextIndex = Math.min(currentIndex + 1, filteredStats.length - 1);
-      setSelectedRowName(filteredStats[nextIndex].name);
+      const nextRow = filteredStats[nextIndex];
+      setSelectedRowName(nextRow.name);
+      setSelectedRowData(nextRow);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const prevIndex = Math.max(currentIndex - 1, 0);
-      setSelectedRowName(filteredStats[prevIndex].name);
+      const prevRow = filteredStats[prevIndex];
+      setSelectedRowName(prevRow.name);
+      setSelectedRowData(prevRow);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedRowName) {
@@ -419,7 +425,10 @@ export const AllTableStatsView: React.FC = () => {
               return (
                 <tr
                   key={row.name}
-                  onClick={() => setSelectedRowName(row.name)}
+                  onClick={() => {
+                    setSelectedRowName(row.name);
+                    setSelectedRowData(row);
+                  }}
                   onDoubleClick={() => handleRowDoubleClick(row.name)}
                   onContextMenu={(e) => {
                     e.preventDefault();

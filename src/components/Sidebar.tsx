@@ -20,7 +20,7 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
-import { getTablesForConnection, getTableSchema } from '../data/schemas';
+import { getTablesForConnection, getTableSchema, getFunctionsForConnection } from '../data/schemas';
 import { ColumnDefinition } from '../types';
 import {
   ContextMenuContainer,
@@ -71,6 +71,7 @@ export const Sidebar = () => {
     openTableGridTab,
     openTableSchemaTab,
     openAllTableStatsTab,
+    openAllFunctionsTab,
     openNewQueryTab,
     activeConnection,
     setDatabaseModalOpen,
@@ -84,6 +85,8 @@ export const Sidebar = () => {
     setTableViewMode,
     liveTables,
     fetchLiveTables,
+    liveFunctions,
+    fetchLiveFunctions,
   } = useAppStore();
 
   const [sidebarTab, setSidebarTab] = useState<'items' | 'queries' | 'history'>('items');
@@ -100,6 +103,7 @@ export const Sidebar = () => {
 
   useEffect(() => {
     fetchLiveTables(activeConnection);
+    fetchLiveFunctions(activeConnection);
   }, [activeConnection.id, activeConnection.database]);
 
   const deletedForConn = deletedTables[activeConnection.id] || [];
@@ -111,6 +115,16 @@ export const Sidebar = () => {
 
   const filteredTables = connectionTables.filter((t) =>
     t.name.toLowerCase().includes(searchFilter.toLowerCase())
+  );
+
+  const liveFuncsForConn = liveFunctions[activeConnection.id];
+  const connectionFunctions = (liveFuncsForConn && liveFuncsForConn.length > 0
+    ? liveFuncsForConn
+    : getFunctionsForConnection(activeConnection.name, activeConnection.engine)
+  );
+
+  const filteredFunctions = connectionFunctions.filter((f) =>
+    f.name.toLowerCase().includes(searchFilter.toLowerCase())
   );
 
   const filteredQueries = SAVED_QUERIES.filter(
@@ -198,19 +212,55 @@ export const Sidebar = () => {
             {/* Functions Group */}
             <div>
               <div
-                onClick={() => setIsFunctionsOpen(!isFunctionsOpen)}
-                className="flex items-center space-x-1 px-1.5 py-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 cursor-pointer rounded hover:bg-slate-900/50 transition-colors"
+                onClick={() => {
+                  openAllFunctionsTab();
+                }}
+                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-slate-100 cursor-pointer rounded hover:bg-slate-900/50 transition-colors group"
+                title="Click to view All Functions (Functions.public)"
               >
-                <ChevronRight
-                  className={`w-3.5 h-3.5 transition-transform duration-150 ${
-                    isFunctionsOpen ? 'rotate-90' : 'rotate-0'
-                  }`}
-                />
-                <span>Functions</span>
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsFunctionsOpen(!isFunctionsOpen);
+                    }}
+                    className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                    title={isFunctionsOpen ? "Collapse functions list" : "Expand functions list"}
+                  >
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                        isFunctionsOpen ? 'rotate-90' : 'rotate-0'
+                      }`}
+                    />
+                  </button>
+                  <span className="group-hover:text-amber-300 transition-colors">Functions</span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-mono pr-1 group-hover:text-slate-400 transition-colors">
+                  {filteredFunctions.length}
+                </span>
               </div>
+
+              {/* Function List (TablePlus Style) */}
               {isFunctionsOpen && (
-                <div className="ml-4 pl-2 border-l border-slate-800/80 py-1 text-[11px] text-slate-500 italic">
-                  No user functions defined
+                <div className="space-y-0.5 pt-0.5 max-h-60 overflow-y-auto no-scrollbar">
+                  {filteredFunctions.map((fn) => {
+                    return (
+                      <div
+                        key={fn.name}
+                        onClick={() => {
+                          openAllFunctionsTab();
+                        }}
+                        className="flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group hover:bg-slate-900/70 text-slate-400 hover:text-slate-200"
+                      >
+                        <div className="flex items-center space-x-2 truncate">
+                          <div className="w-3.5 h-3.5 rounded bg-amber-500/10 border border-amber-400/30 flex items-center justify-center flex-shrink-0 text-amber-400 font-mono font-bold text-[9px]">
+                            {'{ }'}
+                          </div>
+                          <span className="truncate">{fn.name}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

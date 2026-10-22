@@ -80,12 +80,13 @@ export const RightInspector: React.FC = () => {
   // 2. Structure mode (Column definition inspector)
   // 3. Index mode (Index properties inspector)
   // 4. SQL mode (Execution stats & Explain assistant)
-  // 5. Stats mode (Instance telemetry)
+  const isFunctionStats = activeTabObj?.title?.startsWith('Functions.') || activeTabObj?.tableName === '__all_functions__';
+  const isTableStats = activeTabObj?.title?.startsWith('Tables.') || activeTabObj?.tableName === '__all_tables__';
   const isSqlTab = currentTabType === 'sql';
-  const isStatsTab = currentTabType === 'stats';
+  const isStatsTab = currentTabType === 'stats' && !isFunctionStats && !isTableStats;
   const isStructureMode = currentTabType === 'schema' || tableViewMode === 'structure';
   const isIndexMode = tableViewMode === 'index';
-  const isDataMode = !isSqlTab && !isStatsTab && !isStructureMode && !isIndexMode;
+  const isDataMode = (!isSqlTab && !isStatsTab && !isStructureMode && !isIndexMode) || isFunctionStats || isTableStats;
 
   // Extract columns to display for selected row
   const rowFields = selectedRowData
@@ -131,7 +132,7 @@ export const RightInspector: React.FC = () => {
               : isIndexMode
               ? 'Index Inspector'
               : selectedRowData
-              ? `Row #${selectedRowData.id ?? selectedRowData.ulid ?? 'Selected'}`
+              ? (selectedRowData.name ? `${selectedRowData.kind || 'Item'}: ${selectedRowData.name}` : `Row #${selectedRowData.id ?? selectedRowData.ulid ?? 'Selected'}`)
               : 'Table Metadata'}
           </span>
         </div>

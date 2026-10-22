@@ -14,9 +14,10 @@ import { SettingsModal } from './components/SettingsModal';
 import { TableSchemaView } from './components/TableSchemaView';
 import { DefaultWorkspaceView } from './components/DefaultWorkspaceView';
 import { AllTableStatsView } from './components/AllTableStatsView';
+import { AllFunctionsView } from './components/AllFunctionsView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
-import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy } from 'lucide-react';
+import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy, Code } from 'lucide-react';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -309,6 +310,8 @@ export function App() {
                 if (tab.type === 'stats') {
                   if (tab.tableName === '__all_tables__' || tab.title.startsWith('Tables.')) {
                     icon = <Table className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />;
+                  } else if (tab.tableName === '__all_functions__' || tab.title.startsWith('Functions.')) {
+                    icon = <Code className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />;
                   } else {
                     icon = <Activity className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
                   }
@@ -417,6 +420,8 @@ export function App() {
                 {currentTabType === 'stats' && (
                   activeTabObj?.tableName === '__all_tables__' || activeTabObj?.title.startsWith('Tables.') ? (
                     <AllTableStatsView key={activeTabId} />
+                  ) : activeTabObj?.tableName === '__all_functions__' || activeTabObj?.title.startsWith('Functions.') ? (
+                    <AllFunctionsView key={activeTabId} />
                   ) : (
                     <Observability key={activeTabId} />
                   )

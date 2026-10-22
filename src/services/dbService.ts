@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { ConnectionProfile } from '../types';
+import { ConnectionProfile, FunctionItem } from '../types';
 
 export interface DbConfigPayload {
   engine: string;
@@ -97,3 +97,86 @@ export async function getRealTables(profile: ConnectionProfile): Promise<RealTab
     return [];
   }
 }
+
+export async function getRealFunctions(profile: ConnectionProfile): Promise<FunctionItem[]> {
+  try {
+    if (profile.engine === 'postgres') {
+      const sql = `
+        SELECT 
+          p.proname AS name,
+          n.nspname AS schema,
+          CASE p.prokind
+            WHEN 'f' THEN 'function'
+            WHEN 'p' THEN 'procedure'
+            WHEN 'a' THEN 'aggregate'
+            WHEN 'w' THEN 'window'
+            ELSE 'function'
+          END AS kind,
+          pg_catalog.pg_get_userbyid(p.proowner) AS owner,
+          '--' AS estimated_row,
+          '--' AS total_size,
+          '--' AS data_size,
+          '--' AS index_size,
+          COALESCE(d.description, '--') AS comment,
+          COALESCE(pg_get_functiondef(p.oid), '') AS definition
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        LEFT JOIN pg_description d ON d.objoid = p.oid
+        WHERE n.nspname = 'public'
+        ORDER BY p.proname ASC;
+      `;
+      const res = await executeRealQuery(profile, sql);
+      if (res.success && res.rows && res.rows.length > 0) {
+        return res.rows.map((r: any) => ({
+          name: String(r.name || ''),
+          schema: String(r.schema || 'public'),
+          kind: String(r.kind || 'function'),
+          owner: String(r.owner || 'postgres'),
+          estimated_row: '--',
+          total_size: '--',
+          data_size: '--',
+          index_size: '--',
+          comment: String(r.comment || '--'),
+          definition: String(r.definition || ''),
+        }));
+      }
+    } else if (profile.engine === 'mysql') {
+      const sql = `
+        SELECT 
+          ROUTINE_NAME AS name,
+          ROUTINE_SCHEMA AS \`schema\`,
+          LOWER(ROUTINE_TYPE) AS kind,
+          DEFINER AS owner,
+          '--' AS estimated_row,
+          '--' AS total_size,
+          '--' AS data_size,
+          '--' AS index_size,
+          COALESCE(ROUTINE_COMMENT, '--') AS comment,
+          COALESCE(ROUTINE_DEFINITION, '') AS definition
+        FROM information_schema.ROUTINES
+        WHERE ROUTINE_SCHEMA = DATABASE()
+        ORDER BY ROUTINE_NAME ASC;
+      `;
+      const res = await executeRealQuery(profile, sql);
+      if (res.success && res.rows && res.rows.length > 0) {
+        return res.rows.map((r: any) => ({
+          name: String(r.name || ''),
+          schema: String(r.schema || profile.database || 'mysql'),
+          kind: String(r.kind || 'function'),
+          owner: String(r.owner || 'root'),
+          estimated_row: '--',
+          total_size: '--',
+          data_size: '--',
+          index_size: '--',
+          comment: String(r.comment || '--'),
+          definition: String(r.definition || ''),
+        }));
+      }
+    }
+    return [];
+  } catch (e) {
+    console.warn('getRealFunctions failed:', e);
+    return [];
+  }
+}
+

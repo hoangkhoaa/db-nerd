@@ -39,6 +39,19 @@ export interface ConnectionProfile {
   latencyMs: number;
 }
 
+export interface FunctionItem {
+  name: string;
+  schema: string;
+  kind: string;
+  owner: string;
+  estimated_row?: string | number;
+  total_size?: string;
+  data_size?: string;
+  index_size?: string;
+  comment?: string;
+  definition?: string;
+}
+
 export interface TabItem {
   id: string;
   type: 'grid' | 'schema' | 'sql' | 'stats' | 'connection' | 'default';
