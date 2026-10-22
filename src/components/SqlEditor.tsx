@@ -464,8 +464,16 @@ export const SqlEditor: React.FC = () => {
           <div className="flex items-center space-x-2 text-[11px] text-slate-400">
             <button
               onClick={() => {
-                navigator.clipboard.writeText(JSON.stringify(results, null, 2));
-                showToast('📋 Copied results as JSON!');
+                const text =
+                  results.length === 1
+                    ? JSON.stringify(results[0], null, 2)
+                    : JSON.stringify(results, null, 2);
+                navigator.clipboard.writeText(text);
+                showToast(
+                  results.length === 1
+                    ? '📋 Copied result row as JSON Object!'
+                    : `📋 Copied ${results.length} rows as JSON Array!`
+                );
               }}
               className="hover:text-slate-200 transition cursor-pointer"
             >

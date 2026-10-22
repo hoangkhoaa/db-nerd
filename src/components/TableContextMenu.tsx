@@ -84,27 +84,11 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
     }, 180);
   };
 
-  // Format: JSON Array
-  const handleCopyJsonArray = () => {
+  // Format: JSON (auto-determines Object for 1 row, Array for multiple rows)
+  const handleCopyJson = () => {
     const clean = getCleanRows();
-    const text = JSON.stringify(clean, null, 2);
-    notifyAndClose('JSON Array', text);
-  };
-
-  // Format: JSON Object
-  const handleCopyJsonObject = () => {
-    const clean = getCleanRows();
-    let text = '';
-    if (clean.length === 1) {
-      text = JSON.stringify(clean[0], null, 2);
-    } else {
-      const obj: Record<string, any> = {};
-      clean.forEach((r, idx) => {
-        obj[`row_${r.id ?? idx + 1}`] = r;
-      });
-      text = JSON.stringify(obj, null, 2);
-    }
-    notifyAndClose('JSON Object', text);
+    const text = clean.length === 1 ? JSON.stringify(clean[0], null, 2) : JSON.stringify(clean, null, 2);
+    notifyAndClose('JSON', text);
   };
 
   // Format: CSV (no header)
@@ -328,28 +312,16 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
               {copiedFormat === 'Plain Text (TSV)' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
             </button>
 
-            {/* JSON Array */}
+            {/* JSON (Auto Object / Array) */}
             <button
-              onClick={handleCopyJsonArray}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium"
+              onClick={handleCopyJson}
+              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium cursor-pointer"
             >
               <div className="flex items-center space-x-1.5">
                 <Code className="w-3 h-3 text-purple-400" />
-                <span>JSON (Array)</span>
+                <span>JSON</span>
               </div>
-              {copiedFormat === 'JSON Array' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-
-            {/* JSON Object */}
-            <button
-              onClick={handleCopyJsonObject}
-              className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-slate-200 hover:bg-sky-600 hover:text-white transition-colors font-medium"
-            >
-              <div className="flex items-center space-x-1.5">
-                <Code className="w-3 h-3 text-purple-400" />
-                <span>JSON (Object)</span>
-              </div>
-              {copiedFormat === 'JSON Object' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              {copiedFormat === 'JSON' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
             </button>
 
             {/* HTML */}
