@@ -19,6 +19,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { TABLE_SCHEMAS } from '../data/schemas';
 import { TableContextMenu } from './TableContextMenu';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
+import { BorderChase } from './BorderChase';
 import { format as formatSql } from 'sql-formatter';
 import {
   ContextMenuContainer,
@@ -462,9 +463,12 @@ export const SqlEditor: React.FC = () => {
           <button
             onClick={handleRun}
             disabled={tabState.isExecuting}
-            className="h-7 px-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer leading-none"
+            className="relative overflow-hidden h-7 px-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer leading-none"
           >
-            <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+            {tabState.isExecuting && (
+              <BorderChase color="emerald" dual={true} speed="fast" borderWidth={2} glow={true} />
+            )}
+            <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-slate-900' : ''}`} />
             <span className="leading-none">{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-950/20 rounded text-[9px] font-mono text-slate-950 font-extrabold leading-none">⌘↵</kbd>
           </button>
@@ -503,7 +507,30 @@ export const SqlEditor: React.FC = () => {
       </div>
 
       {/* Bottom Split: Query Result Grid */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 select-text">
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 select-text relative">
+        {/* Live Executing Overlay (TablePlus High-Tech System) */}
+        {tabState.isExecuting && (
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs z-30 flex items-center justify-center p-4">
+            <div className="relative overflow-hidden bg-slate-900/95 border border-sky-500/50 rounded-2xl p-4 shadow-2xl flex items-center space-x-3.5 max-w-sm ring-1 ring-sky-400/20">
+              <BorderChase color="sky" dual={true} speed="fast" borderWidth={2} glow={true} />
+              <div className="p-2.5 bg-sky-500/15 rounded-xl border border-sky-500/30 text-sky-400 shrink-0">
+                <Terminal className="w-5 h-5 animate-pulse" />
+              </div>
+              <div className="space-y-0.5 font-mono">
+                <div className="text-xs font-bold text-slate-100 flex items-center space-x-2">
+                  <span>Executing Query...</span>
+                  <span className="text-[10px] text-sky-400 bg-sky-500/15 px-1.5 py-0.2 rounded font-sans font-semibold">
+                    DIRECT
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 truncate max-w-[210px]">
+                  Streaming packets from {activeConnection.name}...
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Results Sub-header */}
         <div className="h-8 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
           <div className="flex items-center space-x-2">

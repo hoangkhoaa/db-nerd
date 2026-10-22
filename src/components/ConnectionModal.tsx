@@ -18,6 +18,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
+import { BorderChase } from './BorderChase';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -949,8 +950,11 @@ export const ConnectionModal = () => {
             <button
               onClick={handleTestConnection}
               disabled={isTesting}
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition active:scale-95 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="relative overflow-hidden px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition active:scale-95 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
+              {isTesting && (
+                <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+              )}
               {isTesting ? 'Pinging host...' : 'Test Connection'}
             </button>
             {testSuccess && (

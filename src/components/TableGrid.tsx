@@ -23,6 +23,7 @@ import { TableContextMenu } from './TableContextMenu';
 import { TableStructureView } from './TableStructureView';
 import { TableIndexesView } from './TableIndexesView';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
+import { BorderChase } from './BorderChase';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -50,6 +51,7 @@ export const TableGrid: React.FC = () => {
     filterOrderByText,
     setFilterOrderByText,
     setSelectedStructureColumn,
+    isReloading,
   } = useAppStore();
 
   const schemaInfo = getTableSchema(selectedTable);
@@ -160,6 +162,29 @@ export const TableGrid: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-900/60 overflow-hidden relative">
+      {/* Live Table Reloading Overlay with Border Chase */}
+      {isReloading && (
+        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs z-30 flex items-center justify-center p-4">
+          <div className="relative overflow-hidden bg-slate-900/95 border border-sky-500/50 rounded-2xl p-4 shadow-2xl flex items-center space-x-3.5 max-w-sm ring-1 ring-sky-400/20 animate-in zoom-in-95 duration-100">
+            <BorderChase color="sky" dual={true} speed="fast" borderWidth={2} glow={true} />
+            <div className="p-2.5 bg-sky-500/15 rounded-xl border border-sky-500/30 text-sky-400 shrink-0">
+              <Zap className="w-5 h-5 animate-pulse" />
+            </div>
+            <div className="space-y-0.5 font-mono">
+              <div className="text-xs font-bold text-slate-100 flex items-center space-x-2">
+                <span>Refreshing Data...</span>
+                <span className="text-[10px] text-sky-400 bg-sky-500/15 px-1.5 py-0.2 rounded font-sans font-semibold">
+                  SYNC
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 truncate max-w-[210px]">
+                Fetching schema & rows for {selectedTable}...
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="absolute top-12 right-6 z-40 bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs animate-in fade-in slide-in-from-top-2 duration-150">

@@ -1,6 +1,7 @@
 import { useAppStore } from '../stores/useAppStore';
 import { Activity } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
+import { BorderChase } from './BorderChase';
 
 export const Observability = () => {
   const { processes, killProcess } = useAppStore();
@@ -93,7 +94,14 @@ export const Observability = () => {
           <Activity className="w-4 h-4 text-emerald-400" />
           <span className="text-slate-200 font-bold">Live Processlist & Running Queries (Kill Query)</span>
         </div>
-        <span className="text-slate-500 font-mono text-[11px]">{processes.length} running threads in pg_stat_activity</span>
+        <div className="flex items-center space-x-2">
+          <div className="relative overflow-hidden px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono font-bold flex items-center space-x-1.5 shadow-sm">
+            <BorderChase color="emerald" dual={true} speed="slow" borderWidth={1.5} glow={true} />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>STREAMING PG_STAT</span>
+          </div>
+          <span className="text-slate-500 font-mono text-[11px]">{processes.length} threads</span>
+        </div>
       </div>
 
       {/* Processlist Table */}

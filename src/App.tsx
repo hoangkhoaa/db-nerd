@@ -9,6 +9,7 @@ import { Observability } from './components/Observability';
 import { ConnectionModal } from './components/ConnectionModal';
 import { OpenDatabaseModal } from './components/OpenDatabaseModal';
 import { QueryHistoryModal } from './components/QueryHistoryModal';
+import { RunningQueriesModal } from './components/RunningQueriesModal';
 import { SqlDiffModal } from './components/SqlDiffModal';
 import { SettingsModal } from './components/SettingsModal';
 import { TableSchemaView } from './components/TableSchemaView';
@@ -541,6 +542,7 @@ export function App() {
       <ConnectionModal />
       <OpenDatabaseModal />
       <QueryHistoryModal />
+      <RunningQueriesModal />
       <SqlDiffModal />
       <SettingsModal />
 

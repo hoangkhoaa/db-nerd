@@ -9,6 +9,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
+import { BorderChase } from './BorderChase';
 
 export const DefaultWorkspaceView: React.FC = () => {
   const {
@@ -86,6 +87,11 @@ export const DefaultWorkspaceView: React.FC = () => {
               }`}
             />
 
+            {/* Apple-grade Border Chase Highlight Runner */}
+            {isConnecting && (
+              <BorderChase color="sky" dual={true} speed="fast" borderWidth={2.5} glow={true} />
+            )}
+
             {/* Laser scanning beam during connecting */}
             {isConnecting && (
               <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-sky-300 to-transparent shadow-[0_0_12px_rgba(56,189,248,1)] animate-laser-scan pointer-events-none z-20" />
@@ -135,7 +141,8 @@ export const DefaultWorkspaceView: React.FC = () => {
 
         {/* Live Cyber Telemetry Console (Appears during connection or benchmark) */}
         {isConnecting ? (
-          <div className="w-full max-w-md bg-slate-950/90 border border-sky-500/40 rounded-xl p-3 shadow-xl text-left space-y-1.5 font-mono text-xs animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md bg-slate-950/90 border border-sky-500/40 rounded-xl p-3 shadow-xl text-left space-y-1.5 font-mono text-xs animate-in zoom-in-95 duration-150 relative overflow-hidden">
+            <BorderChase color="sky" dual={true} speed="normal" borderWidth={1.5} glow={true} />
             <div className="flex items-center justify-between text-[11px] pb-1 border-b border-sky-500/20 text-sky-300 font-bold">
               <span className="flex items-center space-x-1.5">
                 <Activity className="w-3 h-3 animate-spin text-sky-400" />
@@ -197,11 +204,14 @@ export const DefaultWorkspaceView: React.FC = () => {
           <button
             onClick={() => triggerConnectingAnimation(activeConnection.id)}
             disabled={isConnecting}
-            className="flex-1 py-2 px-3 rounded-xl bg-slate-900/70 hover:bg-slate-850 border border-slate-800 hover:border-sky-500/40 text-xs font-mono text-sky-400 flex items-center justify-center space-x-1.5 transition active:scale-95 cursor-pointer shadow-sm group"
+            className="relative overflow-hidden flex-1 py-2 px-3 rounded-xl bg-slate-900/70 hover:bg-slate-850 border border-slate-800 hover:border-sky-500/40 text-xs font-mono text-sky-400 flex items-center justify-center space-x-1.5 transition active:scale-95 cursor-pointer shadow-sm group"
             title="Trigger connection handshake animation & ping benchmark"
           >
+            {isConnecting && (
+              <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+            )}
             <Zap className="w-3.5 h-3.5 group-hover:scale-110 transition-transform fill-current" />
-            <span>⚡ Test Connection & Latency</span>
+            <span>{isConnecting ? 'Testing Connection & Latency...' : '⚡ Test Connection & Latency'}</span>
           </button>
         </div>
 

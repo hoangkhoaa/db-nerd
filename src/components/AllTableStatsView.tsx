@@ -13,6 +13,7 @@ import {
   Code,
   Layers,
 } from 'lucide-react';
+import { BorderChase } from './BorderChase';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -290,11 +291,14 @@ export const AllTableStatsView: React.FC = () => {
           <button
             onClick={() => fetchStats()}
             disabled={loading}
-            className="h-6 px-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1 text-xs transition active:scale-95 border border-slate-700/60"
+            className="relative overflow-hidden h-6 px-2.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1.5 text-xs transition active:scale-95 border border-slate-700/60"
             title="Refresh Table Statistics"
           >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin text-sky-400' : ''}`} />
-            <span>Refresh</span>
+            {loading && (
+              <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+            )}
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-sky-400' : ''}`} />
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>

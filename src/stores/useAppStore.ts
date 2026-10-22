@@ -82,6 +82,9 @@ interface AppState {
   isHistoryModalOpen: boolean;
   setHistoryModalOpen: (open: boolean) => void;
 
+  isRunningQueriesModalOpen: boolean;
+  setRunningQueriesModalOpen: (open: boolean) => void;
+
   isSqlDiffModalOpen: boolean;
   setSqlDiffModalOpen: (open: boolean) => void;
 
@@ -1343,6 +1346,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   isHistoryModalOpen: false,
   setHistoryModalOpen: (open) => set({ isHistoryModalOpen: open }),
+
+  isRunningQueriesModalOpen: false,
+  setRunningQueriesModalOpen: (open) => set({ isRunningQueriesModalOpen: open }),
 
   isSqlDiffModalOpen: false,
   setSqlDiffModalOpen: (open) => set({ isSqlDiffModalOpen: open }),

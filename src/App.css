@@ -412,4 +412,180 @@ html.light body,
   animation: cyber-hologram 2s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   Apple-grade Border Chase Highlight System ("Hiệu ứng đuổi bắt")
+   Strictly stays along the 4 borders and corners of any squircle/card.
+   No clipping or corner-rotation protrusion.
+   ========================================================================== */
+
+@keyframes border-chase-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.border-chase-root {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.border-chase-rotor {
+  position: absolute;
+  inset: -150%;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.border-chase-fast {
+  animation: border-chase-spin 1.6s linear infinite;
+}
+
+.border-chase-normal {
+  animation: border-chase-spin 2.4s linear infinite;
+}
+
+.border-chase-slow {
+  animation: border-chase-spin 3.8s linear infinite;
+}
+
+/* Dual Beams (Chasing each other - "đuổi bắt") */
+.border-chase-dual-sky .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 70deg,
+    rgba(56, 189, 248, 0.25) 130deg,
+    rgba(56, 189, 248, 0.95) 172deg,
+    #ffffff 180deg,
+    transparent 180.1deg,
+    transparent 250deg,
+    rgba(56, 189, 248, 0.25) 310deg,
+    rgba(56, 189, 248, 0.95) 352deg,
+    #ffffff 360deg
+  );
+}
+
+.border-chase-dual-amber .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 70deg,
+    rgba(251, 191, 36, 0.25) 130deg,
+    rgba(251, 191, 36, 0.95) 172deg,
+    #ffffff 180deg,
+    transparent 180.1deg,
+    transparent 250deg,
+    rgba(251, 191, 36, 0.25) 310deg,
+    rgba(251, 191, 36, 0.95) 352deg,
+    #ffffff 360deg
+  );
+}
+
+.border-chase-dual-emerald .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 70deg,
+    rgba(52, 211, 153, 0.25) 130deg,
+    rgba(52, 211, 153, 0.95) 172deg,
+    #ffffff 180deg,
+    transparent 180.1deg,
+    transparent 250deg,
+    rgba(52, 211, 153, 0.25) 310deg,
+    rgba(52, 211, 153, 0.95) 352deg,
+    #ffffff 360deg
+  );
+}
+
+.border-chase-dual-purple .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 70deg,
+    rgba(168, 85, 247, 0.25) 130deg,
+    rgba(168, 85, 247, 0.95) 172deg,
+    #ffffff 180deg,
+    transparent 180.1deg,
+    transparent 250deg,
+    rgba(168, 85, 247, 0.25) 310deg,
+    rgba(168, 85, 247, 0.95) 352deg,
+    #ffffff 360deg
+  );
+}
+
+/* Single Beam (Single laser runner) */
+.border-chase-single-sky .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 220deg,
+    rgba(56, 189, 248, 0.2) 290deg,
+    rgba(56, 189, 248, 0.95) 348deg,
+    #ffffff 360deg
+  );
+}
+
+.border-chase-single-amber .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 220deg,
+    rgba(251, 191, 36, 0.2) 290deg,
+    rgba(251, 191, 36, 0.95) 348deg,
+    #ffffff 360deg
+  );
+}
+
+.border-chase-single-emerald .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 220deg,
+    rgba(52, 211, 153, 0.2) 290deg,
+    rgba(52, 211, 153, 0.95) 348deg,
+    #ffffff 360deg
+  );
+}
+
+.border-chase-single-purple .border-chase-rotor {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 220deg,
+    rgba(168, 85, 247, 0.2) 290deg,
+    rgba(168, 85, 247, 0.95) 348deg,
+    #ffffff 360deg
+  );
+}
+
+/* Soft Neon Glow Filters */
+.border-chase-glow-sky {
+  filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 7px rgba(56, 189, 248, 0.4));
+}
+
+.border-chase-glow-amber {
+  filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.85)) drop-shadow(0 0 7px rgba(251, 191, 36, 0.4));
+}
+
+.border-chase-glow-emerald {
+  filter: drop-shadow(0 0 3px rgba(52, 211, 153, 0.85)) drop-shadow(0 0 7px rgba(52, 211, 153, 0.4));
+}
+
+.border-chase-glow-purple {
+  filter: drop-shadow(0 0 3px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 7px rgba(168, 85, 247, 0.4));
+}
+
+
 

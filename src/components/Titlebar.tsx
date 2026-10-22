@@ -1,6 +1,5 @@
 import { useAppStore } from '../stores/useAppStore';
 import {
-  Sparkles,
   RefreshCw,
   PanelRight,
   PanelRightClose,
@@ -10,14 +9,13 @@ import {
   Filter,
   History,
   Sliders,
-  Sun,
-  Moon,
-  Laptop,
+  XCircle,
+  Activity,
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
 import { LedMatrixBanner } from './LedMatrixBanner';
-import { ThemeMode } from '../types';
+import { BorderChase } from './BorderChase';
 
 export const Titlebar = () => {
   const {
@@ -25,6 +23,8 @@ export const Titlebar = () => {
     setConnectionModalOpen,
     setDatabaseModalOpen,
     setHistoryModalOpen,
+    setRunningQueriesModalOpen,
+    setActiveTab,
     pendingEditsCount,
     commitTransaction,
     rollbackTransaction,
@@ -37,21 +37,8 @@ export const Titlebar = () => {
     openNewQueryTab,
     isReloading,
     reloadData,
-    settings,
-    resolvedTheme,
-    setThemeMode,
     setSettingsModalOpen,
   } = useAppStore();
-
-  const handleCycleTheme = () => {
-    const nextTheme: ThemeMode =
-      settings.themeMode === 'auto'
-        ? 'dark'
-        : settings.themeMode === 'dark'
-        ? 'light'
-        : 'auto';
-    setThemeMode(nextTheme);
-  };
 
   const handleCommit = async () => {
     const res = await commitTransaction();
@@ -155,14 +142,14 @@ export const Titlebar = () => {
       </div>
 
       {/* Right: Clean, un-cluttered actions matching TablePlus */}
+      {/* Right: Sharp, non-duplicate TablePlus toolbar actions */}
       <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
-        {pendingEditsCount > 0 ? (
+        {pendingEditsCount > 0 && (
           <div className="flex items-center space-x-1.5 animate-in fade-in">
             <div className="h-7 px-2 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold flex items-center space-x-1 leading-none shrink-0">
               <HeartbeatDot color="amber" size="xs" showWave={true} />
               <span>{pendingEditsCount}</span>
             </div>
-
             <button
               onClick={handleDiscard}
               className="no-drag h-7 px-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition flex items-center leading-none shrink-0 cursor-pointer"
@@ -170,7 +157,6 @@ export const Titlebar = () => {
             >
               Discard
             </button>
-
             <button
               onClick={handleCommit}
               className="no-drag h-7 px-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-sky-500/20 active:scale-95 leading-none shrink-0 cursor-pointer"
@@ -180,28 +166,53 @@ export const Titlebar = () => {
               <kbd className="px-1 py-0.5 bg-slate-900/30 rounded text-[9px] font-mono text-slate-950 font-extrabold leading-none">⌘S</kbd>
             </button>
           </div>
-        ) : (
-          <button
-            onClick={() => reloadData()}
-            className={`no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
-              isReloading ? 'text-sky-400 border-sky-500/50 bg-sky-950/30' : ''
-            }`}
-            title="Reload Data & Schema (⌘R)"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'animate-spin text-sky-400' : ''}`} />
-          </button>
         )}
 
-        {/* History Modal Trigger */}
-        <button
-          onClick={() => setHistoryModalOpen(true)}
-          className="no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
-          title="Query History (⌘H)"
-        >
-          <History className="w-3.5 h-3.5" />
-        </button>
+        {/* Sharp Unified Toolbar Segmented Cluster */}
+        <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-lg p-0.5 space-x-0.5 shadow-xs">
+          <button
+            onClick={() => setRunningQueriesModalOpen(true)}
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition active:scale-95 cursor-pointer"
+            title="Running Queries & Cancel Process (⌘.)"
+          >
+            <XCircle className="w-3.5 h-3.5 text-rose-400" />
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-300 transition active:scale-95 cursor-pointer"
+            title="Observability & Process Diagnostics"
+          >
+            <Activity className="w-3.5 h-3.5 text-emerald-400" />
+          </button>
+          <button
+            onClick={() => setHistoryModalOpen(true)}
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-amber-300 transition active:scale-95 cursor-pointer"
+            title="Query History & Logs (⌘H)"
+          >
+            <History className="w-3.5 h-3.5 text-amber-400" />
+          </button>
+          <button
+            onClick={() => reloadData()}
+            className={`no-drag relative overflow-hidden h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition active:scale-95 cursor-pointer ${
+              isReloading ? 'text-sky-400 bg-sky-950/40' : ''
+            }`}
+            title="Reload Schema & Refresh (⌘R)"
+          >
+            {isReloading && (
+              <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+            )}
+            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'text-sky-400 animate-pulse' : ''}`} />
+          </button>
+          <button
+            onClick={() => setSettingsModalOpen(true)}
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition active:scale-95 cursor-pointer"
+            title="Settings & Preferences (Theme, Fonts, Limits) (⌘,)"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-        {/* Toggle Right Inspector */}
+        {/* Toggle Right Inspector Panel */}
         <button
           onClick={toggleRightInspector}
           className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
@@ -212,41 +223,6 @@ export const Titlebar = () => {
           title="Toggle Right Inspector Panel (⌘I)"
         >
           {isRightInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
-        </button>
-
-        <div className="h-4 w-[1px] bg-slate-800 mx-0.5 shrink-0 self-center" />
-
-        {/* Quick Theme Mode Toggle */}
-        <button
-          onClick={handleCycleTheme}
-          className="no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
-          title={`Theme: ${settings.themeMode === 'auto' ? `Auto (System: ${resolvedTheme})` : settings.themeMode === 'dark' ? 'Dark' : 'Light'} (Click to cycle)`}
-        >
-          {settings.themeMode === 'auto' ? (
-            <Laptop className="w-3.5 h-3.5 text-sky-400" />
-          ) : settings.themeMode === 'light' ? (
-            <Sun className="w-3.5 h-3.5 text-amber-400" />
-          ) : (
-            <Moon className="w-3.5 h-3.5 text-indigo-400" />
-          )}
-        </button>
-
-        {/* Preferences & Settings */}
-        <button
-          onClick={() => setSettingsModalOpen(true)}
-          className="no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
-          title="Preferences & Settings (⌘,)"
-        >
-          <Sliders className="w-3.5 h-3.5" />
-        </button>
-
-        {/* AI Assistant */}
-        <button 
-          onClick={() => alert("✨ AI Assistant (MCP) connected via localhost:4080\nReady for natural language queries!")}
-          className="no-drag h-7 w-7 flex items-center justify-center bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 hover:text-purple-100 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
-          title="AI Assistant (MCP)"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
         </button>
       </div>
     </header>

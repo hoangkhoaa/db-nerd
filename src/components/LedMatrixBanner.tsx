@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { AlertCircle, Zap, ShieldCheck } from 'lucide-react';
+import { BorderChase } from './BorderChase';
 
 interface LedMatrixBannerProps {
   onOpenDatabaseModal: () => void;
@@ -191,6 +192,11 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
         }`}
         title="Click to Switch Database or Change Schema (⌘O)"
       >
+        {/* Apple-grade Border Chase Highlight Runner */}
+        {isConnecting && (
+          <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+        )}
+
         {/* HTML5 Canvas LED Dot Matrix Layer */}
         <canvas
           ref={canvasRef}
@@ -262,15 +268,18 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
           onClick={() => triggerConnectingAnimation(activeConnection.id)}
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
-          className={`no-drag h-7 w-7 flex items-center justify-center rounded-full transition-all cursor-pointer ${
+          className={`no-drag relative h-7 w-7 flex items-center justify-center rounded-full transition-all cursor-pointer overflow-hidden ${
             isConnecting
-              ? 'bg-sky-500/20 text-sky-400 animate-spin border border-sky-500/50'
+              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
               : env === 'prod'
               ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/40 hover:scale-105 active:scale-95'
               : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/80 hover:scale-105 active:scale-95'
           }`}
           title="Connection Health & Latency Telemetry (Click to Re-test)"
         >
+          {isConnecting && (
+            <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+          )}
           {isConnecting ? (
             <Zap className="w-3.5 h-3.5 fill-current" />
           ) : (

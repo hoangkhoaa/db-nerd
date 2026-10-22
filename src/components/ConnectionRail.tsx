@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { Database, Plus, X, RefreshCw, Pencil, Copy, LogOut } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
+import { BorderChase } from './BorderChase';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -85,9 +86,9 @@ export const ConnectionRail: React.FC = () => {
                 }`}
                 title={`${conn.name} (${conn.engine}) • ${conn.database} • ${conn.host}:${conn.port}`}
               >
-                {/* Connecting Neon Energy Ring */}
+                {/* Border Chase Highlight: stays strictly along the 4 borders of the squircle ("hiệu ứng đuổi bắt") */}
                 {isActive && isConnecting && (
-                  <div className="absolute inset-0 rounded-xl border-2 border-sky-400 border-t-transparent animate-spin pointer-events-none" />
+                  <BorderChase color="sky" dual={true} speed="fast" borderWidth={2} glow={true} />
                 )}
 
                 {/* Engine Icon & Status LED */}

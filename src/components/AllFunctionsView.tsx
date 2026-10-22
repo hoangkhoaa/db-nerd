@@ -13,6 +13,7 @@ import {
   Terminal,
   FileCode,
 } from 'lucide-react';
+import { BorderChase } from './BorderChase';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -165,11 +166,14 @@ export const AllFunctionsView: React.FC = () => {
           <button
             onClick={() => fetchFunctions()}
             disabled={loading}
-            className="h-6 px-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1 text-xs transition active:scale-95 border border-slate-700/60"
+            className="relative overflow-hidden h-6 px-2.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1.5 text-xs transition active:scale-95 border border-slate-700/60"
             title="Refresh Functions List"
           >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin text-amber-400' : ''}`} />
-            <span>Refresh</span>
+            {loading && (
+              <BorderChase color="amber" dual={true} speed="fast" borderWidth={1.5} glow={true} />
+            )}
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-amber-400' : ''}`} />
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
