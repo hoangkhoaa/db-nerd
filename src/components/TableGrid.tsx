@@ -24,6 +24,7 @@ import { TableStructureView } from './TableStructureView';
 import { TableIndexesView } from './TableIndexesView';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
 import { BorderChase } from './BorderChase';
+import { InlineCellEditor } from './InlineCellEditor';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -57,7 +58,6 @@ export const TableGrid: React.FC = () => {
   const schemaInfo = getTableSchema(selectedTable);
 
   const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [targetContextMenuRows, setTargetContextMenuRows] = useState<GridRow[]>([]);
@@ -111,38 +111,18 @@ export const TableGrid: React.FC = () => {
     setSelectedRowData(row);
   };
 
-  const startEditing = (id: number, field: string, currentValue: any) => {
-    // Prevent editing the primary key directly or complex JSON
+  const startEditing = (id: number, field: string) => {
+    // Prevent editing the primary key directly
     if (field === 'id' && schemaInfo.columns.find((c) => c.name === 'id')?.isPrimaryKey) return;
     setEditingCell({ id, field });
-    setEditValue(typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue ?? ''));
   };
 
-  const saveEditing = () => {
-    if (!editingCell) return;
-    const { id, field } = editingCell;
-    let finalVal: any = editValue;
-    if (field === 'total_amount' || field === 'user_id' || field === 'version_id') {
-      const num = Number(editValue);
-      if (!isNaN(num)) finalVal = num;
-    } else if (editValue === 'true' || editValue === 'TRUE') {
-      finalVal = true;
-    } else if (editValue === 'false' || editValue === 'FALSE') {
-      finalVal = false;
-    }
-    updateCell(id, field as keyof GridRow, finalVal);
+  const handleSaveCell = (id: number, field: string, newVal: any) => {
+    updateCell(id, field as keyof GridRow, newVal);
     if (selectedRowData && selectedRowData.id === id) {
-      setSelectedRowData({ ...selectedRowData, [field]: finalVal });
+      setSelectedRowData({ ...selectedRowData, [field]: newVal });
     }
     setEditingCell(null);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      saveEditing();
-    } else if (e.key === 'Escape') {
-      setEditingCell(null);
-    }
   };
 
   const toggleColumnVisibility = (colName: string) => {
@@ -327,10 +307,10 @@ export const TableGrid: React.FC = () => {
                       return (
                         <td
                           key={col.name}
-                          onDoubleClick={() => startEditing(row.id, col.name, val)}
-                          className={`px-3 py-1.5 border-r border-slate-200 dark:border-slate-800/60 relative truncate max-w-xs ${
-                            isDirty ? 'bg-amber-500/15' : ''
-                          }`}
+                          onDoubleClick={() => startEditing(row.id, col.name)}
+                          className={`px-3 py-1.5 border-r border-slate-200 dark:border-slate-800/60 relative ${
+                            isEditing ? 'overflow-visible' : 'truncate'
+                          } max-w-xs ${isDirty ? 'bg-amber-500/15' : ''}`}
                         >
                           {/* Dirty indicator dot */}
                           {isDirty && (
@@ -338,14 +318,11 @@ export const TableGrid: React.FC = () => {
                           )}
 
                           {isEditing ? (
-                            <input
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={saveEditing}
-                              onKeyDown={handleKeyDown}
-                              autoFocus
-                              className="w-full bg-white dark:bg-slate-900 border border-sky-500 rounded px-1.5 py-0.5 text-slate-900 dark:text-slate-100 font-mono text-[11px] focus:outline-none"
+                            <InlineCellEditor
+                              col={col}
+                              initialValue={val}
+                              onSave={(newVal) => handleSaveCell(row.id, col.name, newVal)}
+                              onCancel={() => setEditingCell(null)}
                             />
                           ) : val === null || val === undefined ? (
                             <span className="text-slate-400 dark:text-slate-500 italic select-none font-mono">NULL</span>
