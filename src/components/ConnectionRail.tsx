@@ -42,7 +42,7 @@ export const ConnectionRail: React.FC = () => {
   };
 
   return (
-    <aside className="w-16 bg-[#070b14] border-r border-slate-800/90 flex flex-col justify-between items-center py-2.5 select-none flex-shrink-0 z-20">
+    <aside className="w-16 bg-slate-100 dark:bg-[#070b14] border-r border-slate-300 dark:border-slate-800/90 flex flex-col justify-between items-center py-2.5 select-none flex-shrink-0 z-20">
       {/* Top: List of Open Connection Workspaces */}
       <div className="w-full flex flex-col items-center space-y-2">
         {openConnections.map((conn) => {
@@ -53,7 +53,7 @@ export const ConnectionRail: React.FC = () => {
             <div key={conn.id} className="relative group w-full flex justify-center px-1.5">
               {/* Active Indicator Bar on left edge */}
               {isActive && (
-                <div className="absolute left-0 top-2 bottom-2 w-1 bg-sky-400 rounded-r-md shadow-[0_0_8px_rgba(56,189,248,0.9)]" />
+                <div className="absolute left-0 top-2 bottom-2 w-1 bg-sky-600 dark:bg-sky-400 rounded-r-md shadow-[0_0_8px_rgba(56,189,248,0.9)]" />
               )}
 
               {/* Connection Switcher Capsule */}
@@ -67,8 +67,8 @@ export const ConnectionRail: React.FC = () => {
                 }}
                 className={`w-13 h-13 rounded-xl flex flex-col items-center justify-center p-1 transition-all duration-150 cursor-pointer relative ${
                   isActive
-                    ? 'bg-sky-500/20 border border-sky-500/50 shadow-md shadow-sky-500/10 text-white'
-                    : 'hover:bg-slate-900/90 text-slate-400 hover:text-slate-200 border border-slate-800/60 hover:border-slate-700/80'
+                    ? 'bg-sky-100 dark:bg-sky-500/20 border border-sky-400 dark:border-sky-500/50 shadow-md shadow-sky-500/10 text-sky-950 dark:text-white'
+                    : 'hover:bg-slate-200/80 dark:hover:bg-slate-900/90 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200 border border-slate-300 dark:border-slate-800/60 hover:border-slate-400 dark:hover:border-slate-700/80'
                 }`}
                 title={`${conn.name} (${conn.engine}) • ${conn.database} • ${conn.host}:${conn.port}`}
               >
@@ -97,7 +97,7 @@ export const ConnectionRail: React.FC = () => {
                       e.stopPropagation();
                       closeSession(conn.id);
                     }}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-[9px] shadow-sm cursor-pointer z-10"
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-slate-200 dark:bg-slate-800 hover:bg-rose-600 text-slate-600 dark:text-slate-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-[9px] shadow-sm cursor-pointer z-10"
                     title={`Close session "${conn.name}"`}
                   >
                     <X className="w-2.5 h-2.5" />
@@ -110,15 +110,15 @@ export const ConnectionRail: React.FC = () => {
       </div>
 
       {/* Bottom: Add Connection (+) Button */}
-      <div className="w-full flex flex-col items-center pt-2 border-t border-slate-800/80 space-y-1.5">
+      <div className="w-full flex flex-col items-center pt-2 border-t border-slate-300 dark:border-slate-800/80 space-y-1.5">
         <button
           onClick={() => setConnectionModalOpen(true)}
-          className="w-11 h-11 rounded-xl bg-slate-900/70 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 text-slate-400 hover:text-sky-300 flex items-center justify-center transition-all duration-150 cursor-pointer group shadow-sm active:scale-95"
+          className="w-11 h-11 rounded-xl bg-white dark:bg-slate-900/70 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 hover:border-sky-500/50 text-slate-700 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 flex items-center justify-center transition-all duration-150 cursor-pointer group shadow-sm active:scale-95"
           title="Open Connection Manager (⌘K)"
         >
           <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
         </button>
-        <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+        <span className="text-[9px] font-mono text-slate-600 dark:text-slate-500 uppercase tracking-widest font-semibold">
           {openConnections.length} open
         </span>
       </div>

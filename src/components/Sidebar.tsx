@@ -143,39 +143,39 @@ export const Sidebar = () => {
   return (
     <aside
       style={{ width: `${sidebarWidth}px` }}
-      className="bg-slate-950/70 border-r border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0 font-sans h-full"
+      className="bg-slate-50 dark:bg-slate-950/70 border-r border-slate-300 dark:border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0 font-sans h-full"
     >
       
       {/* Top Section: Segmented Switcher & Search */}
-      <div className="flex-shrink-0 border-b border-slate-800/80 p-2 space-y-2">
+      <div className="flex-shrink-0 border-b border-slate-300 dark:border-slate-800/80 p-2 space-y-2">
         {/* TablePlus Style 3-Segment Switcher (Items | Queries | History) */}
-        <div className="grid grid-cols-3 gap-0.5 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 text-[11px] font-semibold">
+        <div className="grid grid-cols-3 gap-0.5 bg-slate-200 dark:bg-slate-900/90 p-0.5 rounded-lg border border-slate-300 dark:border-slate-800 text-[11px] font-semibold">
           <button
             onClick={() => setSidebarTab('items')}
-            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center cursor-pointer ${
               sidebarTab === 'items'
-                ? 'bg-slate-800 text-slate-100 shadow-xs font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Items
           </button>
           <button
             onClick={() => setSidebarTab('queries')}
-            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center cursor-pointer ${
               sidebarTab === 'queries'
-                ? 'bg-slate-800 text-slate-100 shadow-xs font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Queries
           </button>
           <button
             onClick={() => setSidebarTab('history')}
-            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center ${
+            className={`py-1 rounded-md transition-all duration-150 flex items-center justify-center cursor-pointer ${
               sidebarTab === 'history'
-                ? 'bg-slate-800 text-slate-100 shadow-xs font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             History
@@ -196,19 +196,19 @@ export const Sidebar = () => {
               }
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors pl-6 font-sans"
+              className="w-full bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 rounded-md px-2 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors pl-6 font-sans"
             />
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-1.5 top-1.5" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-1.5 top-1.5" />
           </div>
           <button
-            className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/80 rounded transition cursor-pointer"
+            className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800/80 rounded transition cursor-pointer"
             title="Filter preferences"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={toggleSidebar}
-            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800/80 rounded transition cursor-pointer"
+            className="p-1 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-slate-800/80 rounded transition cursor-pointer"
             title="Collapse Sidebar (⌘B)"
           >
             <PanelLeftClose className="w-3.5 h-3.5" />
@@ -228,7 +228,7 @@ export const Sidebar = () => {
                 onClick={() => {
                   openAllFunctionsTab();
                 }}
-                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-slate-100 cursor-pointer rounded hover:bg-slate-900/50 transition-colors group"
+                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer rounded hover:bg-slate-200/60 dark:hover:bg-slate-900/50 transition-colors group"
                 title="Click to view All Functions (Functions.public)"
               >
                 <div className="flex items-center space-x-1">
@@ -237,7 +237,7 @@ export const Sidebar = () => {
                       e.stopPropagation();
                       setIsFunctionsOpen(!isFunctionsOpen);
                     }}
-                    className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                    className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition"
                     title={isFunctionsOpen ? "Collapse functions list" : "Expand functions list"}
                   >
                     <ChevronRight
@@ -246,9 +246,9 @@ export const Sidebar = () => {
                       }`}
                     />
                   </button>
-                  <span className="group-hover:text-amber-300 transition-colors">Functions</span>
+                  <span className="group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">Functions</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono pr-1 group-hover:text-slate-400 transition-colors">
+                <span className="text-[10px] text-slate-500 font-mono pr-1 group-hover:text-slate-700 dark:group-hover:text-slate-400 transition-colors">
                   {filteredFunctions.length}
                 </span>
               </div>
@@ -263,10 +263,10 @@ export const Sidebar = () => {
                         onClick={() => {
                           openAllFunctionsTab();
                         }}
-                        className="flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group hover:bg-slate-900/70 text-slate-400 hover:text-slate-200"
+                        className="flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group hover:bg-slate-200/80 dark:hover:bg-slate-900/70 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                       >
                         <div className="flex items-center space-x-2 truncate">
-                          <div className="w-3.5 h-3.5 rounded bg-amber-500/10 border border-amber-400/30 flex items-center justify-center flex-shrink-0 text-amber-400 font-mono font-bold text-[9px]">
+                          <div className="w-3.5 h-3.5 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400 font-mono font-bold text-[9px]">
                             {'{ }'}
                           </div>
                           <span className="truncate">{fn.name}</span>
@@ -284,7 +284,7 @@ export const Sidebar = () => {
                 onClick={() => {
                   openAllTableStatsTab();
                 }}
-                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-slate-100 cursor-pointer rounded hover:bg-slate-900/50 transition-colors group"
+                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer rounded hover:bg-slate-200/60 dark:hover:bg-slate-900/50 transition-colors group"
                 title="Click to view All Tables Statistics (Tables.public)"
               >
                 <div className="flex items-center space-x-1">
@@ -293,7 +293,7 @@ export const Sidebar = () => {
                       e.stopPropagation();
                       setIsTablesOpen(!isTablesOpen);
                     }}
-                    className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                    className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition"
                     title={isTablesOpen ? "Collapse tables list" : "Expand tables list"}
                   >
                     <ChevronRight
@@ -302,9 +302,9 @@ export const Sidebar = () => {
                       }`}
                     />
                   </button>
-                  <span className="group-hover:text-sky-300 transition-colors">Tables</span>
+                  <span className="group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">Tables</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono pr-1 group-hover:text-slate-400 transition-colors">
+                <span className="text-[10px] text-slate-500 font-mono pr-1 group-hover:text-slate-700 dark:group-hover:text-slate-400 transition-colors">
                   {filteredTables.length}
                 </span>
               </div>
@@ -330,14 +330,14 @@ export const Sidebar = () => {
                         }}
                         className={`flex items-center justify-between px-2.5 py-1 rounded cursor-pointer text-xs font-mono transition-colors group ${
                           isSelected
-                            ? 'bg-slate-800/90 text-slate-100 font-semibold shadow-xs'
-                            : 'hover:bg-slate-900/70 text-slate-400 hover:text-slate-200'
+                            ? 'bg-sky-100 dark:bg-slate-800/90 text-sky-900 dark:text-slate-100 font-semibold shadow-xs border border-sky-300/60 dark:border-slate-700/80'
+                            : 'hover:bg-slate-200/80 dark:hover:bg-slate-900/70 text-slate-700 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200 border border-transparent'
                         }`}
                       >
                         <div className="flex items-center space-x-2 truncate">
                           <TableIcon
                             className={`w-3.5 h-3.5 flex-shrink-0 ${
-                              isSelected ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-400'
+                              isSelected ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-400'
                             }`}
                           />
                           <span className="truncate">{tbl.name}</span>
@@ -357,7 +357,7 @@ export const Sidebar = () => {
         {/* Tab 2: Saved Queries */}
         {sidebarTab === 'queries' && (
           <div className="space-y-1">
-            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Saved Queries ({filteredQueries.length})
             </div>
             {filteredQueries.map((q) => (
@@ -370,21 +370,21 @@ export const Sidebar = () => {
                   setQueryContextPos({ x: e.clientX, y: e.clientY });
                   setTargetQuery({ id: q.id, title: q.title, sql: q.sql });
                 }}
-                className="p-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/90 border border-slate-800/60 hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
+                className="p-2 rounded-lg bg-white dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900/90 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
                 title="Click to open query (Right click for options)"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1.5 truncate">
-                    <Terminal className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                    <span className="text-xs font-bold text-slate-200 group-hover:text-white truncate">
+                    <Terminal className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white truncate">
                       {q.title}
                     </span>
                   </div>
-                  <span className="text-[9px] px-1 py-0.2 bg-slate-950 border border-slate-800 rounded text-slate-500 font-mono">
+                  <span className="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded text-slate-600 dark:text-slate-500 font-mono">
                     SQL
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 truncate">{q.desc}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{q.desc}</p>
               </div>
             ))}
           </div>
@@ -393,7 +393,7 @@ export const Sidebar = () => {
         {/* Tab 3: Execution History */}
         {sidebarTab === 'history' && (
           <div className="space-y-1">
-            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="px-1.5 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Recent Executions ({filteredHistory.length})
             </div>
             {filteredHistory.map((h) => (
@@ -406,20 +406,20 @@ export const Sidebar = () => {
                   setQueryContextPos({ x: e.clientX, y: e.clientY });
                   setTargetQuery({ id: h.id, title: `Query (${h.durationMs}ms)`, sql: h.sql });
                 }}
-                className="p-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/90 border border-slate-800/60 hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
+                className="p-2 rounded-lg bg-white dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900/90 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-all space-y-1 group"
                 title="Click to open query (Right click for options)"
               >
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
                   <div className="flex items-center space-x-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    <span className="text-emerald-400 font-bold">{h.durationMs}ms</span>
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold">{h.durationMs}ms</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <Clock className="w-2.5 h-2.5" />
+                    <Clock className="w-2.5 h-2.5 text-slate-400" />
                     <span>{h.timestamp.replace('Today at ', '')}</span>
                   </div>
                 </div>
-                <div className="font-mono text-[11px] text-slate-300 line-clamp-2 leading-relaxed bg-slate-950/60 p-1.5 rounded border border-slate-800/80">
+                <div className="font-mono text-[11px] text-slate-800 dark:text-slate-300 line-clamp-2 leading-relaxed bg-slate-50 dark:bg-slate-950/60 p-1.5 rounded border border-slate-200 dark:border-slate-800/80">
                   {h.sql}
                 </div>
               </div>
@@ -430,10 +430,10 @@ export const Sidebar = () => {
       </div>
 
       {/* Footer Section: Add Item & Database/Schema Selector Dropdown */}
-      <div className="h-9 px-2 border-t border-slate-800/80 bg-slate-950/90 flex items-center justify-between text-xs text-slate-400 flex-shrink-0">
+      <div className="h-9 px-2 border-t border-slate-300 dark:border-slate-800/80 bg-slate-100 dark:bg-slate-950/90 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 flex-shrink-0">
         <button
           onClick={() => openNewQueryTab()}
-          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-100 rounded transition cursor-pointer"
+          className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded transition cursor-pointer"
           title="New SQL Query (⌘E / ⌘T)"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -442,15 +442,15 @@ export const Sidebar = () => {
         {/* TablePlus Database & Schema Switcher Dropdown */}
         <button
           onClick={() => setDatabaseModalOpen(true)}
-          className="flex items-center space-x-1.5 px-2 py-0.5 hover:bg-slate-800/80 rounded text-[11px] font-mono text-slate-300 hover:text-white transition group border border-transparent hover:border-slate-700/60 cursor-pointer"
+          className="flex items-center space-x-1.5 px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-800/80 rounded text-[11px] font-mono text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition group border border-transparent hover:border-slate-300 dark:hover:border-slate-700/60 cursor-pointer"
           title="Switch Database or Schema (⌘O)"
         >
-          <span className="font-semibold text-sky-400 truncate max-w-[120px]">
+          <span className="font-semibold text-sky-600 dark:text-sky-400 truncate max-w-[120px]">
             {activeConnection.database || 'postgres'}
           </span>
-          <span className="text-slate-500">:</span>
-          <span className="text-slate-300">public</span>
-          <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-200 transition-transform" />
+          <span className="text-slate-400 dark:text-slate-500">:</span>
+          <span className="text-slate-700 dark:text-slate-300">public</span>
+          <ChevronDown className="w-3 h-3 text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-transform" />
         </button>
       </div>
 

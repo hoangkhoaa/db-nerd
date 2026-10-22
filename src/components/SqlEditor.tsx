@@ -97,8 +97,8 @@ function customDotAndTableCompletion(context: CompletionContext): CompletionResu
   return null;
 }
 
-// Vibrant, high-contrast SQL Syntax Highlighting Theme (Vivid Keywords, Emerald Strings, Amber Functions)
-const sqlHighlightStyle = HighlightStyle.define([
+// Vibrant, high-contrast Dark SQL Syntax Highlighting Theme
+const sqlHighlightStyleDark = HighlightStyle.define([
   { tag: t.keyword, color: '#38bdf8', fontWeight: 'bold' },
   { tag: t.standard(t.name), color: '#c084fc', fontWeight: 'bold' },
   { tag: t.special(t.string), color: '#fbbf24' },
@@ -113,7 +113,23 @@ const sqlHighlightStyle = HighlightStyle.define([
   { tag: t.variableName, color: '#f8fafc' },
 ]);
 
-const sqlEditorTheme = EditorView.theme(
+// Crisp, readable Light SQL Syntax Highlighting Theme (macOS / TablePlus style)
+const sqlHighlightStyleLight = HighlightStyle.define([
+  { tag: t.keyword, color: '#0284c7', fontWeight: 'bold' },
+  { tag: t.standard(t.name), color: '#7c3aed', fontWeight: 'bold' },
+  { tag: t.special(t.string), color: '#b45309' },
+  { tag: t.string, color: '#15803d' },
+  { tag: t.number, color: '#dc2626', fontWeight: 'semibold' },
+  { tag: t.bool, color: '#be123c', fontWeight: 'bold' },
+  { tag: t.null, color: '#be123c', fontWeight: 'bold' },
+  { tag: t.function(t.variableName), color: '#b45309', fontWeight: 'bold' },
+  { tag: t.operator, color: '#2563eb' },
+  { tag: t.punctuation, color: '#475569' },
+  { tag: t.comment, color: '#64748b', fontStyle: 'italic' },
+  { tag: t.variableName, color: '#0f172a' },
+]);
+
+const sqlEditorThemeDark = EditorView.theme(
   {
     '&': {
       color: '#f8fafc',
@@ -131,7 +147,6 @@ const sqlEditorTheme = EditorView.theme(
       borderLeftColor: '#38bdf8',
       borderLeftWidth: '2px',
     },
-    /* High-contrast Native macOS / TablePlus Selection Highlight */
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
       backgroundColor: 'rgba(37, 99, 235, 0.45) !important',
     },
@@ -148,7 +163,6 @@ const sqlEditorTheme = EditorView.theme(
     '&:not(.cm-focused) .cm-selectionBackground': {
       backgroundColor: 'rgba(37, 99, 235, 0.22) !important',
     },
-    /* Word match highlight on double-click */
     '.cm-selectionMatch': {
       backgroundColor: 'rgba(56, 189, 248, 0.25) !important',
       outline: '1px solid rgba(56, 189, 248, 0.6) !important',
@@ -170,7 +184,6 @@ const sqlEditorTheme = EditorView.theme(
     '.cm-scroller': {
       overflow: 'auto',
     },
-    /* Autocomplete Tooltip Dropdown (TablePlus / VS Code style) */
     '.cm-tooltip': {
       backgroundColor: '#0f172a !important',
       border: '1px solid #334155 !important',
@@ -233,6 +246,123 @@ const sqlEditorTheme = EditorView.theme(
   { dark: true }
 );
 
+const sqlEditorThemeLight = EditorView.theme(
+  {
+    '&': {
+      color: '#0f172a',
+      backgroundColor: '#ffffff',
+      fontSize: '13px',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+      height: '100%',
+    },
+    '.cm-content': {
+      caretColor: '#0284c7',
+      padding: '10px 0',
+      lineHeight: '1.6',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#0284c7',
+      borderLeftWidth: '2px',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
+      backgroundColor: 'rgba(2, 132, 199, 0.22) !important',
+    },
+    '.cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'rgba(2, 132, 199, 0.22) !important',
+    },
+    '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+      backgroundColor: 'rgba(2, 132, 199, 0.22) !important',
+    },
+    '::selection, .cm-content ::selection': {
+      backgroundColor: 'rgba(2, 132, 199, 0.25) !important',
+      color: '#0f172a !important',
+    },
+    '&:not(.cm-focused) .cm-selectionBackground': {
+      backgroundColor: 'rgba(2, 132, 199, 0.12) !important',
+    },
+    '.cm-selectionMatch': {
+      backgroundColor: 'rgba(2, 132, 199, 0.15) !important',
+      outline: '1px solid rgba(2, 132, 199, 0.5) !important',
+      borderRadius: '2px',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#f8fafc',
+      color: '#64748b',
+      borderRight: '1px solid #e2e8f0',
+      paddingRight: '6px',
+    },
+    '.cm-activeLine': {
+      backgroundColor: '#f1f5f9',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: '#e2e8f0',
+      color: '#0f172a',
+    },
+    '.cm-scroller': {
+      overflow: 'auto',
+    },
+    '.cm-tooltip': {
+      backgroundColor: '#ffffff !important',
+      border: '1px solid #cbd5e1 !important',
+      borderRadius: '8px !important',
+      boxShadow: '0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important',
+      overflow: 'hidden !important',
+      zIndex: '100 !important',
+    },
+    '.cm-tooltip.cm-tooltip-autocomplete': {
+      '& > ul': {
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontSize: '12px',
+        maxHeight: '260px',
+        minWidth: '240px',
+        padding: '4px',
+      },
+      '& > ul > li': {
+        padding: '5px 8px',
+        borderRadius: '5px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        color: '#0f172a',
+        cursor: 'pointer',
+      },
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#e0f2fe !important',
+        color: '#0369a1 !important',
+      },
+      '& > ul > li:hover': {
+        backgroundColor: '#f1f5f9',
+      },
+    },
+    '.cm-completionLabel': {
+      fontWeight: '600',
+      color: '#0f172a',
+    },
+    '.cm-completionDetail': {
+      marginLeft: 'auto',
+      paddingLeft: '12px',
+      color: '#64748b',
+      fontSize: '11px',
+      fontStyle: 'normal',
+      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+    },
+    '.cm-completionInfo': {
+      backgroundColor: '#f8fafc',
+      borderLeft: '1px solid #e2e8f0',
+      padding: '8px 12px',
+      color: '#334155',
+      fontSize: '11px',
+      maxWidth: '300px',
+    },
+    '.cm-completionIcon': {
+      width: '14px',
+      opacity: '0.9',
+      marginRight: '2px',
+    },
+  },
+  { dark: false }
+);
+
 export const SqlEditor: React.FC = () => {
   const {
     activeTabId,
@@ -245,6 +375,7 @@ export const SqlEditor: React.FC = () => {
     setSqlEditorSplitHeight,
     isSqlResultsCollapsed,
     toggleSqlResultsCollapsed,
+    resolvedTheme,
   } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -398,6 +529,10 @@ export const SqlEditor: React.FC = () => {
   useEffect(() => {
     if (!editorRef.current) return;
 
+    const isLight = resolvedTheme === 'light';
+    const activeHighlight = isLight ? sqlHighlightStyleLight : sqlHighlightStyleDark;
+    const activeTheme = isLight ? sqlEditorThemeLight : sqlEditorThemeDark;
+
     const state = EditorState.create({
       doc: tabState.query,
       extensions: [
@@ -421,8 +556,8 @@ export const SqlEditor: React.FC = () => {
           activateOnTyping: true,
           maxRenderedOptions: 30,
         }),
-        syntaxHighlighting(sqlHighlightStyle),
-        sqlEditorTheme,
+        syntaxHighlighting(activeHighlight),
+        activeTheme,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setSqlTabQuery(activeTabId, update.state.doc.toString());
@@ -475,7 +610,7 @@ export const SqlEditor: React.FC = () => {
     return () => {
       view.destroy();
     };
-  }, [activeTabId, selectedTable]);
+  }, [activeTabId, selectedTable, resolvedTheme]);
 
   const columns = tabState.columns.length > 0
     ? tabState.columns
@@ -618,11 +753,11 @@ export const SqlEditor: React.FC = () => {
         </div>
 
         {/* Dynamic Results Table */}
-        <div className="flex-1 overflow-auto text-xs font-mono">
+        <div className="flex-1 overflow-auto text-xs font-mono bg-white dark:bg-transparent">
           <table className="w-full border-collapse">
-            <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800 text-slate-400 text-left text-[11px]">
+            <thead className="sticky top-0 bg-slate-100 dark:bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 text-left text-[11px]">
               <tr>
-                <th className="w-12 p-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
+                <th className="w-12 p-2 border-r border-slate-300 dark:border-slate-800/80 text-center text-slate-500 dark:text-slate-600 font-bold">#</th>
                 {columns.map((col) => {
                   const firstRowWithVal = results.find((r) => r[col] !== null && r[col] !== undefined);
                   const sampleVal = firstRowWithVal ? firstRowWithVal[col] : undefined;
@@ -639,13 +774,13 @@ export const SqlEditor: React.FC = () => {
                   }
 
                   return (
-                    <th key={col} className="p-2 border-r border-slate-800/80 text-slate-200 font-semibold min-w-[120px]">
+                    <th key={col} className="p-2 border-r border-slate-300 dark:border-slate-800/80 text-slate-800 dark:text-slate-200 font-semibold min-w-[120px]">
                       <div className="flex items-center space-x-1.5 truncate">
                         <ColumnTypeIcon type={foundType} sampleValue={sampleVal} />
-                        <span className="text-slate-200 font-semibold truncate">{col}</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{col}</span>
                         {isPk && (
                           <span title="Primary Key" className="inline-flex items-center ml-0.5">
-                            <Key className="w-2.5 h-2.5 text-amber-400/90 flex-shrink-0" />
+                            <Key className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400/90 flex-shrink-0" />
                           </span>
                         )}
                       </div>
@@ -654,7 +789,7 @@ export const SqlEditor: React.FC = () => {
                 })}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/50 text-[11px]">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50 text-[11px]">
               {results.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + 1} className="py-8 text-center text-slate-500">
@@ -688,27 +823,27 @@ export const SqlEditor: React.FC = () => {
                       }}
                       className={`cursor-pointer transition-colors ${
                         isSelected
-                          ? 'bg-sky-600/30 text-white font-medium shadow-inner'
+                          ? 'bg-sky-100 dark:bg-sky-600/30 text-sky-950 dark:text-white font-medium shadow-inner'
                           : isEven
-                          ? 'bg-slate-900/40 hover:bg-slate-800/50 text-slate-200'
-                          : 'bg-slate-950/60 hover:bg-slate-800/50 text-slate-200'
+                          ? 'bg-slate-50/60 dark:bg-slate-900/40 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
+                          : 'bg-white dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
                       }`}
                     >
-                      <td className="p-2 border-r border-slate-800/60 text-center text-slate-500 select-none">
+                      <td className="p-2 border-r border-slate-200 dark:border-slate-800/60 text-center text-slate-500 select-none font-medium">
                         {index + 1}
                       </td>
                       {columns.map((col) => {
                         const val = r[col];
                         return (
-                          <td key={col} className="p-2 border-r border-slate-800/60 truncate max-w-xs">
+                          <td key={col} className="p-2 border-r border-slate-200 dark:border-slate-800/60 truncate max-w-xs">
                             {val === null || val === undefined ? (
-                              <span className="text-slate-500 italic select-none">NULL</span>
+                              <span className="text-slate-400 dark:text-slate-500 italic select-none font-mono">NULL</span>
                             ) : typeof val === 'boolean' ? (
-                              <span className="text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
                             ) : typeof val === 'object' ? (
-                              <span className="truncate block font-mono text-slate-300">{JSON.stringify(val)}</span>
+                              <span className="truncate block font-mono text-slate-700 dark:text-slate-300">{JSON.stringify(val)}</span>
                             ) : (
-                              <span className="truncate block text-slate-200">{String(val)}</span>
+                              <span className="truncate block text-slate-800 dark:text-slate-200">{String(val)}</span>
                             )}
                           </td>
                         );

@@ -51,23 +51,23 @@ export const BottomPanel: React.FC = () => {
   return (
     <div
       style={{ height: `${currentHeight}px` }}
-      className="bg-slate-950/95 border-t border-slate-800/90 flex flex-col overflow-hidden select-none z-20 flex-shrink-0 relative font-sans"
+      className="bg-white/95 dark:bg-slate-950/95 border-t border-slate-300 dark:border-slate-800/90 flex flex-col overflow-hidden select-none z-20 flex-shrink-0 relative font-sans"
     >
       {/* Top Header Bar */}
-      <div className="h-9 bg-slate-950 border-b border-slate-800/80 px-3 flex items-center justify-between flex-shrink-0 text-xs">
+      <div className="h-9 bg-slate-100 dark:bg-slate-950 border-b border-slate-300 dark:border-slate-800/80 px-3 flex items-center justify-between flex-shrink-0 text-xs">
         {/* Left Tabs */}
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setActiveTab('console')}
             className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer ${
               activeTab === 'console'
-                ? 'bg-slate-800 text-sky-300 border border-slate-700/80 shadow-xs'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 border border-slate-300 dark:border-slate-700/80 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-900'
             }`}
           >
-            <Terminal className="w-3.5 h-3.5 text-sky-400" />
+            <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
             <span>Console Log</span>
-            <span className="text-[10px] px-1.5 py-0.2 bg-slate-900 text-slate-400 rounded-full font-mono">
+            <span className="text-[10px] px-1.5 py-0.2 bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400 rounded-full font-mono">
               {history.length}
             </span>
           </button>
@@ -76,11 +76,11 @@ export const BottomPanel: React.FC = () => {
             onClick={() => setActiveTab('diagnostics')}
             className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer ${
               activeTab === 'diagnostics'
-                ? 'bg-slate-800 text-emerald-300 border border-slate-700/80 shadow-xs'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-slate-300 dark:border-slate-700/80 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-900'
             }`}
           >
-            <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Server Diagnostics</span>
           </button>
         </div>
@@ -89,18 +89,18 @@ export const BottomPanel: React.FC = () => {
         <div className="flex items-center space-x-2">
           {activeTab === 'console' && (
             <div className="relative flex items-center">
-              <Search className="w-3 h-3 text-slate-500 absolute left-2 pointer-events-none" />
+              <Search className="w-3 h-3 text-slate-400 dark:text-slate-500 absolute left-2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter statements..."
-                className="w-40 sm:w-56 h-6 pl-7 pr-2 bg-slate-900/90 border border-slate-800 rounded-md text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                className="w-40 sm:w-56 h-6 pl-7 pr-2 bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-md text-[11px] text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-1.5 text-slate-500 hover:text-slate-300 text-[10px]"
+                  className="absolute right-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-[10px]"
                 >
                   ✕
                 </button>
@@ -108,12 +108,12 @@ export const BottomPanel: React.FC = () => {
             </div>
           )}
 
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="h-4 w-px bg-slate-300 dark:bg-slate-800" />
 
           {/* Toggle Maximize Height */}
           <button
             onClick={handleToggleMaximize}
-            className="h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+            className="h-6 w-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
             title={isMaximized ? 'Restore height' : 'Maximize height'}
           >
             {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -122,7 +122,7 @@ export const BottomPanel: React.FC = () => {
           {/* Collapse Bottom Panel Button */}
           <button
             onClick={toggleBottomPanel}
-            className="h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition cursor-pointer"
+            className="h-6 w-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
             title="Collapse Bottom Panel (⌘J)"
           >
             <X className="w-3.5 h-3.5" />
@@ -134,40 +134,40 @@ export const BottomPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto font-mono text-xs select-text">
         {activeTab === 'console' ? (
           filteredHistory.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-1 py-8">
+            <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-500 space-y-1 py-8">
               <Terminal className="w-6 h-6 opacity-40 text-slate-400" />
               <p className="text-xs">No executed queries logged yet</p>
-              <p className="text-[11px] text-slate-600">Run queries or modify cells to view execution traces here</p>
+              <p className="text-[11px] text-slate-500">Run queries or modify cells to view execution traces here</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-800/50">
+            <div className="divide-y divide-slate-200 dark:divide-slate-800/50">
               {filteredHistory.map((item) => (
                 <div
                   key={item.id}
-                  className="px-3 py-2 hover:bg-slate-900/60 transition-colors flex items-start justify-between group space-x-3"
+                  className="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900/60 transition-colors flex items-start justify-between group space-x-3"
                 >
                   <div className="flex items-start space-x-2.5 min-w-0 flex-1">
                     {/* Status LED */}
                     <div className="pt-0.5 shrink-0">
                       {item.status === 'success' ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       ) : (
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="text-slate-300 whitespace-pre-wrap break-all leading-relaxed">
+                      <div className="text-slate-800 dark:text-slate-300 whitespace-pre-wrap break-all leading-relaxed">
                         {item.sql}
                       </div>
-                      <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-sans">
+                      <div className="flex items-center space-x-2 text-[10px] text-slate-600 dark:text-slate-500 font-sans">
                         <span>{item.timestamp}</span>
                         <span>•</span>
-                        <span className="text-emerald-400 font-semibold">{item.durationMs || 1.2}ms</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{item.durationMs || 1.2}ms</span>
                         <span>•</span>
                         <span>{item.rowsAffected} rows affected</span>
                         <span>•</span>
-                        <span className="text-slate-400 font-mono">@{item.connectionName}</span>
+                        <span className="text-slate-700 dark:text-slate-400 font-mono">@{item.connectionName}</span>
                       </div>
                     </div>
                   </div>

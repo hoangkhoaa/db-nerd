@@ -85,7 +85,7 @@ export const Titlebar = () => {
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="drag-region h-10 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 pl-[78px] flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
+      className="drag-region h-10 bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 pl-[78px] flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
     >
       {/* Left: Window Controls spacer + Sidebar Toggle + Connection Selector + SQL Capsule + Filter Toggle */}
       <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
@@ -94,8 +94,8 @@ export const Titlebar = () => {
           onClick={toggleSidebar}
           className={`no-drag h-7 w-7 flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
             isSidebarOpen
-              ? 'bg-slate-800 text-slate-100 border-slate-700/80 shadow-xs'
-              : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700/80 shadow-xs'
+              : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-slate-300 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
           }`}
           title="Toggle Sidebar (⌘B)"
         >
@@ -105,7 +105,7 @@ export const Titlebar = () => {
         {/* Connection Switcher Pill */}
         <button
           onClick={() => setConnectionModalOpen(true)}
-          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-slate-900/90 hover:bg-slate-800 rounded-lg border border-slate-700/80 text-xs font-semibold text-slate-200 hover:text-white transition shadow-xs group active:scale-[0.98] shrink-0 leading-none cursor-pointer"
+          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700/80 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white transition shadow-xs group active:scale-[0.98] shrink-0 leading-none cursor-pointer"
           title="Connections (⌘K)"
         >
           <HeartbeatDot 
@@ -113,17 +113,17 @@ export const Titlebar = () => {
             size="xs" 
             showWave={false} 
           />
-          <Database className="w-3 h-3 text-sky-400 shrink-0" />
-          <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none inline-block">{activeConnection.name}</span>
+          <Database className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
+          <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none inline-block text-slate-800 dark:text-slate-200">{activeConnection.name}</span>
         </button>
 
         {/* SQL Query Console Capsule (TablePlus Style) */}
         <button
           onClick={() => openNewQueryTab()}
-          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-xs font-bold text-sky-300 hover:text-white transition group shadow-xs active:scale-95 shrink-0 leading-none cursor-pointer"
+          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 rounded-lg text-xs font-bold text-sky-700 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white transition group shadow-xs active:scale-95 shrink-0 leading-none cursor-pointer"
           title="SQL Query (⌘E / ⌘T)"
         >
-          <Terminal className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
+          <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
           <span className="font-mono text-[11px] leading-none">SQL</span>
         </button>
 
@@ -132,8 +132,8 @@ export const Titlebar = () => {
           onClick={toggleFilterBar}
           className={`no-drag h-7 w-7 flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
             isFilterBarOpen
-              ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs'
-              : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
+              ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-500/50 shadow-xs'
+              : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-slate-300 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
           }`}
           title="Toggle Inline Filters (WHERE / ORDER BY)"
         >
@@ -147,70 +147,69 @@ export const Titlebar = () => {
       </div>
 
       {/* Right: Clean, un-cluttered actions matching TablePlus */}
-      {/* Right: Sharp, non-duplicate TablePlus toolbar actions */}
       <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
         {pendingEditsCount > 0 && (
           <div className="flex items-center space-x-1.5 animate-in fade-in">
-            <div className="h-7 px-2 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold flex items-center space-x-1 leading-none shrink-0">
+            <div className="h-7 px-2 bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-semibold flex items-center space-x-1 leading-none shrink-0">
               <HeartbeatDot color="amber" size="xs" showWave={true} />
               <span>{pendingEditsCount}</span>
             </div>
             <button
               onClick={handleDiscard}
-              className="no-drag h-7 px-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition flex items-center leading-none shrink-0 cursor-pointer"
+              className="no-drag h-7 px-2.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition flex items-center leading-none shrink-0 cursor-pointer"
               title="Discard Uncommitted Edits (⌘Z)"
             >
               Discard
             </button>
             <button
               onClick={handleCommit}
-              className="no-drag h-7 px-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-sky-500/20 active:scale-95 leading-none shrink-0 cursor-pointer"
+              className="no-drag h-7 px-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-sky-500/20 active:scale-95 leading-none shrink-0 cursor-pointer"
               title="Commit Changes (⌘S)"
             >
               <span>Commit</span>
-              <kbd className="px-1 py-0.5 bg-slate-900/30 rounded text-[9px] font-mono text-slate-950 font-extrabold leading-none">⌘S</kbd>
+              <kbd className="px-1 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘S</kbd>
             </button>
           </div>
         )}
 
         {/* Sharp Unified Toolbar Segmented Cluster */}
-        <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-lg p-0.5 space-x-0.5 shadow-xs">
+        <div className="flex items-center bg-slate-200/90 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-lg p-0.5 space-x-0.5 shadow-xs">
           <button
             onClick={() => setRunningQueriesModalOpen(true)}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition active:scale-95 cursor-pointer"
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition active:scale-95 cursor-pointer"
             title="Running Queries & Cancel Process (⌘.)"
           >
-            <XCircle className="w-3.5 h-3.5 text-rose-400" />
+            <XCircle className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-emerald-300 transition active:scale-95 cursor-pointer"
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition active:scale-95 cursor-pointer"
             title="Observability & Process Diagnostics"
           >
-            <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           </button>
           <button
             onClick={() => setHistoryModalOpen(true)}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-amber-300 transition active:scale-95 cursor-pointer"
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 transition active:scale-95 cursor-pointer"
             title="Query History & Logs (⌘H)"
           >
-            <History className="w-3.5 h-3.5 text-amber-400" />
+            <History className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
           </button>
           <button
             onClick={() => reloadData()}
-            className={`no-drag relative overflow-hidden h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition active:scale-95 cursor-pointer ${
-              isReloading ? 'text-sky-400 bg-sky-950/40' : ''
+            className={`no-drag relative overflow-hidden h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition active:scale-95 cursor-pointer ${
+              isReloading ? 'text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-950/40' : ''
             }`}
             title="Reload Schema & Refresh (⌘R)"
           >
             {isReloading && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'text-sky-400 animate-pulse' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'text-sky-600 dark:text-sky-400 animate-pulse' : ''}`} />
           </button>
           <button
             onClick={() => setSettingsModalOpen(true)}
-            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition active:scale-95 cursor-pointer"
+            className="no-drag h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition active:scale-95 cursor-pointer"
             title="Settings & Preferences (Theme, Fonts, Limits) (⌘,)"
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -222,8 +221,8 @@ export const Titlebar = () => {
           onClick={toggleBottomPanel}
           className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
             isBottomPanelOpen
-              ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
-              : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700/70 text-slate-400 hover:text-slate-200'
+              ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/50 shadow-xs'
+              : 'bg-white/80 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
           title="Toggle Bottom Console Panel (⌘J)"
         >
@@ -235,8 +234,8 @@ export const Titlebar = () => {
           onClick={toggleRightInspector}
           className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
             isRightInspectorOpen
-              ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
-              : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700/70 text-slate-400 hover:text-slate-200'
+              ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/50 shadow-xs'
+              : 'bg-white/80 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
           title="Toggle Right Inspector Panel (⌘I)"
         >

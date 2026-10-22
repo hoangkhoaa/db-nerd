@@ -171,27 +171,27 @@ export const ColumnTypeIcon: React.FC<ColumnTypeIconProps> = ({
   const renderIcon = () => {
     switch (category) {
       case 'number':
-        return <Hash size={size} className={`text-amber-400/85 flex-shrink-0 ${className}`} />;
+        return <Hash size={size} className={`text-amber-600 dark:text-amber-400 flex-shrink-0 ${className}`} />;
       case 'date':
-        return <Calendar size={size} className={`text-emerald-400/85 flex-shrink-0 ${className}`} />;
+        return <Calendar size={size} className={`text-emerald-700 dark:text-emerald-400 flex-shrink-0 ${className}`} />;
       case 'datetime':
       case 'time':
-        return <Clock size={size} className={`text-emerald-400/85 flex-shrink-0 ${className}`} />;
+        return <Clock size={size} className={`text-emerald-700 dark:text-emerald-400 flex-shrink-0 ${className}`} />;
       case 'json':
-        return <Braces size={size} className={`text-purple-400/85 flex-shrink-0 ${className}`} />;
+        return <Braces size={size} className={`text-purple-700 dark:text-purple-400 flex-shrink-0 ${className}`} />;
       case 'boolean':
-        return <ToggleLeft size={size} className={`text-rose-400/85 flex-shrink-0 ${className}`} />;
+        return <ToggleLeft size={size} className={`text-rose-600 dark:text-rose-400 flex-shrink-0 ${className}`} />;
       case 'uuid':
-        return <KeyRound size={size} className={`text-indigo-400/85 flex-shrink-0 ${className}`} />;
+        return <KeyRound size={size} className={`text-indigo-600 dark:text-indigo-400 flex-shrink-0 ${className}`} />;
       case 'binary':
-        return <Binary size={size} className={`text-slate-400/85 flex-shrink-0 ${className}`} />;
+        return <Binary size={size} className={`text-slate-600 dark:text-slate-400 flex-shrink-0 ${className}`} />;
       case 'geo':
-        return <MapPin size={size} className={`text-teal-400/85 flex-shrink-0 ${className}`} />;
+        return <MapPin size={size} className={`text-teal-700 dark:text-teal-400 flex-shrink-0 ${className}`} />;
       case 'array':
-        return <List size={size} className={`text-cyan-400/85 flex-shrink-0 ${className}`} />;
+        return <List size={size} className={`text-blue-700 dark:text-cyan-400 flex-shrink-0 ${className}`} />;
       case 'text':
       default:
-        return <Type size={size} className={`text-sky-400/85 flex-shrink-0 ${className}`} />;
+        return <Type size={size} className={`text-sky-700 dark:text-sky-400 flex-shrink-0 ${className}`} />;
     }
   };
 

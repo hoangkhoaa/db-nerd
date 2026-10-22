@@ -466,15 +466,32 @@ const createDefaultSessionForConnection = (conn: ConnectionProfile): ConnectionS
 const INITIAL_SESSIONS: Record<string, ConnectionSession> = {
   'conn-1': createDefaultSessionForConnection(INITIAL_CONNECTIONS[0]),
   'conn-4': createDefaultSessionForConnection(INITIAL_CONNECTIONS[1]),
+  'conn-stock': createDefaultSessionForConnection(INITIAL_CONNECTIONS.find((c) => c.id === 'conn-stock') || INITIAL_CONNECTIONS[0]),
 };
 
 const getInitialSettings = (): UserSettings => {
+  let initialMode: ThemeMode = 'auto';
+  try {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTheme = urlParams.get('theme') as ThemeMode | null;
+      if (urlTheme === 'light' || urlTheme === 'dark' || urlTheme === 'auto') {
+        initialMode = urlTheme;
+      }
+    }
+  } catch {}
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('db_nerd_user_settings') : null;
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (initialMode !== 'auto') {
+        parsed.themeMode = initialMode;
+      }
+      return parsed;
+    }
   } catch {}
   return {
-    themeMode: 'auto',
+    themeMode: initialMode,
     editorFontSize: 13,
     rowDensity: 'normal',
     autoFormatSql: false,
@@ -495,6 +512,54 @@ const resolveTheme = (mode: ThemeMode): 'dark' | 'light' => {
 
 const INITIAL_SETTINGS = getInitialSettings();
 const INITIAL_RESOLVED_THEME = resolveTheme(INITIAL_SETTINGS.themeMode);
+
+const getInitialConnId = (): string => {
+  try {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlConn = urlParams.get('conn');
+      if (urlConn && INITIAL_CONNECTIONS.some((c) => c.id === urlConn)) {
+        return urlConn;
+      }
+    }
+  } catch {}
+  return 'conn-1';
+};
+
+const INITIAL_ACTIVE_CONN_ID = getInitialConnId();
+const INITIAL_ACTIVE_CONN = INITIAL_CONNECTIONS.find((c) => c.id === INITIAL_ACTIVE_CONN_ID) || INITIAL_CONNECTIONS[0];
+const INITIAL_ACTIVE_SESSION = INITIAL_SESSIONS[INITIAL_ACTIVE_CONN.id] || INITIAL_SESSIONS['conn-1'];
+
+const getInitialActiveTabId = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam) {
+        const found = INITIAL_ACTIVE_SESSION.tabs.find((t) => t.id === tabParam || t.title === tabParam || t.tableName === tabParam);
+        if (found) return found.id;
+      }
+    }
+  } catch {}
+  return INITIAL_ACTIVE_SESSION.activeTabId;
+};
+
+const INITIAL_TAB_ID = getInitialActiveTabId();
+const INITIAL_ACTIVE_TAB = INITIAL_ACTIVE_SESSION.tabs.find((t) => t.id === INITIAL_TAB_ID) || INITIAL_ACTIVE_SESSION.tabs[0];
+
+const getInitialSelectedRow = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const rowIdStr = urlParams.get('row');
+      if (rowIdStr) {
+        const id = parseInt(rowIdStr, 10);
+        return INITIAL_ACTIVE_SESSION.rows.find((r) => r.id === id) || null;
+      }
+    }
+  } catch {}
+  return null;
+};
 
 export const useAppStore = create<AppState>((set, get) => ({
   settings: INITIAL_SETTINGS,
@@ -548,9 +613,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     showToast('Session disconnected');
   },
 
-  tabs: INITIAL_SESSIONS['conn-1'].tabs,
-  activeTabId: INITIAL_SESSIONS['conn-1'].activeTabId,
-  activeTab: 'sql',
+  tabs: INITIAL_ACTIVE_SESSION.tabs,
+  activeTabId: INITIAL_TAB_ID,
+  activeTab: INITIAL_ACTIVE_TAB?.type || 'sql',
+  selectedTable: INITIAL_ACTIVE_TAB?.tableName || INITIAL_ACTIVE_SESSION.selectedTable,
+  rows: JSON.parse(JSON.stringify(INITIAL_ACTIVE_SESSION.rows)),
+  originalRows: JSON.parse(JSON.stringify(INITIAL_ACTIVE_SESSION.originalRows)),
+  selectedRowData: getInitialSelectedRow(),
 
   setActiveTabId: (id) => {
     const { tabs } = get();
@@ -1122,7 +1191,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   connectionGroups: INITIAL_GROUPS,
   connections: INITIAL_CONNECTIONS,
-  activeConnection: INITIAL_CONNECTIONS[0],
+  activeConnection: INITIAL_ACTIVE_CONN,
   setActiveConnection: (conn) => set({ activeConnection: conn }),
 
   addConnectionGroup: (group) => {
@@ -1470,7 +1539,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     showToast(`🗑️ Dropped table "${tableName}"`);
   },
 
-  selectedTable: 'users',
   setSelectedTable: (tbl) => {
     const { truncatedTables } = get();
     const targetRows = getDefaultRowsForTable(tbl, truncatedTables[tbl]);
@@ -1591,7 +1659,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsSqlResultsCollapsed: (collapsed) => set({ isSqlResultsCollapsed: collapsed }),
   toggleSqlResultsCollapsed: () => set((state) => ({ isSqlResultsCollapsed: !state.isSqlResultsCollapsed })),
 
-  selectedRowData: null,
   setSelectedRowData: (row) => set({ selectedRowData: row }),
 
   tableViewMode: 'data',
@@ -1615,9 +1682,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({
       inspectorWidth: state.inspectorWidth === 'normal' ? 'expanded' : 'normal',
     })),
-
-  originalRows: JSON.parse(JSON.stringify(TUPLE_ROWS)),
-  rows: JSON.parse(JSON.stringify(TUPLE_ROWS)),
 
   updateCell: (id, field, value) => {
     const { rows, originalRows, selectedTable } = get();

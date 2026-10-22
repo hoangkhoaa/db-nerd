@@ -70,7 +70,7 @@ export const ContextMenuContainer: React.FC<ContextMenuContainerProps> = ({
         style={{ left: `${left}px`, top: `${top}px`, width: `${menuWidth}px` }}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`fixed z-50 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-xl shadow-2xl p-1 text-xs select-none ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-100 font-sans ${className}`}
+        className={`fixed z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-300 dark:border-slate-700/80 rounded-xl shadow-2xl p-1 text-xs select-none ring-1 ring-slate-900/5 dark:ring-white/10 animate-in fade-in zoom-in-95 duration-100 font-sans ${className}`}
       >
         {children}
       </div>
@@ -104,10 +104,10 @@ export const ContextMenuItem: React.FC<{
       }}
       className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors text-left font-medium ${
         disabled
-          ? 'opacity-40 cursor-not-allowed text-slate-500'
+          ? 'opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-500'
           : danger
-          ? 'text-rose-400 hover:bg-rose-500/20 hover:text-rose-200 cursor-pointer'
-          : 'text-slate-200 hover:bg-sky-500/15 hover:text-sky-300 cursor-pointer'
+          ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-700 dark:hover:text-rose-200 cursor-pointer'
+          : 'text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-500/15 hover:text-sky-700 dark:hover:text-sky-300 cursor-pointer'
       }`}
     >
       <div className="flex items-center space-x-2 truncate">
@@ -121,10 +121,10 @@ export const ContextMenuItem: React.FC<{
   );
 };
 
-export const ContextMenuDivider = () => <div className="h-[1px] bg-slate-800 my-1 mx-1" />;
+export const ContextMenuDivider = () => <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-1 mx-1" />;
 
 export const ContextMenuHeader: React.FC<{ title: string }> = ({ title }) => (
-  <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 tracking-wider uppercase truncate">
+  <div className="px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase truncate">
     {title}
   </div>
 );

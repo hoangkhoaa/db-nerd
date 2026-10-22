@@ -301,7 +301,7 @@ export function App() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0a0f1d] text-slate-100 overflow-hidden font-sans select-none relative">
+    <div className="h-screen w-screen flex flex-col bg-slate-100 dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 overflow-hidden font-sans select-none relative">
       
       {/* Native macOS Titlebar */}
       <Titlebar />
@@ -388,18 +388,18 @@ export function App() {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-slate-900/40">
+        <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-slate-900/40">
           
           {/* Dynamic Multi-Tab Bar (TablePlus Style Capsule Tabs) */}
-          <div className="h-10 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between px-2 select-none flex-shrink-0">
+          <div className="h-10 bg-slate-100/90 dark:bg-slate-950/70 border-b border-slate-300 dark:border-slate-800/80 flex items-center justify-between px-2 select-none flex-shrink-0">
             <div className="flex items-center space-x-1.5 h-full overflow-x-auto no-scrollbar py-1">
               
               {/* Tab History Navigation (< >) */}
-              <div className="flex items-center bg-slate-900/80 border border-slate-800/80 rounded-md p-0.5 mr-1 flex-shrink-0 h-7">
+              <div className="flex items-center bg-slate-200 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800/80 rounded-md p-0.5 mr-1 flex-shrink-0 h-7">
                 <button
                   onClick={handlePrevTab}
                   disabled={!canGoBack}
-                  className={`h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoBack ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                  className={`h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition ${!canGoBack ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
                   title="Previous Tab"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
@@ -407,7 +407,7 @@ export function App() {
                 <button
                   onClick={handleNextTab}
                   disabled={!canGoForward}
-                  className={`h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoForward ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                  className={`h-6 w-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition ${!canGoForward ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
                   title="Next Tab"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -452,8 +452,8 @@ export function App() {
                     }}
                     className={`group h-7 px-2.5 rounded-md text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer select-none max-w-[220px] flex-shrink-0 border ${
                       isActive
-                        ? 'bg-slate-800/90 border-slate-700/80 text-slate-100 shadow-sm font-semibold'
-                        : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        ? 'bg-white dark:bg-slate-800/90 border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 shadow-xs font-semibold'
+                        : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-800/50'
                     }`}
                     title={`${tab.title} (Double-click to rename)`}
                   >
@@ -470,7 +470,7 @@ export function App() {
                           if (e.key === 'Escape') setEditingTabId(null);
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-slate-900 text-slate-100 border border-sky-500 rounded px-1 py-0 text-xs w-24 outline-none font-sans"
+                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-sky-500 rounded px-1 py-0 text-xs w-24 outline-none font-sans"
                       />
                     ) : (
                       <span className="truncate">{tab.title}</span>
@@ -481,7 +481,7 @@ export function App() {
                           e.stopPropagation();
                           closeTab(tab.id);
                         }}
-                        className="p-0.5 hover:bg-slate-700 text-slate-400 hover:text-rose-400 rounded transition opacity-0 group-hover:opacity-100 ml-0.5"
+                        className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-rose-500 rounded transition opacity-0 group-hover:opacity-100 ml-0.5"
                         title="Close Tab (⌘W)"
                       >
                         <X className="w-3 h-3" />
@@ -494,7 +494,7 @@ export function App() {
               {/* New Tab Button (+) */}
               <button
                 onClick={() => openNewQueryTab()}
-                className="h-7 w-7 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-100 flex items-center justify-center transition active:scale-95 border border-transparent hover:border-slate-700/60 flex-shrink-0"
+                className="h-7 w-7 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition active:scale-95 border border-transparent hover:border-slate-300 dark:hover:border-slate-700/60 flex-shrink-0"
                 title="New SQL Query Tab (⌘T / ⌘E)"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -508,8 +508,8 @@ export function App() {
                 onClick={toggleBottomPanel}
                 className={`h-7 px-2 flex items-center space-x-1.5 rounded-md border text-xs font-semibold transition cursor-pointer ${
                   isBottomPanelOpen
-                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
-                    : 'bg-slate-900/60 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/50 shadow-xs'
+                    : 'bg-white/80 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
                 title="Toggle Console Log & Query History (⌘J)"
               >
@@ -518,17 +518,17 @@ export function App() {
               </button>
               <button
                 onClick={() => {}}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
                 title="Toggle Split Editor (⌘\)"
               >
                 <Columns2 className="w-3.5 h-3.5" />
               </button>
-              <div className="text-[11px] text-slate-500 font-mono hidden md:flex items-center space-x-2 leading-none">
-                <span>Tabs: <strong className="text-slate-300">{tabs.length}</strong></span>
+              <div className="text-[11px] text-slate-600 dark:text-slate-500 font-mono hidden md:flex items-center space-x-2 leading-none">
+                <span>Tabs: <strong className="text-slate-800 dark:text-slate-300">{tabs.length}</strong></span>
                 <span>•</span>
-                <span>RAM: <strong className="text-slate-300">46.8 MB</strong></span>
+                <span>RAM: <strong className="text-slate-800 dark:text-slate-300">46.8 MB</strong></span>
                 <span>•</span>
-                <span className="text-emerald-400 font-bold">120 FPS</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold">120 FPS</span>
               </div>
             </div>
           </div>

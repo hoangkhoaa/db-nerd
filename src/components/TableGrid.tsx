@@ -252,12 +252,12 @@ export const TableGrid: React.FC = () => {
         <TableIndexesView />
       ) : (
         /* DATA GRID VIEW (TablePlus Canvas style) */
-        <div className="flex-1 overflow-auto bg-slate-950/80 text-xs font-mono select-text">
+        <div className="flex-1 overflow-auto bg-white dark:bg-slate-950/80 text-xs font-mono select-text">
           <table className="w-full border-collapse">
             {/* Header */}
-            <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800 text-slate-400 select-none shadow-sm text-[11px]">
+            <thead className="sticky top-0 bg-slate-100 dark:bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 select-none shadow-sm text-[11px]">
               <tr className="text-left font-semibold">
-                <th className="w-12 px-3 py-2 border-r border-slate-800/80 text-center text-slate-600">#</th>
+                <th className="w-12 px-3 py-2 border-r border-slate-300 dark:border-slate-800/80 text-center text-slate-500 dark:text-slate-600 font-bold">#</th>
                 {activeCols.map((col) => (
                   <th
                     key={col.name}
@@ -267,14 +267,14 @@ export const TableGrid: React.FC = () => {
                       setColContextPos({ x: e.clientX, y: e.clientY });
                       setTargetCol(col);
                     }}
-                    className="px-3 py-2 border-r border-slate-800/80 min-w-[130px] cursor-pointer hover:bg-slate-900/60 transition-colors"
+                    className="px-3 py-2 border-r border-slate-300 dark:border-slate-800/80 min-w-[130px] cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-900/60 transition-colors"
                   >
                     <div className="flex items-center space-x-1.5 truncate">
                       <ColumnTypeIcon type={col.type} />
-                      <span className="text-slate-200 font-semibold truncate">{col.name}</span>
+                      <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{col.name}</span>
                       {col.isPrimaryKey && (
                         <span title="Primary Key" className="inline-flex items-center ml-0.5">
-                          <Key className="w-2.5 h-2.5 text-amber-400/90 flex-shrink-0" />
+                          <Key className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400/90 flex-shrink-0" />
                         </span>
                       )}
                     </div>
@@ -284,7 +284,7 @@ export const TableGrid: React.FC = () => {
             </thead>
 
             {/* Rows */}
-            <tbody className="divide-y divide-slate-800/40 text-[11px]">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/40 text-[11px]">
               {rows.map((row, index) => {
                 const isSelected = selectedRowIds.has(row.id) || (selectedRowData && selectedRowData.id === row.id);
                 const isEven = index % 2 === 0;
@@ -307,14 +307,14 @@ export const TableGrid: React.FC = () => {
                     }}
                     className={`cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-sky-600/30 text-white font-medium shadow-inner'
+                        ? 'bg-sky-100 dark:bg-sky-600/30 text-sky-950 dark:text-white font-medium shadow-inner'
                         : isEven
-                        ? 'bg-slate-900/40 hover:bg-slate-800/50 text-slate-200'
-                        : 'bg-slate-950/60 hover:bg-slate-800/50 text-slate-200'
+                        ? 'bg-slate-50/60 dark:bg-slate-900/40 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
+                        : 'bg-white dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
                     }`}
                   >
                     {/* Row Index */}
-                    <td className="px-3 py-1.5 border-r border-slate-800/60 text-center text-slate-500 select-none">
+                    <td className="px-3 py-1.5 border-r border-slate-200 dark:border-slate-800/60 text-center text-slate-500 dark:text-slate-500 select-none font-medium">
                       {index + 1}
                     </td>
 
@@ -328,7 +328,7 @@ export const TableGrid: React.FC = () => {
                         <td
                           key={col.name}
                           onDoubleClick={() => startEditing(row.id, col.name, val)}
-                          className={`px-3 py-1.5 border-r border-slate-800/60 relative truncate max-w-xs ${
+                          className={`px-3 py-1.5 border-r border-slate-200 dark:border-slate-800/60 relative truncate max-w-xs ${
                             isDirty ? 'bg-amber-500/15' : ''
                           }`}
                         >
@@ -345,18 +345,18 @@ export const TableGrid: React.FC = () => {
                               onBlur={saveEditing}
                               onKeyDown={handleKeyDown}
                               autoFocus
-                              className="w-full bg-slate-900 border border-sky-500 rounded px-1.5 py-0.5 text-slate-100 font-mono text-[11px] focus:outline-none"
+                              className="w-full bg-white dark:bg-slate-900 border border-sky-500 rounded px-1.5 py-0.5 text-slate-900 dark:text-slate-100 font-mono text-[11px] focus:outline-none"
                             />
                           ) : val === null || val === undefined ? (
-                            <span className="text-slate-500 italic select-none">NULL</span>
+                            <span className="text-slate-400 dark:text-slate-500 italic select-none font-mono">NULL</span>
                           ) : typeof val === 'boolean' ? (
-                            <span className="text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
                           ) : typeof val === 'object' ? (
-                            <span className="truncate block font-mono text-slate-300">
+                            <span className="truncate block font-mono text-slate-700 dark:text-slate-300">
                               {JSON.stringify(val)}
                             </span>
                           ) : (
-                            <span className="truncate block text-slate-200">{String(val)}</span>
+                            <span className="truncate block text-slate-800 dark:text-slate-200">{String(val)}</span>
                           )}
                         </td>
                       );
@@ -373,13 +373,13 @@ export const TableGrid: React.FC = () => {
                 return (
                   <tr
                     key={`empty-${i}`}
-                    className={`h-7 ${isEven ? 'bg-slate-900/40' : 'bg-slate-950/60'}`}
+                    className={`h-7 ${isEven ? 'bg-slate-50/60 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-950/60'}`}
                   >
-                    <td className="px-3 py-1 border-r border-slate-800/40 text-center text-slate-700 select-none">
+                    <td className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40 text-center text-slate-400 dark:text-slate-700 select-none">
                       {rowNum}
                     </td>
                     {activeCols.map((col) => (
-                      <td key={col.name} className="px-3 py-1 border-r border-slate-800/40" />
+                      <td key={col.name} className="px-3 py-1 border-r border-slate-200 dark:border-slate-800/40" />
                     ))}
                   </tr>
                 );
@@ -390,17 +390,17 @@ export const TableGrid: React.FC = () => {
       )}
 
       {/* BOTTOM CONTROL BAR (TablePlus Standard Footer Toolbar) */}
-      <div className="h-9 bg-slate-950 border-t border-slate-800/90 px-3 flex items-center justify-between text-xs font-sans select-none flex-shrink-0 z-20">
+      <div className="h-9 bg-slate-100 dark:bg-slate-950 border-t border-slate-300 dark:border-slate-800/90 px-3 flex items-center justify-between text-xs font-sans select-none flex-shrink-0 z-20">
         {/* Left Segment: [Data] [Structure] [Index] + Mode Actions */}
         <div className="flex items-center space-x-2 h-full">
           {/* View Mode Switcher Pills */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px] font-semibold h-6">
+          <div className="flex items-center bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-0.5 text-[11px] font-semibold h-6">
             <button
               onClick={() => setTableViewMode('data')}
               className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'data'
-                  ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 dark:bg-sky-500 text-white dark:text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Data
@@ -409,8 +409,8 @@ export const TableGrid: React.FC = () => {
               onClick={() => setTableViewMode('structure')}
               className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'structure'
-                  ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 dark:bg-sky-500 text-white dark:text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Structure
@@ -419,24 +419,24 @@ export const TableGrid: React.FC = () => {
               onClick={() => setTableViewMode('index')}
               className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'index'
-                  ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 dark:bg-sky-500 text-white dark:text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Index
             </button>
           </div>
 
-          <div className="h-3.5 w-[1px] bg-slate-800 mx-0.5 self-center" />
+          <div className="h-3.5 w-[1px] bg-slate-300 dark:bg-slate-800 mx-0.5 self-center" />
 
           {/* Mode-specific Buttons */}
           {tableViewMode === 'data' ? (
             <button
               onClick={insertRow}
-              className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
+              className="h-6 px-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer shadow-2xs"
               title="Insert new row (+)"
             >
-              <Plus className="w-3 h-3 text-emerald-400 shrink-0" />
+              <Plus className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Row</span>
             </button>
           ) : tableViewMode === 'structure' ? (
@@ -445,41 +445,41 @@ export const TableGrid: React.FC = () => {
                 onClick={() => {
                   showToast('Added column column_new to structure');
                 }}
-                className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
+                className="h-6 px-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer shadow-2xs"
               >
-                <Plus className="w-3 h-3 text-sky-400 shrink-0" />
+                <Plus className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
                 <span>Column</span>
               </button>
               <button
                 onClick={() => showToast('Table Triggers: 0 triggers defined')}
-                className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-md text-[11px] font-semibold transition flex items-center leading-none cursor-pointer"
+                className="h-6 px-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 rounded-md text-[11px] font-semibold transition flex items-center leading-none cursor-pointer shadow-2xs"
               >
                 Triggers
               </button>
               <button
                 onClick={() => setIsDdlModalOpen(true)}
-                className="h-6 px-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
+                className="h-6 px-2 bg-indigo-100 dark:bg-indigo-500/20 hover:bg-indigo-200 dark:hover:bg-indigo-500/30 border border-indigo-300 dark:border-indigo-500/40 text-indigo-700 dark:text-indigo-300 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
               >
-                <FileCode className="w-3 h-3 text-indigo-400 shrink-0" />
+                <FileCode className="w-3 h-3 text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <span>DDL</span>
               </button>
             </div>
           ) : (
             <button
               onClick={() => showToast('Opened create index wizard')}
-              className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
+              className="h-6 px-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer shadow-2xs"
             >
-              <Plus className="w-3 h-3 text-amber-400 shrink-0" />
+              <Plus className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>Index</span>
             </button>
           )}
         </div>
 
         {/* Center: Row Counter / Stats */}
-        <div className="text-[11px] text-slate-400 font-mono select-none flex items-center leading-none">
+        <div className="text-[11px] text-slate-600 dark:text-slate-400 font-mono select-none flex items-center leading-none">
           {tableViewMode === 'data' ? (
             selectedRowData || selectedRowIds.size > 0 ? (
-              <span className="text-sky-300 font-semibold">{`${selectedRowIds.size || 1} of ${rows.length} rows selected`}</span>
+              <span className="text-sky-700 dark:text-sky-300 font-semibold">{`${selectedRowIds.size || 1} of ${rows.length} rows selected`}</span>
             ) : (
               <span>{`1-${rows.length} of ${rows.length} rows`}</span>
             )
@@ -498,8 +498,8 @@ export const TableGrid: React.FC = () => {
                 onClick={toggleFilterBar}
                 className={`h-6 px-2 rounded-md text-[11px] font-semibold border transition flex items-center space-x-1 active:scale-95 leading-none cursor-pointer ${
                   isFilterBarOpen
-                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                    : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-500/40'
+                    : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shadow-2xs'
                 }`}
                 title="Toggle WHERE / ORDER BY filter bar"
               >
@@ -509,7 +509,7 @@ export const TableGrid: React.FC = () => {
 
               <button
                 onClick={() => setIsColumnsModalOpen(!isColumnsModalOpen)}
-                className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-md text-[11px] font-semibold transition flex items-center space-x-1 leading-none cursor-pointer"
+                className="h-6 px-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-md text-[11px] font-semibold transition flex items-center space-x-1 leading-none cursor-pointer shadow-2xs"
                 title="Choose visible columns"
               >
                 <ColumnsIcon className="w-3 h-3 shrink-0" />

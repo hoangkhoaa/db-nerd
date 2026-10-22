@@ -104,26 +104,26 @@ export const RightInspector: React.FC = () => {
   return (
     <aside
       style={{ width: `${rightInspectorWidth}px` }}
-      className="bg-slate-950/95 border-l border-slate-800/90 flex flex-col h-full text-xs font-sans select-none flex-shrink-0 z-20"
+      className="bg-white dark:bg-slate-950/95 border-l border-slate-300 dark:border-slate-800/90 flex flex-col h-full text-xs font-sans select-none flex-shrink-0 z-20"
     >
       {/* Top Header Bar */}
-      <div className="h-10 px-3 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
+      <div className="h-10 px-3 bg-slate-100 dark:bg-slate-950 border-b border-slate-300 dark:border-slate-800/80 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-1.5 truncate">
           {isSqlTab ? (
-            <Terminal className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
           ) : isStatsTab ? (
-            <Activity className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+            <Activity className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
           ) : isStructureMode ? (
-            <Layers className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+            <Layers className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
           ) : isIndexMode ? (
-            <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <Key className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
           ) : selectedRowData ? (
-            <Info className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+            <Info className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
           ) : (
-            <Database className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <Database className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 flex-shrink-0" />
           )}
 
-          <span className="font-bold text-slate-200 truncate">
+          <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
             {isSqlTab
               ? 'Query Inspector'
               : isStatsTab
@@ -142,7 +142,7 @@ export const RightInspector: React.FC = () => {
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setRightInspectorWidth(isExpanded ? 320 : 520)}
-            className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition cursor-pointer"
+            className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition cursor-pointer"
             title={isExpanded ? 'Restore width (320px)' : 'Expand width (520px)'}
           >
             {isExpanded ? (
@@ -155,16 +155,16 @@ export const RightInspector: React.FC = () => {
           {selectedRowData && isDataMode && (
             <button
               onClick={() => handleCopyText(JSON.stringify(selectedRowData, null, 2))}
-              className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition"
+              className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
               title="Copy row JSON"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           )}
 
           <button
             onClick={toggleRightInspector}
-            className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition"
+            className="p-1 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition cursor-pointer"
             title="Hide Inspector (⌘I)"
           >
             <X className="w-3.5 h-3.5" />
@@ -174,16 +174,16 @@ export const RightInspector: React.FC = () => {
 
       {/* Search Input Bar (Shown in Data Mode & Structure Mode) */}
       {(isDataMode || isStructureMode) && (
-        <div className="p-2 border-b border-slate-800/80 bg-slate-950/60 flex-shrink-0">
+        <div className="p-2 border-b border-slate-300 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 flex-shrink-0">
           <div className="relative">
             <input
               type="text"
               placeholder={isDataMode ? 'Search for field...' : 'Filter properties...'}
               value={searchField}
               onChange={(e) => setSearchField(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-7 pr-2.5 py-1 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 font-sans"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg pl-7 pr-2.5 py-1 text-[11px] text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 font-sans"
             />
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2 top-2 pointer-events-none" />
           </div>
         </div>
       )}
@@ -195,13 +195,13 @@ export const RightInspector: React.FC = () => {
         {/* ========================================================================= */}
         {isDataMode && selectedRowData && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800/80">
+              <span className="text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400 tracking-wider">
                 Fields ({filteredFields.length})
               </span>
               <button
                 onClick={() => setSelectedRowData(null)}
-                className="text-[10px] text-sky-400 hover:underline"
+                className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold hover:underline cursor-pointer"
               >
                 Clear Selection
               </button>
@@ -244,13 +244,13 @@ export const RightInspector: React.FC = () => {
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse flex-shrink-0" />
                         )}
                         <ColumnTypeIcon type={colType} sampleValue={val} size={11} />
-                        <span className="font-semibold text-slate-300 truncate group-hover:text-sky-300 transition-colors">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">
                           {field}
                         </span>
                       </div>
 
                       <div className="flex items-center space-x-1">
-                        <span className="text-[10px] text-slate-500 font-sans px-1 bg-slate-900 rounded border border-slate-800">
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-sans px-1.5 py-0.2 bg-slate-100 dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-800 font-medium">
                           {colType}
                         </span>
                       </div>
@@ -280,10 +280,10 @@ export const RightInspector: React.FC = () => {
                           updateCell(selectedRowData.id, field, parsed);
                           setSelectedRowData({ ...selectedRowData, [field]: parsed });
                         }}
-                        className={`w-full bg-slate-900/90 border rounded-lg p-2 text-slate-100 font-mono text-[11px] focus:outline-none focus:border-sky-500 select-text leading-relaxed ${
-                          val === null ? 'text-slate-500 italic' : ''
+                        className={`w-full bg-white dark:bg-slate-900/90 border rounded-lg p-2 text-slate-900 dark:text-slate-100 font-mono text-[11px] focus:outline-none focus:border-sky-500 select-text leading-relaxed shadow-2xs ${
+                          val === null ? 'text-slate-400 dark:text-slate-500 italic' : ''
                         } ${
-                          isDirty ? 'border-rose-500/60 ring-1 ring-rose-500/30' : 'border-slate-800'
+                          isDirty ? 'border-rose-500/60 ring-1 ring-rose-500/30' : 'border-slate-300 dark:border-slate-800'
                         }`}
                       />
                     ) : (
@@ -303,15 +303,15 @@ export const RightInspector: React.FC = () => {
                             updateCell(selectedRowData.id, field, nextVal);
                             setSelectedRowData({ ...selectedRowData, [field]: nextVal });
                           }}
-                          className={`w-full bg-slate-900/90 border rounded-lg px-2.5 py-1 text-slate-100 font-mono text-[11px] focus:outline-none focus:border-sky-500 select-text truncate pr-6 ${
-                            val === null ? 'text-slate-500 italic' : ''
+                          className={`w-full bg-white dark:bg-slate-900/90 border rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-100 font-mono text-[11px] focus:outline-none focus:border-sky-500 select-text truncate pr-6 shadow-2xs ${
+                            val === null ? 'text-slate-400 dark:text-slate-500 italic' : ''
                           } ${
-                            isDirty ? 'border-rose-500/60 ring-1 ring-rose-500/30' : 'border-slate-800'
+                            isDirty ? 'border-rose-500/60 ring-1 ring-rose-500/30' : 'border-slate-300 dark:border-slate-800'
                           }`}
                         />
                         <button
                           onClick={() => toggleFieldExpand(field)}
-                          className="absolute right-1.5 top-1.5 text-slate-500 hover:text-slate-300"
+                          className="absolute right-1.5 top-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
                           title="Expand field view"
                         >
                           <ChevronDown className="w-3 h-3" />
@@ -331,66 +331,66 @@ export const RightInspector: React.FC = () => {
         {isDataMode && !selectedRowData && (
           <div className="space-y-3.5">
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+              <label className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
                 total_size
               </label>
-              <div className="w-full bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-200">
+              <div className="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-200 font-mono font-semibold">
                 {totalSize}
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+              <label className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
                 data_size
               </label>
-              <div className="w-full bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-200">
+              <div className="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-200 font-mono font-semibold">
                 {dataSize}
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+              <label className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
                 index_size
               </label>
-              <div className="w-full bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-200">
+              <div className="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-200 font-mono font-semibold">
                 {indexSize}
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+              <label className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
                 comment
               </label>
-              <div className="w-full bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-500 italic">
+              <div className="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-slate-500 italic">
                 NULL
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-800/80 space-y-2">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-slate-500">Engine</span>
-                <span className="text-slate-300 font-semibold">{schemaInfo.engine}</span>
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-600 dark:text-slate-500 font-medium">Engine</span>
+                <span className="text-slate-900 dark:text-slate-300 font-semibold">{schemaInfo.engine}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-slate-500">Schema</span>
-                <span className="text-sky-400 font-semibold">{schemaInfo.schema}</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-600 dark:text-slate-500 font-medium">Schema</span>
+                <span className="text-sky-700 dark:text-sky-400 font-semibold">{schemaInfo.schema}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-slate-500">Rows</span>
-                <span className="text-emerald-400 font-semibold">{schemaInfo.rowCount}</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-600 dark:text-slate-500 font-medium">Rows</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{schemaInfo.rowCount}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-slate-500">Columns</span>
-                <span className="text-slate-300 font-semibold">{schemaInfo.columns.length}</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-600 dark:text-slate-500 font-medium">Columns</span>
+                <span className="text-slate-900 dark:text-slate-300 font-semibold">{schemaInfo.columns.length}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-slate-500">Indexes</span>
-                <span className="text-amber-400 font-semibold">{schemaInfo.indexes.length}</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-600 dark:text-slate-500 font-medium">Indexes</span>
+                <span className="text-amber-700 dark:text-amber-400 font-semibold">{schemaInfo.indexes.length}</span>
               </div>
             </div>
 
-            <div className="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80 text-[10px] font-sans text-slate-400 space-y-1">
-              <div className="flex items-center space-x-1.5 text-sky-400 font-bold">
+            <div className="p-2.5 bg-sky-50 dark:bg-slate-900/60 rounded-xl border border-sky-200 dark:border-slate-800/80 text-[11px] font-sans text-slate-700 dark:text-slate-400 space-y-1">
+              <div className="flex items-center space-x-1.5 text-sky-700 dark:text-sky-400 font-bold">
                 <Info className="w-3.5 h-3.5" />
                 <span>Tip: Click any row</span>
               </div>
@@ -528,34 +528,34 @@ export const RightInspector: React.FC = () => {
         {/* ========================================================================= */}
         {isSqlTab && (
           <div className="space-y-3 font-sans">
-            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-2">
-              <div className="flex items-center justify-between font-mono text-emerald-400 font-bold">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-300 dark:border-emerald-500/30 rounded-xl space-y-2">
+              <div className="flex items-center justify-between font-mono text-emerald-800 dark:text-emerald-400 font-bold">
                 <span className="flex items-center space-x-1">
-                  <Zap className="w-3.5 h-3.5" />
+                  <Zap className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                   <span>Execution Metrics</span>
                 </span>
-                <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 border border-emerald-500/30 rounded">
+                <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30 rounded text-emerald-800 dark:text-emerald-300 font-bold">
                   Success
                 </span>
               </div>
-              <div className="space-y-1 font-mono text-[11px] text-slate-300">
+              <div className="space-y-1 font-mono text-[11px] text-slate-800 dark:text-slate-300">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Duration:</span>
-                  <span className="text-emerald-300 font-semibold">1.4ms (Cached)</span>
+                  <span className="text-slate-700 dark:text-slate-400 font-semibold">Duration:</span>
+                  <span className="text-emerald-700 dark:text-emerald-300 font-bold">1.4ms (Cached)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Rows affected:</span>
-                  <span>3 rows</span>
+                  <span className="text-slate-700 dark:text-slate-400 font-semibold">Rows affected:</span>
+                  <span className="text-slate-900 dark:text-slate-200 font-medium">3 rows</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Lock time:</span>
-                  <span>0.02ms</span>
+                  <span className="text-slate-700 dark:text-slate-400 font-semibold">Lock time:</span>
+                  <span className="text-slate-900 dark:text-slate-200 font-medium">0.02ms</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5 pt-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              <span className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 tracking-wider">
                 Quick SQL Snippets
               </span>
               {[
@@ -567,13 +567,13 @@ export const RightInspector: React.FC = () => {
                 <div
                   key={s.label}
                   onClick={() => handleCopyText(s.label)}
-                  className="p-2 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 rounded-lg cursor-pointer transition flex items-center justify-between group"
+                  className="p-2 bg-slate-100 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 rounded-lg cursor-pointer transition flex items-center justify-between group shadow-2xs"
                   title="Click to copy snippet"
                 >
-                  <div className="font-mono text-[11px] text-sky-300 group-hover:text-white truncate">
+                  <div className="font-mono text-[11px] text-sky-700 dark:text-sky-300 group-hover:text-sky-900 dark:group-hover:text-white font-medium truncate">
                     {s.label}
                   </div>
-                  <span className="text-[10px] text-slate-500">{s.desc}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{s.desc}</span>
                 </div>
               ))}
             </div>
