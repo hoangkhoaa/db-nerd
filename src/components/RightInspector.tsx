@@ -25,8 +25,8 @@ export const RightInspector: React.FC = () => {
   const {
     isRightInspectorOpen,
     toggleRightInspector,
-    inspectorWidth,
-    toggleInspectorWidth,
+    rightInspectorWidth,
+    setRightInspectorWidth,
     selectedTable,
     selectedRowData,
     setSelectedRowData,
@@ -99,11 +99,12 @@ export const RightInspector: React.FC = () => {
     f.toLowerCase().includes(searchField.trim().toLowerCase())
   );
 
-  const widthClass = inspectorWidth === 'expanded' ? 'w-[440px]' : 'w-72';
+  const isExpanded = rightInspectorWidth >= 480;
 
   return (
     <aside
-      className={`${widthClass} bg-slate-950/95 border-l border-slate-800/90 flex flex-col h-full text-xs font-sans select-none flex-shrink-0 z-20 transition-[width] duration-200 ease-out`}
+      style={{ width: `${rightInspectorWidth}px` }}
+      className="bg-slate-950/95 border-l border-slate-800/90 flex flex-col h-full text-xs font-sans select-none flex-shrink-0 z-20"
     >
       {/* Top Header Bar */}
       <div className="h-10 px-3 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
@@ -140,11 +141,11 @@ export const RightInspector: React.FC = () => {
         {/* Action icons: Width Toggle (Maximize/Minimize), Copy, Close */}
         <div className="flex items-center space-x-1">
           <button
-            onClick={toggleInspectorWidth}
-            className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition"
-            title={inspectorWidth === 'expanded' ? 'Collapse width (to 288px)' : 'Expand width (to 440px)'}
+            onClick={() => setRightInspectorWidth(isExpanded ? 320 : 520)}
+            className="p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition cursor-pointer"
+            title={isExpanded ? 'Restore width (320px)' : 'Expand width (520px)'}
           >
-            {inspectorWidth === 'expanded' ? (
+            {isExpanded ? (
               <Minimize2 className="w-3.5 h-3.5" />
             ) : (
               <Maximize2 className="w-3.5 h-3.5" />

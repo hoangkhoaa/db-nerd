@@ -4,6 +4,9 @@ import {
   PanelRight,
   PanelRightClose,
   PanelLeft,
+  PanelLeftClose,
+  PanelBottom,
+  PanelBottomClose,
   Terminal,
   Database,
   Filter,
@@ -32,6 +35,8 @@ export const Titlebar = () => {
     toggleRightInspector,
     isSidebarOpen,
     toggleSidebar,
+    isBottomPanelOpen,
+    toggleBottomPanel,
     isFilterBarOpen,
     toggleFilterBar,
     openNewQueryTab,
@@ -94,7 +99,7 @@ export const Titlebar = () => {
           }`}
           title="Toggle Sidebar (⌘B)"
         >
-          <PanelLeft className="w-3.5 h-3.5" />
+          {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
         </button>
 
         {/* Connection Switcher Pill */}
@@ -211,6 +216,19 @@ export const Titlebar = () => {
             <Sliders className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Toggle Bottom Console / Query Log Panel */}
+        <button
+          onClick={toggleBottomPanel}
+          className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
+            isBottomPanelOpen
+              ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
+              : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700/70 text-slate-400 hover:text-slate-200'
+          }`}
+          title="Toggle Bottom Console Panel (⌘J)"
+        >
+          {isBottomPanelOpen ? <PanelBottomClose className="w-3.5 h-3.5" /> : <PanelBottom className="w-3.5 h-3.5" />}
+        </button>
 
         {/* Toggle Right Inspector Panel */}
         <button

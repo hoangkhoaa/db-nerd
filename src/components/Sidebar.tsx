@@ -19,6 +19,7 @@ import {
   Trash2,
   Sparkles,
   RefreshCw,
+  PanelLeftClose,
 } from 'lucide-react';
 import { getTablesForConnection, getTableSchema, getFunctionsForConnection } from '../data/schemas';
 import { ColumnDefinition } from '../types';
@@ -87,6 +88,8 @@ export const Sidebar = () => {
     fetchLiveTables,
     liveFunctions,
     fetchLiveFunctions,
+    sidebarWidth,
+    toggleSidebar,
   } = useAppStore();
 
   const [sidebarTab, setSidebarTab] = useState<'items' | 'queries' | 'history'>('items');
@@ -138,7 +141,10 @@ export const Sidebar = () => {
   );
 
   return (
-    <aside className="w-60 bg-slate-950/70 border-r border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0 font-sans">
+    <aside
+      style={{ width: `${sidebarWidth}px` }}
+      className="bg-slate-950/70 border-r border-slate-800/80 flex flex-col justify-between select-none flex-shrink-0 font-sans h-full"
+    >
       
       {/* Top Section: Segmented Switcher & Search */}
       <div className="flex-shrink-0 border-b border-slate-800/80 p-2 space-y-2">
@@ -176,7 +182,7 @@ export const Sidebar = () => {
           </button>
         </div>
 
-        {/* Search Input Bar */}
+        {/* Search Input Bar & Collapse */}
         <div className="flex items-center space-x-1">
           <div className="relative flex-1">
             <input
@@ -195,10 +201,17 @@ export const Sidebar = () => {
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-1.5 top-1.5" />
           </div>
           <button
-            className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/80 rounded transition"
+            className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800/80 rounded transition cursor-pointer"
             title="Filter preferences"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800/80 rounded transition cursor-pointer"
+            title="Collapse Sidebar (⌘B)"
+          >
+            <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

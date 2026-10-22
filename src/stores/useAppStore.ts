@@ -100,10 +100,26 @@ interface AppState {
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  sidebarWidth: number;
+  setSidebarWidth: (width: number) => void;
 
   isRightInspectorOpen: boolean;
   setRightInspectorOpen: (open: boolean) => void;
   toggleRightInspector: () => void;
+  rightInspectorWidth: number;
+  setRightInspectorWidth: (width: number) => void;
+
+  isBottomPanelOpen: boolean;
+  setBottomPanelOpen: (open: boolean) => void;
+  toggleBottomPanel: () => void;
+  bottomPanelHeight: number;
+  setBottomPanelHeight: (height: number) => void;
+
+  sqlEditorSplitHeight: number;
+  setSqlEditorSplitHeight: (height: number) => void;
+  isSqlResultsCollapsed: boolean;
+  setIsSqlResultsCollapsed: (collapsed: boolean) => void;
+  toggleSqlResultsCollapsed: () => void;
 
   selectedRowData: any | null;
   setSelectedRowData: (row: any | null) => void;
@@ -1542,10 +1558,38 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSidebarOpen: true,
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  sidebarWidth: typeof window !== 'undefined' ? (Number(localStorage.getItem('dbnerd_sidebar_width')) || 240) : 240,
+  setSidebarWidth: (width) => {
+    if (typeof window !== 'undefined') localStorage.setItem('dbnerd_sidebar_width', String(width));
+    set({ sidebarWidth: width });
+  },
 
   isRightInspectorOpen: true,
   setRightInspectorOpen: (open) => set({ isRightInspectorOpen: open }),
   toggleRightInspector: () => set((state) => ({ isRightInspectorOpen: !state.isRightInspectorOpen })),
+  rightInspectorWidth: typeof window !== 'undefined' ? (Number(localStorage.getItem('dbnerd_inspector_width')) || 320) : 320,
+  setRightInspectorWidth: (width) => {
+    if (typeof window !== 'undefined') localStorage.setItem('dbnerd_inspector_width', String(width));
+    set({ rightInspectorWidth: width });
+  },
+
+  isBottomPanelOpen: false,
+  setBottomPanelOpen: (open) => set({ isBottomPanelOpen: open }),
+  toggleBottomPanel: () => set((state) => ({ isBottomPanelOpen: !state.isBottomPanelOpen })),
+  bottomPanelHeight: typeof window !== 'undefined' ? (Number(localStorage.getItem('dbnerd_bottom_panel_height')) || 190) : 190,
+  setBottomPanelHeight: (height) => {
+    if (typeof window !== 'undefined') localStorage.setItem('dbnerd_bottom_panel_height', String(height));
+    set({ bottomPanelHeight: height });
+  },
+
+  sqlEditorSplitHeight: typeof window !== 'undefined' ? (Number(localStorage.getItem('dbnerd_sql_split_height')) || 220) : 220,
+  setSqlEditorSplitHeight: (height) => {
+    if (typeof window !== 'undefined') localStorage.setItem('dbnerd_sql_split_height', String(height));
+    set({ sqlEditorSplitHeight: height });
+  },
+  isSqlResultsCollapsed: false,
+  setIsSqlResultsCollapsed: (collapsed) => set({ isSqlResultsCollapsed: collapsed }),
+  toggleSqlResultsCollapsed: () => set((state) => ({ isSqlResultsCollapsed: !state.isSqlResultsCollapsed })),
 
   selectedRowData: null,
   setSelectedRowData: (row) => set({ selectedRowData: row }),

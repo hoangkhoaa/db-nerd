@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap } from 'lucide-react';
+import { Play, Sparkles, CheckCircle2, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2 } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -234,9 +234,44 @@ const sqlEditorTheme = EditorView.theme(
 );
 
 export const SqlEditor: React.FC = () => {
-  const { activeTabId, sqlTabStates, setSqlTabQuery, runSqlQuery, selectedTable, activeConnection } = useAppStore();
+  const {
+    activeTabId,
+    sqlTabStates,
+    setSqlTabQuery,
+    runSqlQuery,
+    selectedTable,
+    activeConnection,
+    sqlEditorSplitHeight,
+    setSqlEditorSplitHeight,
+    isSqlResultsCollapsed,
+    toggleSqlResultsCollapsed,
+  } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+
+  const handleSplitterResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = sqlEditorSplitHeight;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientY - startY;
+      const newHeight = Math.min(650, Math.max(80, startHeight + delta));
+      setSqlEditorSplitHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
 
   const tabState = sqlTabStates[activeTabId] || {
     tabId: activeTabId,
@@ -501,13 +536,29 @@ export const SqlEditor: React.FC = () => {
           e.preventDefault();
           setEditorContextPos({ x: e.clientX, y: e.clientY });
         }}
-        className="h-48 border-b border-slate-800/80 relative flex flex-col bg-slate-950 flex-shrink-0"
+        style={!isSqlResultsCollapsed ? { height: `${sqlEditorSplitHeight}px` } : undefined}
+        className={`${isSqlResultsCollapsed ? 'flex-1' : ''} border-b border-slate-800/80 relative flex flex-col bg-slate-950 flex-shrink-0 overflow-hidden`}
       >
         <div ref={editorRef} className="flex-1 w-full h-full overflow-hidden" />
       </div>
 
-      {/* Bottom Split: Query Result Grid */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 select-text relative">
+      {/* Draggable Horizontal Splitter Handle between Editor and Results */}
+      {!isSqlResultsCollapsed && (
+        <div
+          onMouseDown={handleSplitterResizeStart}
+          onDoubleClick={() => setSqlEditorSplitHeight(220)}
+          className="h-1 hover:h-1.5 bg-slate-800/80 hover:bg-sky-500/60 active:bg-sky-500 cursor-row-resize transition-all duration-100 relative group flex-shrink-0 z-20 select-none"
+          title="Drag to resize SQL editor & results • Double-click to reset (220px)"
+        >
+          <div className="absolute left-1/2 -translate-x-1/2 -top-1 -bottom-1 w-12 rounded-full bg-sky-400/0 group-hover:bg-sky-400/40 transition-colors pointer-events-none flex items-center justify-center">
+            <div className="h-0.5 w-6 bg-sky-300 rounded-full opacity-0 group-hover:opacity-100" />
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Split: Query Result Grid (Collapsible & Resizable) */}
+      {!isSqlResultsCollapsed ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/90 select-text relative">
         {/* Live Executing Overlay (TablePlus High-Tech System) */}
         {tabState.isExecuting && (
           <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs z-30 flex items-center justify-center p-4">
@@ -544,9 +595,24 @@ export const SqlEditor: React.FC = () => {
                 navigator.clipboard.writeText(JSON.stringify(results, null, 2));
                 showToast('📋 Copied results as JSON!');
               }}
-              className="hover:text-slate-200 transition"
+              className="hover:text-slate-200 transition cursor-pointer"
             >
               Copy JSON
+            </button>
+            <div className="h-3.5 w-px bg-slate-800" />
+            <button
+              onClick={() => setSqlEditorSplitHeight(sqlEditorSplitHeight > 300 ? 160 : 450)}
+              className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition cursor-pointer"
+              title={sqlEditorSplitHeight > 300 ? 'Restore Split' : 'Maximize Results'}
+            >
+              {sqlEditorSplitHeight > 300 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={toggleSqlResultsCollapsed}
+              className="p-1 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded transition cursor-pointer"
+              title="Collapse Results Panel"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -655,6 +721,22 @@ export const SqlEditor: React.FC = () => {
           </table>
         </div>
       </div>
+      ) : (
+        /* Collapsed Query Results Bottom Bar */
+        <div className="h-8 bg-slate-950 border-t border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
+          <div className="flex items-center space-x-2 text-slate-400 font-mono text-[11px]">
+            <Terminal className="w-3.5 h-3.5 text-sky-400" />
+            <span>Query Results: {results.length} rows (Collapsed)</span>
+          </div>
+          <button
+            onClick={toggleSqlResultsCollapsed}
+            className="px-2.5 py-1 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 rounded-md text-[11px] font-semibold transition active:scale-95 cursor-pointer flex items-center space-x-1"
+          >
+            <ChevronUp className="w-3 h-3" />
+            <span>Expand Results</span>
+          </button>
+        </div>
+      )}
 
       {/* Right-Click Context Menu for Results */}
       <TableContextMenu

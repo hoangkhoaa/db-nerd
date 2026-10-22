@@ -17,6 +17,7 @@ import { DefaultWorkspaceView } from './components/DefaultWorkspaceView';
 import { AllTableStatsView } from './components/AllTableStatsView';
 import { AllFunctionsView } from './components/AllFunctionsView';
 import { RightInspector } from './components/RightInspector';
+import { BottomPanel } from './components/BottomPanel';
 import { HeartbeatDot } from './components/HeartbeatDot';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy, Code } from 'lucide-react';
 import {
@@ -45,6 +46,16 @@ export function App() {
     pendingEditsCount,
     isSidebarOpen,
     toggleSidebar,
+    sidebarWidth,
+    setSidebarWidth,
+    isRightInspectorOpen,
+    toggleRightInspector,
+    rightInspectorWidth,
+    setRightInspectorWidth,
+    isBottomPanelOpen,
+    toggleBottomPanel,
+    bottomPanelHeight,
+    setBottomPanelHeight,
     setConnectionModalOpen,
     setDatabaseModalOpen,
     setHistoryModalOpen,
@@ -76,6 +87,11 @@ export function App() {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'i' || e.key === 'I')) {
         e.preventDefault();
         useAppStore.getState().toggleRightInspector();
+      }
+      // ⌘J: Toggle Bottom Console Panel
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
+        e.preventDefault();
+        useAppStore.getState().toggleBottomPanel();
       }
       // ⌘R: Reload Data (Table or Query)
       if ((e.metaKey || e.ctrlKey) && (e.key === 'r' || e.key === 'R')) {
@@ -209,6 +225,81 @@ export function App() {
     setEditingTabId(null);
   };
 
+  // Left Sidebar Resizing
+  const handleSidebarResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      const newWidth = Math.min(500, Math.max(160, startWidth + delta));
+      setSidebarWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // Right Inspector Resizing
+  const handleInspectorResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = rightInspectorWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = startX - moveEvent.clientX;
+      const newWidth = Math.min(650, Math.max(220, startWidth + delta));
+      setRightInspectorWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // Bottom Panel Resizing
+  const handleBottomPanelResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = bottomPanelHeight;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = startY - moveEvent.clientY;
+      const newHeight = Math.min(550, Math.max(100, startHeight + delta));
+      setBottomPanelHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0a0f1d] text-slate-100 overflow-hidden font-sans select-none relative">
       
@@ -268,12 +359,33 @@ export function App() {
 
       {/* Workspace Split (Rail + Sidebar + Main) */}
       <div className="flex-1 flex overflow-hidden">
-        
         {/* Connection Switcher Rail (TablePlus style) */}
         <ConnectionRail />
 
-        {/* Sidebar (Collapsible with ⌘B) */}
-        {isSidebarOpen && <Sidebar />}
+        {/* Sidebar (Collapsible with ⌘B and Resizable) */}
+        {isSidebarOpen ? (
+          <>
+            <Sidebar />
+            <div
+              onMouseDown={handleSidebarResizeStart}
+              onDoubleClick={() => setSidebarWidth(240)}
+              className="w-1 hover:w-1.5 bg-slate-800/80 hover:bg-sky-500/60 active:bg-sky-500 cursor-col-resize transition-all duration-100 relative group flex-shrink-0 z-20 select-none"
+              title="Drag to resize sidebar • Double-click to reset (240px)"
+            >
+              <div className="absolute top-1/2 -translate-y-1/2 -left-1 -right-1 h-8 rounded-full bg-sky-400/0 group-hover:bg-sky-400/40 transition-colors pointer-events-none flex items-center justify-center">
+                <div className="w-0.5 h-3 bg-sky-300 rounded-full opacity-0 group-hover:opacity-100" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <button
+            onClick={toggleSidebar}
+            className="w-4 hover:w-5 bg-slate-900/90 hover:bg-slate-800 border-r border-slate-800 text-slate-500 hover:text-sky-300 flex items-center justify-center transition-all cursor-pointer group flex-shrink-0 z-10"
+            title="Expand Sidebar (⌘B)"
+          >
+            <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        )}
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-900/40">
@@ -390,8 +502,20 @@ export function App() {
 
             </div>
 
-            {/* Right Controls: Split Editor & Engine Stats */}
-            <div className="flex items-center space-x-3 flex-shrink-0 pl-2 h-full">
+            {/* Right Controls: Split Editor, Console Toggle & Engine Stats */}
+            <div className="flex items-center space-x-2 flex-shrink-0 pl-2 h-full">
+              <button
+                onClick={toggleBottomPanel}
+                className={`h-7 px-2 flex items-center space-x-1.5 rounded-md border text-xs font-semibold transition cursor-pointer ${
+                  isBottomPanelOpen
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
+                    : 'bg-slate-900/60 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+                title="Toggle Console Log & Query History (⌘J)"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline text-[11px]">Console</span>
+              </button>
               <button
                 onClick={() => {}}
                 className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
@@ -431,10 +555,50 @@ export function App() {
             )}
           </div>
 
+          {/* Global Bottom Console / Query Log Panel (Collapsible & Resizable) */}
+          {isBottomPanelOpen && (
+            <>
+              {/* Bottom Splitter Handle */}
+              <div
+                onMouseDown={handleBottomPanelResizeStart}
+                onDoubleClick={() => setBottomPanelHeight(190)}
+                className="h-1 hover:h-1.5 bg-slate-800/80 hover:bg-sky-500/60 active:bg-sky-500 cursor-row-resize transition-all duration-100 relative group flex-shrink-0 z-20 select-none"
+                title="Drag to resize console • Double-click to reset (190px)"
+              >
+                <div className="absolute left-1/2 -translate-x-1/2 -top-1 -bottom-1 w-12 rounded-full bg-sky-400/0 group-hover:bg-sky-400/40 transition-colors pointer-events-none flex items-center justify-center">
+                  <div className="h-0.5 w-6 bg-sky-300 rounded-full opacity-0 group-hover:opacity-100" />
+                </div>
+              </div>
+              <BottomPanel />
+            </>
+          )}
+
         </main>
 
-        {/* Right Inspector Panel */}
-        <RightInspector />
+        {/* Right Inspector Panel (Collapsible with ⌘I and Resizable) */}
+        {isRightInspectorOpen ? (
+          <>
+            <div
+              onMouseDown={handleInspectorResizeStart}
+              onDoubleClick={() => setRightInspectorWidth(320)}
+              className="w-1 hover:w-1.5 bg-slate-800/80 hover:bg-sky-500/60 active:bg-sky-500 cursor-col-resize transition-all duration-100 relative group flex-shrink-0 z-20 select-none"
+              title="Drag to resize inspector • Double-click to reset (320px)"
+            >
+              <div className="absolute top-1/2 -translate-y-1/2 -left-1 -right-1 h-8 rounded-full bg-sky-400/0 group-hover:bg-sky-400/40 transition-colors pointer-events-none flex items-center justify-center">
+                <div className="w-0.5 h-3 bg-sky-300 rounded-full opacity-0 group-hover:opacity-100" />
+              </div>
+            </div>
+            <RightInspector />
+          </>
+        ) : (
+          <button
+            onClick={toggleRightInspector}
+            className="w-4 hover:w-5 bg-slate-900/90 hover:bg-slate-800 border-l border-slate-800 text-slate-500 hover:text-sky-300 flex items-center justify-center transition-all cursor-pointer group flex-shrink-0 z-10"
+            title="Expand Right Inspector (⌘I)"
+          >
+            <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+        )}
       </div>
 
       {/* Global Floating Toast */}
