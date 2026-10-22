@@ -39,12 +39,14 @@ interface DropIndicator {
   position: 'before' | 'after' | 'inside';
 }
 
-const ENGINE_OPTIONS: { id: DatabaseEngine; label: string; icon: string; defaultPort: number }[] = [
-  { id: 'postgres', label: 'PostgreSQL', icon: '🐘', defaultPort: 5432 },
-  { id: 'mysql', label: 'MySQL', icon: '🐬', defaultPort: 3306 },
-  { id: 'redis', label: 'Redis', icon: '🟥', defaultPort: 6379 },
-  { id: 'snowflake', label: 'Snowflake', icon: '❄️', defaultPort: 443 },
-];
+import {
+  ConnectorIcon,
+  CONNECTOR_METADATA,
+  ALL_TABLEPLUS_CONNECTORS,
+} from './ConnectorIcon';
+
+const PRIMARY_ENGINES: DatabaseEngine[] = ['postgres', 'mysql', 'sqlite', 'redis', 'clickhouse', 'duckdb'];
+
 
 const COLOR_MAP: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   rose: { bg: 'bg-rose-950/30', text: 'text-rose-300', border: 'border-rose-500/30', dot: 'bg-rose-500' },
@@ -84,6 +86,8 @@ export const ConnectionModal = () => {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [showAllConnectors, setShowAllConnectors] = useState(false);
+  const [connectorSearch, setConnectorSearch] = useState('');
 
   // Drag and Drop State
   const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null);
@@ -170,8 +174,10 @@ export const ConnectionModal = () => {
     setIsCreatingNew(true);
     setSelectedConnId(null);
     setTestSuccess(false);
+    setShowAllConnectors(true);
+    setConnectorSearch('');
     setFormData({
-      name: 'new-database-conn',
+      name: 'new-postgres-connection',
       groupId: groupId || connectionGroups[0]?.id || 'group-prod',
       engine: 'postgres',
       env: 'local',
@@ -193,14 +199,19 @@ export const ConnectionModal = () => {
     setIsCreatingNew(false);
     setSelectedConnId(conn.id);
     setTestSuccess(false);
+    setShowAllConnectors(false);
   };
 
   const handleEngineChange = (engine: DatabaseEngine) => {
-    const opt = ENGINE_OPTIONS.find((e) => e.id === engine);
+    const meta = CONNECTOR_METADATA[engine] || CONNECTOR_METADATA.generic;
     setFormData((prev) => ({
       ...prev,
       engine,
-      port: opt?.defaultPort || prev.port,
+      port: meta.defaultPort > 0 ? meta.defaultPort : prev.port,
+      name: isCreatingNew && (prev.name.startsWith('new-') || !prev.name)
+        ? `new-${meta.id}-connection`
+        : prev.name,
+      database: (meta.id === 'sqlite' || meta.id === 'duckdb') ? `${meta.id}.db` : (prev.database || meta.id),
     }));
   };
 
@@ -635,7 +646,6 @@ export const ConnectionModal = () => {
                             groupConns.map((conn) => {
                               const isSelected = !isCreatingNew && selectedConnId === conn.id;
                               const isConnActive = conn.active;
-                              const engObj = ENGINE_OPTIONS.find((e) => e.id === conn.engine);
                               const isConnDragged = draggedItem?.type === 'connection' && draggedItem.id === conn.id;
                               const isConnDropTarget = dropTarget?.id === conn.id;
 
@@ -684,7 +694,7 @@ export const ConnectionModal = () => {
                                         className="w-3 h-3 text-slate-500 group-hover:text-slate-300 opacity-20 group-hover:opacity-90 transition-opacity flex-shrink-0 cursor-grab active:cursor-grabbing"
                                       />
                                     </span>
-                                    <span>{engObj?.icon || '🐘'}</span>
+                                    <ConnectorIcon engine={conn.engine} size="xs" />
                                     <span className="truncate">{conn.name}</span>
                                   </div>
 
@@ -781,28 +791,110 @@ export const ConnectionModal = () => {
               </div>
             </div>
 
-            {/* Engine Tabs */}
-            <div>
-              <label className="block text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
-                Database Engine
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {ENGINE_OPTIONS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleEngineChange(item.id)}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all duration-150 flex items-center justify-center space-x-1.5 active:scale-95 ${
-                      formData.engine === item.id
-                        ? 'bg-sky-500/20 text-sky-200 border-sky-500/60 shadow-sm'
-                        : 'bg-slate-800/40 text-slate-300 border-slate-700 hover:border-slate-600'
-                    }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+            {/* Database Engine Selection (TablePlus Full 22 Connectors Catalog) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-400 font-bold uppercase text-[10px] tracking-wider flex items-center space-x-1.5">
+                  <span>Database Engine</span>
+                  <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 text-sky-400 rounded-full font-mono border border-slate-700/80">
+                    22 Connectors
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowAllConnectors(!showAllConnectors)}
+                  className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 transition-colors flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>{showAllConnectors ? 'Hide Connector Grid' : 'Browse All 22 Connectors'}</span>
+                  <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${showAllConnectors ? 'rotate-90' : ''}`} />
+                </button>
               </div>
+
+              {/* Full 22 TablePlus Connectors Grid */}
+              {showAllConnectors ? (
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between space-x-2">
+                    <input
+                      type="text"
+                      value={connectorSearch}
+                      onChange={(e) => setConnectorSearch(e.target.value)}
+                      placeholder="Filter 22 connectors (PostgreSQL, ClickHouse, DuckDB, Redis, etc.)..."
+                      className="flex-1 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 font-medium"
+                    />
+                    {connectorSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setConnectorSearch('')}
+                        className="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-1 rounded bg-slate-800 cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-56 overflow-y-auto pr-1">
+                    {ALL_TABLEPLUS_CONNECTORS.filter((item) =>
+                      item.label.toLowerCase().includes(connectorSearch.toLowerCase()) ||
+                      item.id.toLowerCase().includes(connectorSearch.toLowerCase()) ||
+                      item.category.toLowerCase().includes(connectorSearch.toLowerCase())
+                    ).map((item) => {
+                      const isSelected = formData.engine === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleEngineChange(item.id)}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-150 cursor-pointer group/card relative ${
+                            isSelected
+                              ? 'bg-sky-500/20 border-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.25)] text-sky-200 ring-1 ring-sky-400/50'
+                              : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/60 text-slate-300'
+                          }`}
+                        >
+                          <ConnectorIcon engine={item.id} size="md" className="group-hover/card:scale-105 transition-transform" />
+                          <span className="text-[10px] font-semibold mt-1.5 line-clamp-1 leading-tight">{item.label}</span>
+                          <span className="text-[9px] text-slate-500 font-mono scale-90">{item.tag}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* Quick Engine Tabs (Primary engines + currently selected) */
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {(() => {
+                    const keys = [...PRIMARY_ENGINES];
+                    if (!keys.includes(formData.engine)) {
+                      keys.push(formData.engine);
+                    }
+                    return keys.map((key) => {
+                      const meta = CONNECTOR_METADATA[key] || {
+                        id: key,
+                        label: key.toUpperCase(),
+                        iconSrc: '/connectors/generic.png',
+                        tag: 'Db',
+                        defaultPort: 5432,
+                        category: 'sql' as const,
+                      };
+                      const isSelected = formData.engine === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => handleEngineChange(key)}
+                          className={`py-2 px-2 rounded-xl border text-xs font-bold transition-all duration-150 flex items-center space-x-2 active:scale-95 cursor-pointer ${
+                            isSelected
+                              ? 'bg-sky-500/20 text-sky-200 border-sky-500/60 shadow-sm ring-1 ring-sky-400/30'
+                              : 'bg-slate-800/40 text-slate-300 border-slate-700 hover:border-slate-600'
+                          }`}
+                        >
+                          <ConnectorIcon engine={key} size="xs" />
+                          <span className="truncate text-[11px]">{meta.label}</span>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
             </div>
 
             {/* Host & Port (Postgres, MySQL, Redis) */}

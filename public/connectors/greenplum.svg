@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-greenplum" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e2908" />
+      <stop offset="100%" stop-color="#0c1203" />
+    </linearGradient>
+    <linearGradient id="g-greenplum" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#82c91e" />
+      <stop offset="100%" stop-color="#b2f252" />
+    </linearGradient>
+    <linearGradient id="g-greenplum-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#82c91e" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#b2f252" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="glow-greenplum" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Apple macOS Squircle Body -->
+  <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#bg-greenplum)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+  
+  <!-- Subtle Top Glass Glare -->
+  <path d="M 5 26 C 5 14 14 5 26 5 L 74 5 C 86 5 95 14 95 26 L 95 44 C 70 48 30 48 5 44 Z" fill="rgba(255,255,255,0.06)" />
+  
+  <!-- Centered Connector Emblem -->
+  <g filter="url(#glow-greenplum)">
+    <circle cx="50" cy="55" r="26" fill="url(#g-greenplum)" />
+          <path d="M50 32 Q 52 18 64 22" stroke="#5c940d" stroke-width="4" fill="none" stroke-linecap="round" />
+          <path d="M50 28 Q 62 25 66 32" stroke="#82c91e" stroke-width="3" fill="none" stroke-linecap="round" />
+  </g>
+</svg>

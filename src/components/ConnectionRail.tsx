@@ -11,6 +11,7 @@ import {
   ContextMenuPosition,
 } from './ContextMenu';
 import { ConnectionProfile } from '../types';
+import { ConnectorIcon } from './ConnectorIcon';
 
 export const ConnectionRail: React.FC = () => {
   const {
@@ -33,21 +34,6 @@ export const ConnectionRail: React.FC = () => {
   const openConnections = openSessionIds
     .map((id) => connections.find((c) => c.id === id))
     .filter((c): c is ConnectionProfile => Boolean(c));
-
-  const getEngineEmoji = (engine: string) => {
-    switch (engine) {
-      case 'postgres':
-        return '🐘';
-      case 'mysql':
-        return '🐬';
-      case 'redis':
-        return '🟥';
-      case 'snowflake':
-        return '❄️';
-      default:
-        return '🗄️';
-    }
-  };
 
   const getEnvColor = (env: string): 'red' | 'amber' | 'green' => {
     if (env === 'prod') return 'red';
@@ -93,7 +79,7 @@ export const ConnectionRail: React.FC = () => {
 
                 {/* Engine Icon & Status LED */}
                 <div className="relative flex items-center justify-center mb-0.5">
-                  <span className="text-base select-none leading-none">{getEngineEmoji(conn.engine)}</span>
+                  <ConnectorIcon engine={conn.engine} size="sm" />
                   <span className="absolute -bottom-1 -right-1">
                     <HeartbeatDot color={envColor} size="xs" showWave={isActive} />
                   </span>

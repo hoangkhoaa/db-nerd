@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-cloudflare_d1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b1809" />
+      <stop offset="100%" stop-color="#110903" />
+    </linearGradient>
+    <linearGradient id="g-cloudflare_d1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f38020" />
+      <stop offset="100%" stop-color="#faad3f" />
+    </linearGradient>
+    <linearGradient id="g-cloudflare_d1-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f38020" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#faad3f" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="glow-cloudflare_d1" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Apple macOS Squircle Body -->
+  <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#bg-cloudflare_d1)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+  
+  <!-- Subtle Top Glass Glare -->
+  <path d="M 5 26 C 5 14 14 5 26 5 L 74 5 C 86 5 95 14 95 26 L 95 44 C 70 48 30 48 5 44 Z" fill="rgba(255,255,255,0.06)" />
+  
+  <!-- Centered Connector Emblem -->
+  <g filter="url(#glow-cloudflare_d1)">
+    <path d="M30 65 A 15 15 0 0 1 45 42 A 20 20 0 0 1 75 48 A 12 12 0 0 1 78 65 Z" fill="url(#g-cf)" />
+          <text x="50" y="60" font-family="-apple-system, system-ui, sans-serif" font-weight="900" font-size="16" fill="#ffffff" text-anchor="middle">D1</text>
+  </g>
+</svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-libsql" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#062322" />
+      <stop offset="100%" stop-color="#020e0e" />
+    </linearGradient>
+    <linearGradient id="g-libsql" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2ed3b7" />
+      <stop offset="100%" stop-color="#7ef7df" />
+    </linearGradient>
+    <linearGradient id="g-libsql-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2ed3b7" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#7ef7df" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="glow-libsql" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Apple macOS Squircle Body -->
+  <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#bg-libsql)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+  
+  <!-- Subtle Top Glass Glare -->
+  <path d="M 5 26 C 5 14 14 5 26 5 L 74 5 C 86 5 95 14 95 26 L 95 44 C 70 48 30 48 5 44 Z" fill="rgba(255,255,255,0.06)" />
+  
+  <!-- Centered Connector Emblem -->
+  <g filter="url(#glow-libsql)">
+    <path d="M25 70 Q 45 25 75 30 Q 60 55 50 65 Z" fill="url(#g-libsql)" />
+          <path d="M45 45 Q 65 35 78 20" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" filter="drop-shadow(0 0 6px #2ed3b7)" />
+          <circle cx="75" cy="30" r="4" fill="#ffffff" />
+  </g>
+</svg>

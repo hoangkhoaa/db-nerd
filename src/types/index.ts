@@ -1,4 +1,26 @@
-export type DatabaseEngine = 'postgres' | 'mysql' | 'redis' | 'snowflake';
+export type DatabaseEngine =
+  | 'postgres'
+  | 'mysql'
+  | 'redis'
+  | 'snowflake'
+  | 'sqlite'
+  | 'clickhouse'
+  | 'mongodb'
+  | 'duckdb'
+  | 'sqlserver'
+  | 'redshift'
+  | 'mariadb'
+  | 'cassandra'
+  | 'bigquery'
+  | 'dynamodb'
+  | 'elasticsearch'
+  | 'libsql'
+  | 'cloudflare_d1'
+  | 'oracle'
+  | 'cockroach'
+  | 'greenplum'
+  | 'vertica'
+  | (string & {});
 export type EnvironmentTag = 'prod' | 'staging' | 'local';
 export type ThemeMode = 'dark' | 'light' | 'auto';
 export type RowDensity = 'compact' | 'normal' | 'relaxed';
