@@ -483,6 +483,129 @@ CREATE INDEX idx_products_category ON public.products USING btree (category_id);
     foreignKeys: [],
     ddl: `CREATE TABLE public.store (id text PRIMARY KEY, name varchar(255) NOT NULL, created_at timestamptz DEFAULT now());`,
   },
+
+  stock_items: {
+    tableName: 'stock_items',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '14,240 rows',
+    totalSize: '4.8 MB (Data: 3.2 MB, Index: 1.6 MB)',
+    columns: [
+      { name: 'id', type: 'bigint', isNullable: false, isPrimaryKey: true, comment: 'Primary item ID' },
+      { name: 'sku', type: 'varchar(64)', isNullable: false, defaultValue: "''", comment: 'Unique stock keeping unit' },
+      { name: 'name', type: 'varchar(255)', isNullable: false, comment: 'Product item name' },
+      { name: 'category', type: 'varchar(64)', isNullable: false, comment: 'Inventory category' },
+      { name: 'current_stock', type: 'integer', isNullable: false, defaultValue: '0', comment: 'Available stock count in warehouse' },
+      { name: 'reorder_threshold', type: 'integer', isNullable: false, defaultValue: '20' },
+      { name: 'unit_price', type: 'numeric(10,2)', isNullable: false, defaultValue: '0.00' },
+      { name: 'warehouse_id', type: 'varchar(32)', isNullable: false },
+      { name: 'status', type: 'varchar(32)', isNullable: false, defaultValue: "'in_stock'" },
+      { name: 'updated_at', type: 'timestamptz', isNullable: false, defaultValue: 'now()' },
+    ],
+    indexes: [
+      { name: 'stock_items_pkey', columns: ['id'], type: 'BTREE', isUnique: true, isPrimary: true, size: '256 KB' },
+      { name: 'idx_stock_sku', columns: ['sku'], type: 'BTREE', isUnique: true, size: '256 KB' },
+      { name: 'idx_stock_category_status', columns: ['category', 'status'], type: 'BTREE', isUnique: false, size: '512 KB' },
+    ],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.stock_items (\n  id bigserial PRIMARY KEY,\n  sku varchar(64) UNIQUE NOT NULL,\n  name varchar(255) NOT NULL,\n  category varchar(64) NOT NULL,\n  current_stock integer NOT NULL DEFAULT 0,\n  reorder_threshold integer NOT NULL DEFAULT 20,\n  unit_price numeric(10,2) NOT NULL DEFAULT 0.00,\n  warehouse_id varchar(32) NOT NULL,\n  status varchar(32) NOT NULL DEFAULT 'in_stock',\n  updated_at timestamptz NOT NULL DEFAULT now()\n);`,
+  },
+
+  warehouses: {
+    tableName: 'warehouses',
+    schema: 'public',
+    engine: 'PostgreSQL 17.7',
+    rowCount: '12 rows',
+    totalSize: '64 KB (Data: 32 KB, Index: 32 KB)',
+    columns: [
+      { name: 'id', type: 'bigint', isNullable: false, isPrimaryKey: true },
+      { name: 'code', type: 'varchar(32)', isNullable: false, comment: 'Warehouse code (e.g. WH-SG-01)' },
+      { name: 'name', type: 'varchar(255)', isNullable: false },
+      { name: 'location', type: 'varchar(255)', isNullable: false },
+      { name: 'capacity', type: 'integer', isNullable: false, defaultValue: '10000' },
+      { name: 'active_pallets', type: 'integer', isNullable: false, defaultValue: '0' },
+      { name: 'manager', type: 'varchar(128)', isNullable: false },
+      { name: 'status', type: 'varchar(32)', isNullable: false, defaultValue: "'operational'" },
+    ],
+    indexes: [
+      { name: 'warehouses_pkey', columns: ['id'], type: 'BTREE', isUnique: true, isPrimary: true, size: '16 KB' },
+      { name: 'idx_warehouses_code', columns: ['code'], type: 'BTREE', isUnique: true, size: '16 KB' },
+    ],
+    foreignKeys: [],
+    ddl: `CREATE TABLE public.warehouses (\n  id bigserial PRIMARY KEY,\n  code varchar(32) UNIQUE NOT NULL,\n  name varchar(255) NOT NULL,\n  location varchar(255) NOT NULL,\n  capacity integer NOT NULL DEFAULT 10000,\n  active_pallets integer NOT NULL DEFAULT 0,\n  manager varchar(128) NOT NULL,\n  status varchar(32) NOT NULL DEFAULT 'operational'\n);`,
+  },
+};
+
+export const STOCK_ITEMS_ROWS: any[] = [
+  { id: 1, sku: 'WH-CPU-7800X', name: 'Ryzen 7 7800X3D Processor', category: 'Hardware', current_stock: 142, reorder_threshold: 30, unit_price: 389.99, warehouse_id: 'WH-SG-01', status: 'in_stock', updated_at: '2026-10-22 08:30:00', isDirty: false, dirtyFields: {}, rowState: 'clean' },
+  { id: 2, sku: 'WH-GPU-4090FE', name: 'GeForce RTX 4090 24GB Founders', category: 'Hardware', current_stock: 18, reorder_threshold: 20, unit_price: 1599.00, warehouse_id: 'WH-SG-01', status: 'low_stock', updated_at: '2026-10-22 09:15:00', isDirty: false, dirtyFields: {}, rowState: 'clean' },
+  { id: 3, sku: 'WH-RAM-DDR5-64', name: 'Corsair Vengeance 64GB DDR5-6000', category: 'Memory', current_stock: 310, reorder_threshold: 50, unit_price: 219.50, warehouse_id: 'WH-US-WEST', status: 'in_stock', updated_at: '2026-10-22 07:45:00', isDirty: false, dirtyFields: {}, rowState: 'clean' },
+  { id: 4, sku: 'WH-SSD-990PRO-2TB', name: 'Samsung 990 Pro 2TB NVMe PCIe 4.0', category: 'Storage', current_stock: 520, reorder_threshold: 80, unit_price: 169.99, warehouse_id: 'WH-US-WEST', status: 'in_stock', updated_at: '2026-10-22 08:00:00', isDirty: false, dirtyFields: {}, rowState: 'clean' },
+  { id: 5, sku: 'WH-PSU-1000W-GOLD', name: 'Seasonic Focus GX-1000 ATX 3.0', category: 'Power', current_stock: 85, reorder_threshold: 25, unit_price: 189.00, warehouse_id: 'WH-EU-CENTRAL', status: 'in_stock', updated_at: '2026-10-22 06:20:00', isDirty: false, dirtyFields: {}, rowState: 'clean' },
+  { id: 6, sku: 'WH-CASE-O11D-EVO', name: 'Lian Li O11 Dynamic EVO RGB', category: 'Chassis', current_stock: 44, reorder_threshold: 15, unit_price: 169.00, warehouse_id: 'WH-EU-CENTRAL', status: 'in_stock', updated_at: '2026-10-22 07:10:00', isDirty: false, dirtyFields: {}, rowState: 'clean' },
+];
+
+export const WAREHOUSES_ROWS: any[] = [
+  { id: 1, code: 'WH-SG-01', name: 'Singapore Changi Airhub Hub', location: 'Singapore', capacity: 50000, active_pallets: 38400, manager: 'Tan Wei Ming', status: 'operational', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 2, code: 'WH-US-WEST', name: 'California Silicon Valley Logistics', location: 'San Jose, USA', capacity: 120000, active_pallets: 98200, manager: 'Sarah Jenkins', status: 'operational', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 3, code: 'WH-EU-CENTRAL', name: 'Frankfurt Central Fulfillment', location: 'Frankfurt, Germany', capacity: 85000, active_pallets: 67300, manager: 'Hans Gruber', status: 'operational', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+  { id: 4, code: 'WH-JP-TOKYO', name: 'Tokyo Bay Distribution Center', location: 'Tokyo, Japan', capacity: 60000, active_pallets: 51200, manager: 'Kenji Sato', status: 'operational', dirtyFields: {}, isDirty: false, rowState: 'clean' },
+];
+
+export const getTablesForConnection = (connName: string, engine: string = 'postgres'): { name: string; count: string }[] => {
+  const lower = (connName || '').toLowerCase();
+  if (lower.includes('stock') || lower.includes('warehouse') || lower.includes('inventory')) {
+    return [
+      { name: 'stock_items', count: '14.2K' },
+      { name: 'warehouses', count: '12' },
+      { name: 'inventory_transfers', count: '84.6K' },
+      { name: 'stock_adjustments', count: '3.1K' },
+      { name: 'purchase_orders', count: '19.5K' },
+      { name: 'suppliers', count: '240' },
+      { name: 'stock_movements', count: '248K' },
+    ];
+  }
+  if (engine === 'snowflake' || lower.includes('analytics') || lower.includes('dwh')) {
+    return [
+      { name: 'fact_orders', count: '8.4M' },
+      { name: 'dim_customers', count: '450K' },
+      { name: 'dim_products', count: '12.8K' },
+      { name: 'daily_revenue', count: '1.8K' },
+      { name: 'raw_events', count: '42.1M' },
+      { name: 'staging_sync', count: '5' },
+    ];
+  }
+  if (engine === 'redis' || lower.includes('redis') || lower.includes('cache')) {
+    return [
+      { name: 'cache_keys', count: '1.2M' },
+      { name: 'session_store', count: '34.2K' },
+      { name: 'rate_limit_buckets', count: '180K' },
+      { name: 'pubsub_channels', count: '48' },
+      { name: 'leaderboards', count: '12' },
+    ];
+  }
+  if (engine === 'mysql' || lower.includes('mysql') || lower.includes('staging')) {
+    return [
+      { name: 'app_users', count: '52K' },
+      { name: 'accounts', count: '14K' },
+      { name: 'invoices', count: '120K' },
+      { name: 'payment_transactions', count: '340K' },
+      { name: 'coupons', count: '85' },
+      { name: 'settings', count: '32' },
+    ];
+  }
+  // Default postgres tables
+  return [
+    { name: 'assertion', count: '42' },
+    { name: 'authorization_model', count: '18' },
+    { name: 'changelog', count: '1.4K' },
+    { name: 'goose_db_version', count: '6' },
+    { name: 'store', count: '120' },
+    { name: 'tuple', count: '386K' },
+    { name: 'user_orders', count: '1.2M' },
+    { name: 'users', count: '124K' },
+    { name: 'products', count: '8.4K' },
+  ];
 };
 
 export const getTableSchema = (tableName: string): TableSchemaInfo => {

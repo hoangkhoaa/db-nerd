@@ -20,7 +20,7 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
-import { TABLE_SCHEMAS } from '../data/schemas';
+import { TABLE_SCHEMAS, getTablesForConnection } from '../data/schemas';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -63,18 +63,6 @@ const SAVED_QUERIES = [
   },
 ];
 
-const TABLES = [
-  { name: 'assertion', count: '42' },
-  { name: 'authorization_model', count: '18' },
-  { name: 'changelog', count: '1.4K' },
-  { name: 'goose_db_version', count: '6' },
-  { name: 'store', count: '120' },
-  { name: 'tuple', count: '386K' },
-  { name: 'user_orders', count: '1.2M' },
-  { name: 'users', count: '124K' },
-  { name: 'products', count: '8.4K' },
-];
-
 export const Sidebar = () => {
   const {
     selectedTable,
@@ -101,7 +89,9 @@ export const Sidebar = () => {
   const [queryContextPos, setQueryContextPos] = useState<ContextMenuPosition | null>(null);
   const [targetQuery, setTargetQuery] = useState<{ id: string; title?: string; sql: string } | null>(null);
 
-  const filteredTables = TABLES.filter((t) =>
+  const connectionTables = getTablesForConnection(activeConnection.name, activeConnection.engine);
+
+  const filteredTables = connectionTables.filter((t) =>
     t.name.toLowerCase().includes(searchFilter.toLowerCase())
   );
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from './stores/useAppStore';
 import { Titlebar } from './components/Titlebar';
+import { ConnectionRail } from './components/ConnectionRail';
 import { Sidebar } from './components/Sidebar';
 import { TableGrid } from './components/TableGrid';
 import { SqlEditor } from './components/SqlEditor';
@@ -212,9 +213,12 @@ export function App() {
         </div>
       </div>
 
-      {/* Workspace Split (Sidebar + Main) */}
+      {/* Workspace Split (Rail + Sidebar + Main) */}
       <div className="flex-1 flex overflow-hidden">
         
+        {/* Connection Switcher Rail (TablePlus style) */}
+        <ConnectionRail />
+
         {/* Sidebar (Collapsible with ⌘B) */}
         {isSidebarOpen && <Sidebar />}
 

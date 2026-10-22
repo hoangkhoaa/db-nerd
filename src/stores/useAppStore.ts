@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession } from '../types';
+import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS } from '../data/schemas';
 
 interface AppState {
   tabs: TabItem[];
@@ -24,6 +25,12 @@ interface AppState {
 
   appMode: 'sql' | 'redis' | 'snowflake';
   setAppMode: (mode: 'sql' | 'redis' | 'snowflake') => void;
+
+  // Multi-Connection Workspaces & Session Isolation
+  openSessionIds: string[];
+  sessions: Record<string, ConnectionSession>;
+  openSession: (connId: string) => void;
+  closeSession: (connId: string) => void;
 
   connectionGroups: ConnectionGroup[];
   connections: ConnectionProfile[];
@@ -199,12 +206,6 @@ const TUPLE_ROWS: GridRow[] = [
   { id: 6, store: '01M2Z8794GWTS8MMZKGD922YX9', object_type: 'connector_tool', object_id: '15453fec-4d45-4954-9dcc-923120562ec6_r2770', relation: 'organisation', _user: 'grantee:user:76adbfc3-ae54-469b', user_type: 'userset', ulid: '01M5FB8XBAJQ406DP5PVW247CR', inserted_at: '2026-10-21 13:48:00+00', condition_name: '', condition_context: null, dirtyFields: {}, isDirty: false, rowState: 'clean' },
 ];
 
-const DEFAULT_TABS: TabItem[] = [
-  { id: 'tab-sql-1', type: 'sql', title: 'SQL Query', canClose: true },
-  { id: 'tab-grid-tuple', type: 'grid', title: 'tuple', tableName: 'tuple', canClose: true },
-  { id: 'tab-grid-goose', type: 'grid', title: 'goose_db_version', tableName: 'goose_db_version', canClose: true },
-];
-
 const INITIAL_SQL_TAB_STATES: Record<string, SqlTabState> = {
   'tab-sql-1': {
     tabId: 'tab-sql-1',
@@ -235,38 +236,42 @@ const INITIAL_GROUPS: ConnectionGroup[] = [
 
 const INITIAL_CONNECTIONS: ConnectionProfile[] = [
   {
-    id: 'conn-1',
-    name: 'Notification Service',
+    id: 'conn-stock',
+    name: 'stock_movement',
     groupId: 'group-local',
     engine: 'postgres',
     env: 'local',
-    host: 'aurora-cluster.eu-west-1.rds.amazonaws.com',
+    host: 'localhost',
     port: 5432,
-    database: 'ada_openfga',
+    database: 'stock_movement',
+    databases: ['stock_movement', 'inventory_db', 'postgres'],
+    username: 'postgres',
+    password: '••••••••••••',
+    active: true,
+    latencyMs: 1.1,
+  },
+  {
+    id: 'conn-1',
+    name: 'postgres',
+    groupId: 'group-local',
+    engine: 'postgres',
+    env: 'local',
+    host: 'localhost',
+    port: 5432,
+    database: 'postgres',
     databases: [
-      'ecom_prod_db',
-      'ada',
+      'postgres',
       'ada_openfga',
+      'ecom_prod_db',
       'agl_login',
       'airbyte',
       'airflow',
-      'airflow_eks',
-      'amcflow',
-      'apsproddb',
-      'beacon',
-      'catalog_service',
-      'coder',
-      'committed_units_temp',
-      'commonproddb',
-      'controllership_duy_nguyen',
-      'postgres',
     ],
-    username: 'app_master',
+    username: 'postgres',
     password: '••••••••••••',
-    useSsh: true,
-    sshHost: 'ec2-bastion.corp.io',
-    active: true,
-    latencyMs: 1.8,
+    useSsh: false,
+    active: false,
+    latencyMs: 1.4,
   },
   {
     id: 'conn-2',
@@ -346,9 +351,106 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
   },
 ];
 
+const createDefaultSessionForConnection = (conn: ConnectionProfile): ConnectionSession => {
+  const isStock = conn.name.toLowerCase().includes('stock') || (conn.database && conn.database.toLowerCase().includes('stock'));
+  const defaultTable = isStock ? 'stock_items' : 'user_orders';
+  const defaultRows = isStock ? STOCK_ITEMS_ROWS : INITIAL_ROWS;
+
+  const defaultTabs: TabItem[] = isStock
+    ? [
+        { id: `tab-grid-${conn.id}-1`, type: 'grid', title: 'stock_items', tableName: 'stock_items', canClose: true },
+        { id: `tab-sql-${conn.id}-1`, type: 'sql', title: 'Stock Movement Query', canClose: true },
+      ]
+    : [
+        { id: `tab-sql-${conn.id}-1`, type: 'sql', title: 'SQL Query', canClose: true },
+        { id: `tab-grid-${conn.id}-1`, type: 'grid', title: 'tuple', tableName: 'tuple', canClose: true },
+        { id: `tab-grid-${conn.id}-2`, type: 'grid', title: 'goose_db_version', tableName: 'goose_db_version', canClose: true },
+      ];
+
+  const defaultSqlTabId = isStock ? defaultTabs[1].id : defaultTabs[0].id;
+  const defaultSqlState: SqlTabState = isStock
+    ? {
+        tabId: defaultSqlTabId,
+        query: `SELECT sku, name, current_stock, unit_price, status\nFROM stock_items\nWHERE current_stock < 50\nORDER BY current_stock ASC;`,
+        results: [
+          { sku: 'WH-GPU-4090FE', name: 'GeForce RTX 4090 24GB Founders', current_stock: 18, unit_price: 1599.00, status: 'low_stock' },
+          { sku: 'WH-CASE-O11D-EVO', name: 'Lian Li O11 Dynamic EVO RGB', current_stock: 44, unit_price: 169.00, status: 'in_stock' },
+        ],
+        columns: ['sku', 'name', 'current_stock', 'unit_price', 'status'],
+        durationMs: 1.1,
+        rowsCount: 2,
+        executedAt: 'Just now',
+        isExecuting: false,
+      }
+    : {
+        tabId: defaultSqlTabId,
+        query: `SELECT u.id, u.email, COUNT(o.id) AS total_orders, SUM(o.total_amount) AS total_spend\nFROM users u\nLEFT JOIN user_orders o ON o.user_id = u.id\nWHERE u.status = 'active'\nGROUP BY u.id, u.email\nORDER BY total_spend DESC LIMIT 50;`,
+        results: [
+          { id: 501, email: 'alex.turner@corp.io', total_orders: 14, total_spend: 2030.0 },
+          { id: 502, email: 'sarah.connor@cyberdyne.net', total_orders: 29, total_spend: 4210.5 },
+          { id: 503, email: 'khoa.nguyen@ai.lab', total_orders: 102, total_spend: 12450.0 },
+        ],
+        columns: ['id', 'email', 'total_orders', 'total_spend'],
+        durationMs: 1.4,
+        rowsCount: 3,
+        executedAt: 'Just now',
+        isExecuting: false,
+      };
+
+  return {
+    connectionId: conn.id,
+    tabs: defaultTabs,
+    activeTabId: defaultTabs[0].id,
+    sqlTabStates: { [defaultSqlTabId]: defaultSqlState },
+    selectedTable: defaultTable,
+    tableViewMode: 'data',
+    isFilterBarOpen: false,
+    filterWhereText: '',
+    filterOrderByText: '',
+    rows: JSON.parse(JSON.stringify(defaultRows)),
+    originalRows: JSON.parse(JSON.stringify(defaultRows)),
+    isTransactionOpen: false,
+    pendingEditsCount: 0,
+    history: [],
+    selectedRowData: null,
+    selectedStructureColumn: null,
+    structureSearchColumn: '',
+  };
+};
+
+const INITIAL_SESSIONS: Record<string, ConnectionSession> = {
+  'conn-stock': createDefaultSessionForConnection(INITIAL_CONNECTIONS[0]),
+  'conn-1': createDefaultSessionForConnection(INITIAL_CONNECTIONS[1]),
+};
+
 export const useAppStore = create<AppState>((set, get) => ({
-  tabs: DEFAULT_TABS,
-  activeTabId: 'tab-grid-tuple',
+  openSessionIds: ['conn-stock', 'conn-1'],
+  sessions: INITIAL_SESSIONS,
+
+  openSession: (connId) => {
+    const { openSessionIds, switchActiveConnection } = get();
+    if (!openSessionIds.includes(connId)) {
+      set((state) => ({ openSessionIds: [...state.openSessionIds, connId] }));
+    }
+    switchActiveConnection(connId);
+  },
+
+  closeSession: (connId) => {
+    const { openSessionIds, activeConnection, switchActiveConnection, showToast } = get();
+    const nextOpen = openSessionIds.filter((id) => id !== connId);
+    if (nextOpen.length === 0) {
+      showToast('⚠️ At least one connection must remain open');
+      return;
+    }
+    if (activeConnection.id === connId) {
+      switchActiveConnection(nextOpen[0]);
+    }
+    set({ openSessionIds: nextOpen });
+    showToast('Session disconnected');
+  },
+
+  tabs: INITIAL_SESSIONS['conn-stock'].tabs,
+  activeTabId: INITIAL_SESSIONS['conn-stock'].activeTabId,
   activeTab: 'grid',
 
   setActiveTabId: (id) => {
@@ -791,16 +893,83 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   switchActiveConnection: (id) => {
-    const { connections } = get();
-    const conn = connections.find((c) => c.id === id);
-    if (!conn) return;
-    const nextEngine = conn.engine;
+    const state = get();
+    if (state.activeConnection?.id === id) return;
+
+    const targetConn = state.connections.find((c) => c.id === id);
+    if (!targetConn) return;
+
+    // 1. Snapshot current active session state
+    const currentId = state.activeConnection?.id;
+    const currentSession: ConnectionSession = {
+      connectionId: currentId,
+      tabs: state.tabs,
+      activeTabId: state.activeTabId,
+      sqlTabStates: state.sqlTabStates,
+      selectedTable: state.selectedTable,
+      tableViewMode: state.tableViewMode,
+      isFilterBarOpen: state.isFilterBarOpen,
+      filterWhereText: state.filterWhereText,
+      filterOrderByText: state.filterOrderByText,
+      rows: state.rows,
+      originalRows: state.originalRows,
+      isTransactionOpen: state.isTransactionOpen,
+      pendingEditsCount: state.pendingEditsCount,
+      history: state.history,
+      selectedRowData: state.selectedRowData,
+      selectedStructureColumn: state.selectedStructureColumn,
+      structureSearchColumn: state.structureSearchColumn,
+    };
+
+    const nextSessions = {
+      ...state.sessions,
+      [currentId]: currentSession,
+    };
+
+    // 2. Ensure target connection is in openSessionIds
+    const nextOpenSessionIds = state.openSessionIds.includes(id)
+      ? state.openSessionIds
+      : [...state.openSessionIds, id];
+
+    // 3. Load or create target session
+    let targetSession = nextSessions[id];
+    if (!targetSession) {
+      targetSession = createDefaultSessionForConnection(targetConn);
+      nextSessions[id] = targetSession;
+    }
+
+    const nextEngine = targetConn.engine;
     const nextAppMode = nextEngine === 'redis' ? 'redis' : nextEngine === 'snowflake' ? 'snowflake' : 'sql';
-    set((state) => ({
+
+    // 4. Update store with fully isolated session state
+    set({
+      openSessionIds: nextOpenSessionIds,
+      sessions: nextSessions,
+      activeConnection: { ...targetConn, active: true },
       connections: state.connections.map((c) => ({ ...c, active: c.id === id })),
-      activeConnection: { ...conn, active: true },
       appMode: nextAppMode,
-    }));
+
+      // Restored isolated workspace session
+      tabs: targetSession.tabs,
+      activeTabId: targetSession.activeTabId,
+      activeTab: targetSession.tabs.find((t) => t.id === targetSession.activeTabId)?.type || 'grid',
+      sqlTabStates: targetSession.sqlTabStates,
+      selectedTable: targetSession.selectedTable,
+      tableViewMode: targetSession.tableViewMode,
+      isFilterBarOpen: targetSession.isFilterBarOpen,
+      filterWhereText: targetSession.filterWhereText,
+      filterOrderByText: targetSession.filterOrderByText,
+      rows: targetSession.rows,
+      originalRows: targetSession.originalRows,
+      isTransactionOpen: targetSession.isTransactionOpen,
+      pendingEditsCount: targetSession.pendingEditsCount,
+      history: targetSession.history,
+      selectedRowData: targetSession.selectedRowData,
+      selectedStructureColumn: targetSession.selectedStructureColumn,
+      structureSearchColumn: targetSession.structureSearchColumn,
+    });
+
+    state.showToast(`⚡ Switched to "${targetConn.name}"`);
   },
 
   isDatabaseModalOpen: false,
@@ -851,17 +1020,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSqlDiffModalOpen: false,
   setSqlDiffModalOpen: (open) => set({ isSqlDiffModalOpen: open }),
 
-  isTransactionOpen: true,
+  isTransactionOpen: false,
   setTransactionOpen: (open) => set({ isTransactionOpen: open }),
 
-  pendingEditsCount: 1,
+  pendingEditsCount: 0,
   resetPending: () => set({ pendingEditsCount: 0, isTransactionOpen: false }),
 
-  selectedTable: 'tuple',
+  selectedTable: 'stock_items',
   setSelectedTable: (tbl) => {
     let targetRows = INITIAL_ROWS;
     if (tbl === 'goose_db_version') targetRows = GOOSE_ROWS;
     else if (tbl === 'tuple') targetRows = TUPLE_ROWS;
+    else if (tbl === 'stock_items') targetRows = STOCK_ITEMS_ROWS;
+    else if (tbl === 'warehouses') targetRows = WAREHOUSES_ROWS;
     set({
       selectedTable: tbl,
       selectedRowData: null,

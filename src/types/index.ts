@@ -137,3 +137,23 @@ export interface TableSchemaInfo {
   foreignKeys: TableForeignKeyDefinition[];
   ddl: string;
 }
+
+export interface ConnectionSession {
+  connectionId: string;
+  tabs: TabItem[];
+  activeTabId: string;
+  sqlTabStates: Record<string, SqlTabState>;
+  selectedTable: string;
+  tableViewMode: 'data' | 'structure' | 'index';
+  isFilterBarOpen: boolean;
+  filterWhereText: string;
+  filterOrderByText: string;
+  rows: GridRow[];
+  originalRows: GridRow[];
+  isTransactionOpen: boolean;
+  pendingEditsCount: number;
+  history: QueryHistoryItem[];
+  selectedRowData: any | null;
+  selectedStructureColumn: any | null;
+  structureSearchColumn: string;
+}
