@@ -1,9 +1,13 @@
 [package]
-name = "db-nerd"
+name = "dbnerd"
 version = "0.1.0"
 description = "A fast, lightweight, native-feel database client for developers"
 authors = ["Khoa Nguyen"]
 edition = "2021"
+
+[[bin]]
+name = "DBNerd"
+path = "src/main.rs"
 
 [lib]
 name = "db_nerd_lib"

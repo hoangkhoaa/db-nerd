@@ -750,7 +750,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "db-nerd"
+name = "dbnerd"
 version = "0.1.0"
 dependencies = [
  "anyhow",

@@ -70,6 +70,7 @@ export const Sidebar = () => {
     setSelectedTable,
     openTableGridTab,
     openTableSchemaTab,
+    openAllTableStatsTab,
     openNewQueryTab,
     activeConnection,
     setDatabaseModalOpen,
@@ -217,18 +218,32 @@ export const Sidebar = () => {
             {/* Tables Group */}
             <div>
               <div
-                onClick={() => setIsTablesOpen(!isTablesOpen)}
-                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-slate-100 cursor-pointer rounded hover:bg-slate-900/50 transition-colors"
+                onClick={() => {
+                  openAllTableStatsTab();
+                }}
+                className="flex items-center justify-between px-1.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-slate-100 cursor-pointer rounded hover:bg-slate-900/50 transition-colors group"
+                title="Click to view All Tables Statistics (Tables.public)"
               >
                 <div className="flex items-center space-x-1">
-                  <ChevronRight
-                    className={`w-3.5 h-3.5 transition-transform duration-150 ${
-                      isTablesOpen ? 'rotate-90' : 'rotate-0'
-                    }`}
-                  />
-                  <span>Tables</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsTablesOpen(!isTablesOpen);
+                    }}
+                    className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                    title={isTablesOpen ? "Collapse tables list" : "Expand tables list"}
+                  >
+                    <ChevronRight
+                      className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                        isTablesOpen ? 'rotate-90' : 'rotate-0'
+                      }`}
+                    />
+                  </button>
+                  <span className="group-hover:text-sky-300 transition-colors">Tables</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono pr-1">{filteredTables.length}</span>
+                <span className="text-[10px] text-slate-500 font-mono pr-1 group-hover:text-slate-400 transition-colors">
+                  {filteredTables.length}
+                </span>
               </div>
 
               {/* Table List (TablePlus Style) */}

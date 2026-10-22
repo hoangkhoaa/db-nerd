@@ -10,6 +10,7 @@ interface AppState {
   openNewQueryTab: (initialSql?: string) => void;
   openTableGridTab: (tableName: string) => void;
   openTableSchemaTab: (tableName: string) => void;
+  openAllTableStatsTab: () => void;
   closeTab: (id: string) => void;
   closeOtherTabs: (id: string) => void;
   closeTabsToRight: (id: string) => void;
@@ -803,6 +804,34 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().setSelectedTable(tableName);
     get().openTableGridTab(tableName);
     set({ tableViewMode: 'structure' });
+  },
+
+  openAllTableStatsTab: () => {
+    const { tabs, activeConnection } = get();
+    const schemaName = activeConnection.engine === 'postgres' ? 'public' : activeConnection.database || 'public';
+    const tabTitle = `Tables.${schemaName}`;
+    const tabId = `tab-tables-${activeConnection.id}`;
+
+    const existing = tabs.find((t) => t.id === tabId || (t.type === 'stats' && t.title.startsWith('Tables.')));
+    if (existing) {
+      set({
+        activeTabId: existing.id,
+        activeTab: 'stats',
+      });
+    } else {
+      const newTab: TabItem = {
+        id: tabId,
+        type: 'stats',
+        title: tabTitle,
+        tableName: '__all_tables__',
+        canClose: true,
+      };
+      set({
+        tabs: [...tabs, newTab],
+        activeTabId: newTab.id,
+        activeTab: 'stats',
+      });
+    }
   },
 
   closeTab: (id) => {

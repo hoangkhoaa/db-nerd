@@ -13,6 +13,7 @@ import { SqlDiffModal } from './components/SqlDiffModal';
 import { SettingsModal } from './components/SettingsModal';
 import { TableSchemaView } from './components/TableSchemaView';
 import { DefaultWorkspaceView } from './components/DefaultWorkspaceView';
+import { AllTableStatsView } from './components/AllTableStatsView';
 import { RightInspector } from './components/RightInspector';
 import { HeartbeatDot } from './components/HeartbeatDot';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, Columns2, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy } from 'lucide-react';
@@ -305,7 +306,13 @@ export function App() {
                 let icon = <Table className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />;
                 if (tab.type === 'schema') icon = <Columns className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />;
                 if (tab.type === 'sql') icon = <Terminal className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />;
-                if (tab.type === 'stats') icon = <Activity className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
+                if (tab.type === 'stats') {
+                  if (tab.tableName === '__all_tables__' || tab.title.startsWith('Tables.')) {
+                    icon = <Table className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />;
+                  } else {
+                    icon = <Activity className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
+                  }
+                }
 
                 return (
                   <div
@@ -407,7 +414,13 @@ export function App() {
                 {currentTabType === 'grid' && <TableGrid key={activeTabObj?.tableName || 'grid'} />}
                 {currentTabType === 'schema' && <TableSchemaView key={activeTabObj?.tableName || 'schema'} />}
                 {currentTabType === 'sql' && <SqlEditor key={activeTabId} />}
-                {currentTabType === 'stats' && <Observability />}
+                {currentTabType === 'stats' && (
+                  activeTabObj?.tableName === '__all_tables__' || activeTabObj?.title.startsWith('Tables.') ? (
+                    <AllTableStatsView key={activeTabId} />
+                  ) : (
+                    <Observability key={activeTabId} />
+                  )
+                )}
               </>
             )}
           </div>
