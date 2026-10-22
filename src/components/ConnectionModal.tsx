@@ -508,7 +508,7 @@ export const ConnectionModal = () => {
                     setIsImportingUrl(false);
                   }}
                   className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
-                    isCreatingGroup ? 'bg-indigo-500/30 text-indigo-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                    isCreatingGroup ? 'bg-indigo-100 dark:bg-indigo-500/30 text-indigo-800 dark:text-indigo-300' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                   title="Create New Group (Folder)"
                 >
@@ -522,7 +522,7 @@ export const ConnectionModal = () => {
                     setIsCreatingGroup(false);
                   }}
                   className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
-                    isImportingUrl ? 'bg-amber-500/30 text-amber-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                    isImportingUrl ? 'bg-amber-100 dark:bg-amber-500/30 text-amber-800 dark:text-amber-300' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                   title="Import from Connection URL (TablePlus / Postgres / MySQL)"
                 >
@@ -537,7 +537,7 @@ export const ConnectionModal = () => {
                     setIsCreatingGroup(false);
                   }}
                   className={`p-1 rounded transition-all duration-150 active:scale-95 cursor-pointer ${
-                    isCreatingNew ? 'bg-sky-500/30 text-sky-300' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                    isCreatingNew ? 'bg-sky-100 dark:bg-sky-500/30 text-sky-800 dark:text-sky-300' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                   title="Create New Connection"
                 >
@@ -553,16 +553,16 @@ export const ConnectionModal = () => {
               }`}
             >
               <div className="overflow-hidden">
-                <div className="p-3 bg-slate-900 border border-amber-500/40 rounded-xl space-y-2 text-xs shadow-lg mb-2">
+                <div className="p-3 bg-amber-50/80 dark:bg-slate-900 border border-amber-200 dark:border-amber-500/40 rounded-xl space-y-2 text-xs shadow-md mb-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-amber-300 flex items-center space-x-1">
+                    <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center space-x-1">
                       <Link className="w-3.5 h-3.5" />
                       <span>Import Connection URL</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsImportingUrl(false)}
-                      className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -573,14 +573,14 @@ export const ConnectionModal = () => {
                       value={importUrlInput}
                       onChange={(e) => setImportUrlInput(e.target.value)}
                       rows={3}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 placeholder-slate-500 font-mono text-[10px] focus:outline-none focus:border-amber-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 font-mono text-[10px] focus:outline-none focus:border-amber-500 shadow-2xs"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleImportFromUrl}
                     disabled={!importUrlInput.trim()}
-                    className="w-full py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                    className="w-full py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shadow-2xs"
                   >
                     Parse & Import Profile
                   </button>
@@ -595,13 +595,13 @@ export const ConnectionModal = () => {
               }`}
             >
               <div className="overflow-hidden">
-                <form onSubmit={handleCreateGroup} className="p-3 bg-slate-900 border border-indigo-500/40 rounded-xl space-y-2 text-xs shadow-lg mb-2">
+                <form onSubmit={handleCreateGroup} className="p-3 bg-indigo-50/80 dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/40 rounded-xl space-y-2 text-xs shadow-md mb-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-indigo-300">New Group</span>
+                    <span className="font-bold text-indigo-800 dark:text-indigo-300">New Group</span>
                     <button
                       type="button"
                       onClick={() => setIsCreatingGroup(false)}
-                      className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -613,15 +613,15 @@ export const ConnectionModal = () => {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       autoFocus
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500 shadow-2xs font-sans"
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400">Environment Tag:</span>
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Environment Tag:</span>
                     <select
                       value={groupTag}
                       onChange={(e) => setGroupTag(e.target.value as any)}
-                      className="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-200 cursor-pointer"
+                      className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-800 dark:text-slate-200 cursor-pointer shadow-2xs"
                     >
                       <option value="PROD">PROD</option>
                       <option value="QA">QA</option>
@@ -630,7 +630,7 @@ export const ConnectionModal = () => {
                     </select>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400">Color:</span>
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Color:</span>
                     <div className="flex items-center space-x-1.5">
                       {['rose', 'amber', 'emerald', 'sky', 'purple'].map((col) => (
                         <button
@@ -885,20 +885,20 @@ export const ConnectionModal = () => {
           <div className="flex-1 p-5 overflow-y-auto space-y-4 text-xs select-text">
             
             {/* Header info */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-bold text-slate-100">
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                   {isCreatingNew ? '✨ Create New Connection' : `Editing: ${formData.name}`}
                 </span>
                 {!isCreatingNew && selectedConnId && (
-                  <span className="text-[10px] px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-400 font-mono">
+                  <span className="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 font-mono">
                     ID: {selectedConnId}
                   </span>
                 )}
               </div>
 
               {isCreatingNew && (
-                <span className="text-[10px] px-2 py-0.5 bg-sky-500/15 border border-sky-500/30 text-sky-300 rounded font-semibold animate-pulse">
+                <span className="text-[10px] px-2 py-0.5 bg-sky-50 dark:bg-sky-500/15 border border-sky-200 dark:border-sky-500/30 text-sky-700 dark:text-sky-300 rounded font-semibold animate-pulse">
                   Drafting
                 </span>
               )}
@@ -907,7 +907,7 @@ export const ConnectionModal = () => {
             {/* Connection Name & Group Selection */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
-                <label className="block text-slate-400 font-bold mb-1 uppercase text-[10px] tracking-wider">
+                <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1 uppercase text-[10px] tracking-wider">
                   Connection Name
                 </label>
                 <input
@@ -915,18 +915,18 @@ export const ConnectionModal = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. prod-replica-db"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-bold mb-1 uppercase text-[10px] tracking-wider">
+                <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1 uppercase text-[10px] tracking-wider">
                   Target Group
                 </label>
                 <select
                   value={formData.groupId}
                   onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                 >
                   {connectionGroups.map((g) => (
                     <option key={g.id} value={g.id}>
@@ -940,16 +940,16 @@ export const ConnectionModal = () => {
             {/* Database Engine Selection (TablePlus Full 22 Connectors Catalog) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-slate-400 font-bold uppercase text-[10px] tracking-wider flex items-center space-x-1.5">
+                <label className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider flex items-center space-x-1.5">
                   <span>Database Engine</span>
-                  <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 text-sky-400 rounded-full font-mono border border-slate-700/80">
+                  <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-sky-700 dark:text-sky-400 rounded-full font-mono border border-slate-300 dark:border-slate-700/80">
                     22 Connectors
                   </span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowAllConnectors(!showAllConnectors)}
-                  className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 transition-colors flex items-center space-x-1 cursor-pointer"
+                  className="text-[11px] font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors flex items-center space-x-1 cursor-pointer"
                 >
                   <span>{showAllConnectors ? 'Hide Connector Grid' : 'Browse All 22 Connectors'}</span>
                   <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${showAllConnectors ? 'rotate-90' : ''}`} />
@@ -958,20 +958,20 @@ export const ConnectionModal = () => {
 
               {/* Full 22 TablePlus Connectors Grid */}
               {showAllConnectors ? (
-                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-150">
+                <div className="bg-slate-50/80 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-150 shadow-2xs">
                   <div className="flex items-center justify-between space-x-2">
                     <input
                       type="text"
                       value={connectorSearch}
                       onChange={(e) => setConnectorSearch(e.target.value)}
                       placeholder="Filter 22 connectors (PostgreSQL, ClickHouse, DuckDB, Redis, etc.)..."
-                      className="flex-1 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 font-medium"
+                      className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 font-medium shadow-2xs"
                     />
                     {connectorSearch && (
                       <button
                         type="button"
                         onClick={() => setConnectorSearch('')}
-                        className="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-1 rounded bg-slate-800 cursor-pointer"
+                        className="text-[11px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 cursor-pointer"
                       >
                         Clear
                       </button>
@@ -992,13 +992,13 @@ export const ConnectionModal = () => {
                           onClick={() => handleEngineChange(item.id)}
                           className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-150 cursor-pointer group/card relative ${
                             isSelected
-                              ? 'bg-sky-500/20 border-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.25)] text-sky-200 ring-1 ring-sky-400/50'
-                              : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/60 text-slate-300'
+                              ? 'bg-sky-50 dark:bg-sky-500/20 border-sky-400 shadow-2xs text-sky-800 dark:text-sky-200 ring-1 ring-sky-400/50'
+                              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 shadow-2xs'
                           }`}
                         >
                           <ConnectorIcon engine={item.id} size="md" className="group-hover/card:scale-105 transition-transform" />
                           <span className="text-[10px] font-semibold mt-1.5 line-clamp-1 leading-tight">{item.label}</span>
-                          <span className="text-[9px] text-slate-500 font-mono scale-90">{item.tag}</span>
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono scale-90">{item.tag}</span>
                         </button>
                       );
                     })}
@@ -1029,8 +1029,8 @@ export const ConnectionModal = () => {
                           onClick={() => handleEngineChange(key)}
                           className={`py-2 px-2 rounded-xl border text-xs font-bold transition-all duration-150 flex items-center space-x-2 active:scale-95 cursor-pointer ${
                             isSelected
-                              ? 'bg-sky-500/20 text-sky-200 border-sky-500/60 shadow-sm ring-1 ring-sky-400/30'
-                              : 'bg-slate-800/40 text-slate-300 border-slate-700 hover:border-slate-600'
+                              ? 'bg-sky-50 dark:bg-sky-500/20 text-sky-800 dark:text-sky-200 border-sky-400 dark:border-sky-500/60 shadow-2xs ring-1 ring-sky-400/30'
+                              : 'bg-white dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs'
                           }`}
                         >
                           <ConnectorIcon engine={key} size="xs" />
@@ -1047,22 +1047,22 @@ export const ConnectionModal = () => {
             {formData.engine !== 'snowflake' && (
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-slate-400 font-semibold mb-1">Host / Server Address</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Host / Server Address</label>
                   <input
                     type="text"
                     value={formData.host}
                     onChange={(e) => setFormData({ ...formData, host: e.target.value })}
                     placeholder="localhost or db.cloud.internal"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Port</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Port</label>
                   <input
                     type="number"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value, 10) || 5432 })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                   />
                 </div>
               </div>
@@ -1070,7 +1070,7 @@ export const ConnectionModal = () => {
 
             {/* Database / Keyspace Name */}
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">
+              <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
                 {formData.engine === 'redis' ? 'Database Index (0-15)' : 'Database / Schema'}
               </label>
               <input
@@ -1078,32 +1078,32 @@ export const ConnectionModal = () => {
                 value={formData.database}
                 onChange={(e) => setFormData({ ...formData, database: e.target.value })}
                 placeholder={formData.engine === 'redis' ? '0' : 'ecom_prod_db'}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
               />
             </div>
 
             {/* Snowflake Specific Fields */}
             {formData.engine === 'snowflake' && (
-              <div className="space-y-3 bg-sky-950/20 border border-sky-500/30 p-3 rounded-xl animate-in fade-in duration-200">
+              <div className="space-y-3 bg-sky-50/70 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-500/30 p-3 rounded-xl animate-in fade-in duration-200 shadow-2xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sky-300 font-semibold mb-1">Account Identifier</label>
+                    <label className="block text-sky-800 dark:text-sky-300 font-semibold mb-1">Account Identifier</label>
                     <input
                       type="text"
                       value={formData.accountIdentifier || ''}
                       onChange={(e) => setFormData({ ...formData, accountIdentifier: e.target.value })}
                       placeholder="e.g. xy12345.us-east-1"
-                      className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-200"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-800 dark:text-slate-200 shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-sky-300 font-semibold mb-1">Warehouse</label>
+                    <label className="block text-sky-800 dark:text-sky-300 font-semibold mb-1">Warehouse</label>
                     <input
                       type="text"
                       value={formData.warehouse || ''}
                       onChange={(e) => setFormData({ ...formData, warehouse: e.target.value })}
                       placeholder="e.g. COMPUTE_WH"
-                      className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-200"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-800 dark:text-slate-200 shadow-2xs"
                     />
                   </div>
                 </div>
@@ -1113,37 +1113,37 @@ export const ConnectionModal = () => {
             {/* User & Password */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Username / Role</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Username / Role</label>
                 <input
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   placeholder="app_master"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Password</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Password</label>
                 <input
                   type="password"
                   value={formData.password || ''}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="••••••••••••"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                 />
               </div>
             </div>
 
             {/* Smooth Collapsible SSH Bastion Tunnel Option */}
-            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-              <label className="flex items-center space-x-2 text-slate-200 cursor-pointer font-semibold">
+            <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 shadow-2xs">
+              <label className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 cursor-pointer font-semibold">
                 <input
                   type="checkbox"
                   checked={formData.useSsh || false}
                   onChange={(e) => setFormData({ ...formData, useSsh: e.target.checked })}
-                  className="rounded border-slate-700 bg-slate-900 text-sky-500"
+                  className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sky-500"
                 />
-                <Shield className="w-3.5 h-3.5 text-sky-400" />
+                <Shield className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 <span>Connect via SSH Bastion Tunnel (Zero-Trust)</span>
               </label>
 
@@ -1155,22 +1155,22 @@ export const ConnectionModal = () => {
                 <div className="overflow-hidden">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-slate-400 text-[10px] font-semibold mb-1">SSH Bastion Host</label>
+                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">SSH Bastion Host</label>
                       <input
                         type="text"
                         value={formData.sshHost || ''}
                         onChange={(e) => setFormData({ ...formData, sshHost: e.target.value })}
                         placeholder="bastion.internal.cloud"
-                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 font-mono text-xs"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-400 text-[10px] font-semibold mb-1">SSH Port / Protocol</label>
+                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">SSH Port / Protocol</label>
                       <input
                         type="text"
                         defaultValue="22 (Standard SSH Key Auth)"
                         disabled
-                        className="w-full bg-slate-900/50 border border-slate-800 rounded px-2 py-1 text-slate-500 font-mono text-xs"
+                        className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-slate-500 font-mono text-xs"
                       />
                     </div>
                   </div>
