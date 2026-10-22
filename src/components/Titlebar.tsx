@@ -102,14 +102,14 @@ export const Titlebar = () => {
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="drag-region h-11 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 pl-20 flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
+      className="drag-region h-10 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 pl-[78px] flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
     >
       {/* Left: Window Controls spacer + Sidebar Toggle + Connection Selector + SQL Capsule + Filter Toggle */}
-      <div className="flex items-center space-x-1.5 pointer-events-auto">
+      <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
         {/* Sidebar Toggle */}
         <button
           onClick={toggleSidebar}
-          className={`no-drag p-1.5 rounded-lg border transition ${
+          className={`no-drag h-7 w-7 flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
             isSidebarOpen
               ? 'bg-slate-800 text-slate-100 border-slate-700/80 shadow-xs'
               : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
@@ -122,7 +122,7 @@ export const Titlebar = () => {
         {/* Connection Switcher Pill */}
         <button
           onClick={() => setConnectionModalOpen(true)}
-          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 rounded-lg border border-slate-700/80 text-xs font-semibold text-slate-200 hover:text-white transition shadow-xs group active:scale-[0.98]"
+          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-slate-900/90 hover:bg-slate-800 rounded-lg border border-slate-700/80 text-xs font-semibold text-slate-200 hover:text-white transition shadow-xs group active:scale-[0.98] shrink-0 leading-none cursor-pointer"
           title="Connections (⌘K)"
         >
           <HeartbeatDot 
@@ -130,24 +130,24 @@ export const Titlebar = () => {
             size="xs" 
             showWave={false} 
           />
-          <Database className="w-3 h-3 text-sky-400" />
-          <span className="font-mono text-[11px] font-bold truncate max-w-[105px]">{activeConnection.name}</span>
+          <Database className="w-3 h-3 text-sky-400 shrink-0" />
+          <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none inline-block">{activeConnection.name}</span>
         </button>
 
         {/* SQL Query Console Capsule (TablePlus Style) */}
         <button
           onClick={() => openNewQueryTab()}
-          className="no-drag flex items-center space-x-1.5 px-2.5 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-xs font-bold text-sky-300 hover:text-white transition group shadow-xs active:scale-95"
+          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-lg text-xs font-bold text-sky-300 hover:text-white transition group shadow-xs active:scale-95 shrink-0 leading-none cursor-pointer"
           title="SQL Query (⌘E / ⌘T)"
         >
-          <Terminal className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" />
-          <span className="font-mono text-[11px]">SQL</span>
+          <Terminal className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
+          <span className="font-mono text-[11px] leading-none">SQL</span>
         </button>
 
         {/* Inline Filter Bar Toggle */}
         <button
           onClick={toggleFilterBar}
-          className={`no-drag p-1.5 rounded-lg border transition ${
+          className={`no-drag h-7 w-7 flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
             isFilterBarOpen
               ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs'
               : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:bg-slate-800'
@@ -159,10 +159,10 @@ export const Titlebar = () => {
       </div>
 
       {/* Center: Environment Safety Pill Banner (TablePlus iconic layout) */}
-      <div className="flex items-center space-x-2 pointer-events-auto">
+      <div className="flex items-center justify-center pointer-events-auto min-w-0 max-w-xl mx-2">
         <button
           onClick={() => setDatabaseModalOpen(true)}
-          className={`no-drag flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono font-bold transition shadow-sm active:scale-95 ${
+          className={`no-drag h-7 px-3.5 rounded-full text-xs font-mono font-bold transition shadow-sm active:scale-95 flex items-center space-x-2 whitespace-nowrap leading-none shrink-0 cursor-pointer ${
             activeConnection.env === 'prod'
               ? 'bg-rose-600/90 hover:bg-rose-600 text-white shadow-rose-950/40 border border-rose-400/40'
               : activeConnection.env === 'staging'
@@ -171,30 +171,30 @@ export const Titlebar = () => {
           }`}
           title="Click to Switch Database (⌘O)"
         >
-          <span>{engineLabel}</span>
-          <span className="opacity-60">:</span>
-          <span>TLSv1.3</span>
-          <span className="opacity-60">:</span>
-          <span>{activeConnection.name}</span>
-          <span className="opacity-60">:</span>
-          <span className="underline decoration-white/40 underline-offset-2">{activeConnection.database || 'postgres'}</span>
-          <span className="opacity-60">:</span>
-          <span>public.{selectedTable}</span>
+          <span className="shrink-0 leading-none">{engineLabel}</span>
+          <span className="opacity-60 shrink-0 leading-none">:</span>
+          <span className="shrink-0 leading-none">TLSv1.3</span>
+          <span className="opacity-60 shrink-0 leading-none">:</span>
+          <span className="truncate max-w-[130px] leading-none">{activeConnection.name}</span>
+          <span className="opacity-60 shrink-0 leading-none">:</span>
+          <span className="underline decoration-white/40 underline-offset-2 truncate max-w-[110px] leading-none">{activeConnection.database || 'postgres'}</span>
+          <span className="opacity-60 shrink-0 leading-none">:</span>
+          <span className="truncate max-w-[130px] leading-none">public.{selectedTable}</span>
         </button>
       </div>
 
       {/* Right: Clean, un-cluttered actions matching TablePlus */}
-      <div className="flex items-center space-x-1.5 pointer-events-auto">
+      <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
         {pendingEditsCount > 0 ? (
           <div className="flex items-center space-x-1.5 animate-in fade-in">
-            <div className="flex items-center space-x-1 px-2 py-1 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold">
+            <div className="h-7 px-2 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold flex items-center space-x-1 leading-none shrink-0">
               <HeartbeatDot color="amber" size="xs" showWave={true} />
               <span>{pendingEditsCount}</span>
             </div>
 
             <button
               onClick={handleDiscard}
-              className="no-drag px-2 py-1 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+              className="no-drag h-7 px-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition flex items-center leading-none shrink-0 cursor-pointer"
               title="Discard Uncommitted Edits (⌘Z)"
             >
               Discard
@@ -202,17 +202,17 @@ export const Titlebar = () => {
 
             <button
               onClick={handleCommit}
-              className="no-drag px-2.5 py-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1 shadow-md shadow-sky-500/20 active:scale-95"
+              className="no-drag h-7 px-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-sky-500/20 active:scale-95 leading-none shrink-0 cursor-pointer"
               title="Commit Changes (⌘S)"
             >
               <span>Commit</span>
-              <kbd className="px-1 py-0.2 bg-slate-900/40 rounded text-[9px] font-mono text-slate-950 font-extrabold">⌘S</kbd>
+              <kbd className="px-1 py-0.5 bg-slate-900/30 rounded text-[9px] font-mono text-slate-950 font-extrabold leading-none">⌘S</kbd>
             </button>
           </div>
         ) : (
           <button
             onClick={() => reloadData()}
-            className={`no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 ${
+            className={`no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
               isReloading ? 'text-sky-400 border-sky-500/50 bg-sky-950/30' : ''
             }`}
             title="Reload Data & Schema (⌘R)"
@@ -224,7 +224,7 @@ export const Titlebar = () => {
         {/* History Modal Trigger */}
         <button
           onClick={() => setHistoryModalOpen(true)}
-          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95"
+          className="no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
           title="Query History (⌘H)"
         >
           <History className="w-3.5 h-3.5" />
@@ -233,7 +233,7 @@ export const Titlebar = () => {
         {/* Toggle Right Inspector */}
         <button
           onClick={toggleRightInspector}
-          className={`no-drag p-1.5 border rounded-lg transition active:scale-95 ${
+          className={`no-drag h-7 w-7 flex items-center justify-center border rounded-lg transition active:scale-95 shrink-0 cursor-pointer ${
             isRightInspectorOpen
               ? 'bg-sky-500/20 text-sky-300 border-sky-500/50 shadow-xs'
               : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700/70 text-slate-400 hover:text-slate-200'
@@ -243,12 +243,12 @@ export const Titlebar = () => {
           {isRightInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
         </button>
 
-        <div className="h-4 w-[1px] bg-slate-800 mx-0.5" />
+        <div className="h-4 w-[1px] bg-slate-800 mx-0.5 shrink-0 self-center" />
 
         {/* Quick Theme Mode Toggle */}
         <button
           onClick={handleCycleTheme}
-          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 flex items-center justify-center cursor-pointer"
+          className="no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
           title={`Theme: ${settings.themeMode === 'auto' ? `Auto (System: ${resolvedTheme})` : settings.themeMode === 'dark' ? 'Dark' : 'Light'} (Click to cycle)`}
         >
           {settings.themeMode === 'auto' ? (
@@ -263,7 +263,7 @@ export const Titlebar = () => {
         {/* Preferences & Settings */}
         <button
           onClick={() => setSettingsModalOpen(true)}
-          className="no-drag p-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95 cursor-pointer"
+          className="no-drag h-7 w-7 flex items-center justify-center bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-400 hover:text-slate-200 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
           title="Preferences & Settings (⌘,)"
         >
           <Sliders className="w-3.5 h-3.5" />
@@ -272,7 +272,7 @@ export const Titlebar = () => {
         {/* AI Assistant */}
         <button 
           onClick={() => alert("✨ AI Assistant (MCP) connected via localhost:4080\nReady for natural language queries!")}
-          className="no-drag p-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 hover:text-purple-100 rounded-lg transition active:scale-95"
+          className="no-drag h-7 w-7 flex items-center justify-center bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 hover:text-purple-100 rounded-lg transition active:scale-95 shrink-0 cursor-pointer"
           title="AI Assistant (MCP)"
         >
           <Sparkles className="w-3.5 h-3.5 text-purple-400" />

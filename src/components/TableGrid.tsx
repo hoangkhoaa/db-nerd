@@ -367,12 +367,12 @@ export const TableGrid: React.FC = () => {
       {/* BOTTOM CONTROL BAR (TablePlus Standard Footer Toolbar) */}
       <div className="h-9 bg-slate-950 border-t border-slate-800/90 px-3 flex items-center justify-between text-xs font-sans select-none flex-shrink-0 z-20">
         {/* Left Segment: [Data] [Structure] [Index] + Mode Actions */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 h-full">
           {/* View Mode Switcher Pills */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px] font-semibold">
+          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px] font-semibold h-6">
             <button
               onClick={() => setTableViewMode('data')}
-              className={`px-2.5 py-0.5 rounded-md transition-all duration-100 ${
+              className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'data'
                   ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -382,7 +382,7 @@ export const TableGrid: React.FC = () => {
             </button>
             <button
               onClick={() => setTableViewMode('structure')}
-              className={`px-2.5 py-0.5 rounded-md transition-all duration-100 ${
+              className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'structure'
                   ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -392,7 +392,7 @@ export const TableGrid: React.FC = () => {
             </button>
             <button
               onClick={() => setTableViewMode('index')}
-              className={`px-2.5 py-0.5 rounded-md transition-all duration-100 ${
+              className={`h-5 px-2.5 rounded-md transition-all duration-100 flex items-center justify-center leading-none cursor-pointer ${
                 tableViewMode === 'index'
                   ? 'bg-sky-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -402,56 +402,56 @@ export const TableGrid: React.FC = () => {
             </button>
           </div>
 
-          <div className="h-3.5 w-[1px] bg-slate-800 mx-0.5" />
+          <div className="h-3.5 w-[1px] bg-slate-800 mx-0.5 self-center" />
 
           {/* Mode-specific Buttons */}
           {tableViewMode === 'data' ? (
             <button
               onClick={insertRow}
-              className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+              className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
               title="Insert new row (+)"
             >
-              <Plus className="w-3 h-3 text-emerald-400" />
+              <Plus className="w-3 h-3 text-emerald-400 shrink-0" />
               <span>Row</span>
             </button>
           ) : tableViewMode === 'structure' ? (
-            <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-1.5 h-full">
               <button
                 onClick={() => {
                   showToast('Added column column_new to structure');
                 }}
-                className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+                className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
               >
-                <Plus className="w-3 h-3 text-sky-400" />
+                <Plus className="w-3 h-3 text-sky-400 shrink-0" />
                 <span>Column</span>
               </button>
               <button
                 onClick={() => showToast('Table Triggers: 0 triggers defined')}
-                className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-md text-[11px] font-semibold transition"
+                className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-md text-[11px] font-semibold transition flex items-center leading-none cursor-pointer"
               >
                 Triggers
               </button>
               <button
                 onClick={() => setIsDdlModalOpen(true)}
-                className="px-2 py-0.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+                className="h-6 px-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
               >
-                <FileCode className="w-3 h-3 text-indigo-400" />
+                <FileCode className="w-3 h-3 text-indigo-400 shrink-0" />
                 <span>DDL</span>
               </button>
             </div>
           ) : (
             <button
               onClick={() => showToast('Opened create index wizard')}
-              className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1"
+              className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 rounded-md text-[11px] font-semibold transition active:scale-95 flex items-center space-x-1 leading-none cursor-pointer"
             >
-              <Plus className="w-3 h-3 text-amber-400" />
+              <Plus className="w-3 h-3 text-amber-400 shrink-0" />
               <span>Index</span>
             </button>
           )}
         </div>
 
         {/* Center: Row Counter / Stats */}
-        <div className="text-[11px] text-slate-400 font-mono select-none">
+        <div className="text-[11px] text-slate-400 font-mono select-none flex items-center leading-none">
           {tableViewMode === 'data' ? (
             selectedRowData || selectedRowIds.size > 0 ? (
               <span className="text-sky-300 font-semibold">{`${selectedRowIds.size || 1} of ${rows.length} rows selected`}</span>
@@ -466,40 +466,40 @@ export const TableGrid: React.FC = () => {
         </div>
 
         {/* Right: Filters toggle, Columns picker, Pagination */}
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center space-x-1.5 h-full">
           {tableViewMode === 'data' && (
             <>
               <button
                 onClick={toggleFilterBar}
-                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition flex items-center space-x-1 active:scale-95 ${
+                className={`h-6 px-2 rounded-md text-[11px] font-semibold border transition flex items-center space-x-1 active:scale-95 leading-none cursor-pointer ${
                   isFilterBarOpen
                     ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                     : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
                 title="Toggle WHERE / ORDER BY filter bar"
               >
-                <Filter className="w-3 h-3" />
+                <Filter className="w-3 h-3 shrink-0" />
                 <span>Filters</span>
               </button>
 
               <button
                 onClick={() => setIsColumnsModalOpen(!isColumnsModalOpen)}
-                className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-md text-[11px] font-semibold transition flex items-center space-x-1"
+                className="h-6 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-md text-[11px] font-semibold transition flex items-center space-x-1 leading-none cursor-pointer"
                 title="Choose visible columns"
               >
-                <ColumnsIcon className="w-3 h-3" />
+                <ColumnsIcon className="w-3 h-3 shrink-0" />
                 <span>Columns</span>
               </button>
 
-              <div className="flex items-center space-x-0.5 pl-1">
+              <div className="flex items-center space-x-0.5 pl-1 h-6">
                 <button
-                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                  className="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
                   disabled
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  className="p-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                  className="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
                   disabled
                 >
                   <ChevronRight className="w-3.5 h-3.5" />

@@ -224,26 +224,26 @@ export function App() {
           <div className="h-8 bg-amber-500/15 border-b border-amber-500/40 px-4 flex items-center justify-between text-xs select-none backdrop-blur-md">
             <div className="flex items-center space-x-2">
               <HeartbeatDot color="amber" size="sm" showWave={true} />
-              <span className="font-bold text-amber-300">Active Transaction Open</span>
-              <span className="text-amber-200/80">
+              <span className="font-bold text-amber-300 leading-none">Active Transaction Open</span>
+              <span className="text-amber-200/80 leading-none">
                 • TxID: #891024 • {pendingEditsCount} uncommitted edit{pendingEditsCount > 1 ? 's' : ''}
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setSqlDiffModalOpen(true)}
-                className="px-2 py-0.5 hover:bg-slate-800 text-amber-300 rounded font-medium text-[11px] flex items-center space-x-1 transition-colors"
+                className="h-6 px-2 hover:bg-slate-800 text-amber-300 rounded font-medium text-[11px] flex items-center space-x-1.5 transition-colors leading-none cursor-pointer"
               >
-                <FileCode className="w-3 h-3" />
+                <FileCode className="w-3 h-3 shrink-0" />
                 <span>Review SQL</span>
               </button>
               <button
                 onClick={() => {
                   if (confirm("Rollback transaction?")) rollbackTransaction();
                 }}
-                className="px-2 py-0.5 hover:bg-slate-800 text-slate-300 rounded font-medium text-[11px] flex items-center space-x-1 transition-colors active:scale-95"
+                className="h-6 px-2 hover:bg-slate-800 text-slate-300 rounded font-medium text-[11px] flex items-center space-x-1.5 transition-colors active:scale-95 leading-none cursor-pointer"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3 h-3 shrink-0" />
                 <span>Rollback (⌘Z)</span>
               </button>
               <button
@@ -253,9 +253,9 @@ export function App() {
                     alert(`✅ Transaction Committed!\n\nExecuted ${res.count} change(s).`);
                   }
                 }}
-                className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded text-[11px] flex items-center space-x-1 shadow-sm transition-all active:scale-95"
+                className="h-6 px-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded text-[11px] flex items-center space-x-1.5 shadow-sm transition-all active:scale-95 leading-none cursor-pointer"
               >
-                <Check className="w-3 h-3 stroke-[3]" />
+                <Check className="w-3 h-3 stroke-[3] shrink-0" />
                 <span>Commit (⌘S)</span>
               </button>
             </div>
@@ -280,11 +280,11 @@ export function App() {
             <div className="flex items-center space-x-1.5 h-full overflow-x-auto no-scrollbar py-1">
               
               {/* Tab History Navigation (< >) */}
-              <div className="flex items-center bg-slate-900/80 border border-slate-800/80 rounded-md p-0.5 mr-1 flex-shrink-0">
+              <div className="flex items-center bg-slate-900/80 border border-slate-800/80 rounded-md p-0.5 mr-1 flex-shrink-0 h-7">
                 <button
                   onClick={handlePrevTab}
                   disabled={!canGoBack}
-                  className={`p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoBack ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                  className={`h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoBack ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
                   title="Previous Tab"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
@@ -292,7 +292,7 @@ export function App() {
                 <button
                   onClick={handleNextTab}
                   disabled={!canGoForward}
-                  className={`p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoForward ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                  className={`h-6 w-6 flex items-center justify-center rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition ${!canGoForward ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
                   title="Next Tab"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -380,15 +380,15 @@ export function App() {
             </div>
 
             {/* Right Controls: Split Editor & Engine Stats */}
-            <div className="flex items-center space-x-3 flex-shrink-0 pl-2">
+            <div className="flex items-center space-x-3 flex-shrink-0 pl-2 h-full">
               <button
                 onClick={() => {}}
-                className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition cursor-pointer"
                 title="Toggle Split Editor (⌘\)"
               >
                 <Columns2 className="w-3.5 h-3.5" />
               </button>
-              <div className="text-[11px] text-slate-500 font-mono hidden md:flex items-center space-x-2">
+              <div className="text-[11px] text-slate-500 font-mono hidden md:flex items-center space-x-2 leading-none">
                 <span>Tabs: <strong className="text-slate-300">{tabs.length}</strong></span>
                 <span>•</span>
                 <span>RAM: <strong className="text-slate-300">46.8 MB</strong></span>

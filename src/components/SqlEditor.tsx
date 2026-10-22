@@ -458,36 +458,36 @@ export const SqlEditor: React.FC = () => {
 
       {/* Editor Top Toolbar */}
       <div className="h-10 bg-slate-950/80 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 h-full">
           <button
             onClick={handleRun}
             disabled={tabState.isExecuting}
-            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
+            className="h-7 px-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer leading-none"
           >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
-            <kbd className="px-1.5 py-0.2 bg-slate-950/20 rounded text-[9px] font-mono text-slate-950 font-extrabold">⌘↵</kbd>
+            <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+            <span className="leading-none">{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
+            <kbd className="px-1.5 py-0.5 bg-slate-950/20 rounded text-[9px] font-mono text-slate-950 font-extrabold leading-none">⌘↵</kbd>
           </button>
 
           <button
             onClick={handleFormat}
-            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium cursor-pointer active:scale-95"
+            className="h-7 px-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium cursor-pointer active:scale-95 leading-none"
             title="Beautify SQL Query or Selected Block (⇧⌥F / ⇧⌘F)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-            <span>Format</span>
-            <kbd className="px-1.5 py-0.2 bg-slate-800/80 border border-slate-700 rounded text-[9px] font-mono text-slate-400">⇧⌥F</kbd>
+            <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <span className="leading-none">Format</span>
+            <kbd className="px-1.5 py-0.5 bg-slate-800/80 border border-slate-700 rounded text-[9px] font-mono text-slate-400 leading-none">⇧⌥F</kbd>
           </button>
         </div>
 
         {/* Execution Performance Badge */}
-        <div className="flex items-center space-x-3 text-slate-400 font-mono text-[11px]">
-          <span className="flex items-center space-x-1 text-emerald-400 font-semibold">
-            <Clock className="w-3 h-3" />
-            <span>{tabState.durationMs || 1.4}ms</span>
+        <div className="flex items-center space-x-3 text-slate-400 font-mono text-[11px] leading-none">
+          <span className="flex items-center space-x-1 text-emerald-400 font-semibold leading-none">
+            <Clock className="w-3 h-3 shrink-0" />
+            <span className="leading-none">{tabState.durationMs || 1.4}ms</span>
           </span>
           <span>•</span>
-          <span>{results.length} rows</span>
+          <span className="leading-none">{results.length} rows</span>
         </div>
       </div>
 
