@@ -427,7 +427,7 @@ export const SqlEditor: React.FC = () => {
               )}
               <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-white' : ''}`} />
               <span className="leading-none">
-                {tabState.isExecuting ? 'Executing...' : hasSelection ? 'Run Selection' : 'Run Query'}
+                {hasSelection ? 'Run Selection' : 'Run Query'}
               </span>
               <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘↵</kbd>
             </button>

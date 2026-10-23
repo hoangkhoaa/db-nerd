@@ -6,7 +6,6 @@ import {
   Layers,
   ShieldCheck,
   Zap,
-  Activity,
 } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
 import { BorderChase } from './BorderChase';
@@ -17,9 +16,6 @@ export const DefaultWorkspaceView: React.FC = () => {
     openNewQueryTab,
     openTableGridTab,
     isConnecting,
-    connectingPhase,
-    connectingLogs,
-    networkSpeed,
     triggerConnectingAnimation,
   } = useAppStore();
 
@@ -47,22 +43,15 @@ export const DefaultWorkspaceView: React.FC = () => {
         
         {/* DBNerd Mascot Illustration with Speech Bubble */}
         <div className="relative group flex flex-col items-center">
-          {/* Speech Bubble: "DBNerd" or Connecting Status */}
+          {/* Speech Bubble: "DBNerd" */}
           <div
-            className={`relative mb-2 px-3.5 py-1 rounded-full text-xs font-mono font-bold shadow-sm flex items-center space-x-1.5 select-none transition-all duration-200 ${
+            className={`relative mb-2 px-3.5 py-1 rounded-full text-xs font-mono font-bold shadow-sm flex items-center space-x-1.5 select-none transition-colors ${
               isConnecting
-                ? 'bg-sky-50 dark:bg-sky-500/25 border border-sky-300 dark:border-sky-400 text-sky-700 dark:text-sky-200 shadow-sky-500/10 animate-pulse'
+                ? 'bg-sky-50 dark:bg-sky-500/25 border border-sky-300 dark:border-sky-400 text-sky-700 dark:text-sky-200'
                 : 'bg-teal-50 dark:bg-teal-500/20 border border-teal-200 dark:border-teal-400/40 text-teal-800 dark:text-teal-200'
             }`}
           >
-            {isConnecting ? (
-              <span className="flex items-center space-x-1.5 text-sky-600 dark:text-sky-300">
-                <Zap className="w-3.5 h-3.5 fill-sky-500 text-sky-500 animate-bounce" />
-                <span className="font-extrabold">{connectingPhase || 'Connecting to DB...'}</span>
-              </span>
-            ) : (
-              <span>DBNerd</span>
-            )}
+            <span>DBNerd</span>
             {/* Small speech bubble tail */}
             <div
               className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-50 dark:bg-slate-950 border-r border-b rotate-45 ${
@@ -72,37 +61,21 @@ export const DefaultWorkspaceView: React.FC = () => {
           </div>
 
           <div
-            className={`w-32 h-32 rounded-3xl bg-gradient-to-b from-white dark:from-slate-900 to-slate-100 dark:to-slate-950 border shadow-xl flex items-center justify-center p-3 ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 relative overflow-hidden ${
+            className={`w-32 h-32 rounded-3xl bg-gradient-to-b from-white dark:from-slate-900 to-slate-100 dark:to-slate-950 border shadow-xl flex items-center justify-center p-3 ring-1 ring-black/5 dark:ring-white/10 relative overflow-hidden ${
               isConnecting
-                ? 'border-sky-400 shadow-[0_0_25px_rgba(56,189,248,0.3)] ring-sky-400/30'
-                : 'border-slate-200 dark:border-slate-800/80 group-hover:border-teal-400/50'
+                ? 'border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.25)] ring-sky-400/30'
+                : 'border-slate-200 dark:border-slate-800/80'
             }`}
           >
-            {/* Ambient pulse */}
-            <div
-              className={`absolute inset-0 rounded-3xl blur-xl transition-colors ${
-                isConnecting
-                  ? 'bg-sky-500/30 animate-pulse'
-                  : 'bg-teal-500/10 group-hover:bg-teal-500/20'
-              }`}
-            />
-
             {/* Apple-grade Border Chase Highlight Runner */}
             {isConnecting && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={2.5} glow={true} />
             )}
 
-            {/* Laser scanning beam during connecting */}
-            {isConnecting && (
-              <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-sky-300 to-transparent shadow-[0_0_12px_rgba(56,189,248,1)] animate-laser-scan pointer-events-none z-20" />
-            )}
-
             <img
               src="/app-icon.png"
               alt="DBNerd Mascot"
-              className={`w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] transition-all duration-300 ${
-                isConnecting ? 'scale-105 brightness-110' : 'group-hover:scale-105'
-              }`}
+              className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
             />
           </div>
 
@@ -138,33 +111,6 @@ export const DefaultWorkspaceView: React.FC = () => {
             </span>
           </p>
         </div>
-
-        {/* Live Cyber Telemetry Console (Appears during connection or benchmark) */}
-        {isConnecting ? (
-          <div className="w-full max-w-md bg-white dark:bg-slate-950/90 border border-sky-300 dark:border-sky-500/40 rounded-xl p-3 shadow-xl text-left space-y-1.5 font-mono text-xs animate-in zoom-in-95 duration-150 relative overflow-hidden">
-            <BorderChase color="sky" dual={true} speed="normal" borderWidth={1.5} glow={true} />
-            <div className="flex items-center justify-between text-[11px] pb-1 border-b border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-300 font-bold">
-              <span className="flex items-center space-x-1.5">
-                <Activity className="w-3 h-3 animate-spin text-sky-600 dark:text-sky-400" />
-                <span>HANDSHAKE TELEMETRY</span>
-              </span>
-              <span className="text-amber-600 dark:text-amber-300">{networkSpeed || '355 KB/s'}</span>
-            </div>
-            <div className="space-y-1 text-[11px] max-h-32 overflow-y-auto font-mono text-slate-700 dark:text-slate-300">
-              {connectingLogs.map((log, idx) => (
-                <div key={idx} className="leading-snug animate-in fade-in slide-in-from-left-2 duration-100">
-                  {log.includes('🟢') ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{log}</span>
-                  ) : log.includes('TLS') ? (
-                    <span className="text-sky-700 dark:text-sky-300">{log}</span>
-                  ) : (
-                    <span>{log}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
 
         {/* Quick Action Tiles */}
         <div className="grid grid-cols-2 gap-3 w-full max-w-md">
@@ -204,14 +150,14 @@ export const DefaultWorkspaceView: React.FC = () => {
           <button
             onClick={() => triggerConnectingAnimation(activeConnection.id)}
             disabled={isConnecting}
-            className="relative overflow-hidden flex-1 py-2 px-3 rounded-xl bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-sky-400 dark:hover:border-sky-500/40 text-xs font-mono text-sky-700 dark:text-sky-400 flex items-center justify-center space-x-1.5 transition active:scale-95 cursor-pointer shadow-2xs group"
+            className="relative overflow-hidden flex-1 py-2 px-3 rounded-xl bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-sky-400 dark:hover:border-sky-500/40 text-xs font-mono text-sky-700 dark:text-sky-400 flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-2xs group"
             title="Trigger connection handshake animation & ping benchmark"
           >
             {isConnecting && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <Zap className="w-3.5 h-3.5 group-hover:scale-110 transition-transform fill-current" />
-            <span>{isConnecting ? 'Testing Connection & Latency...' : '⚡ Test Connection & Latency'}</span>
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>⚡ Test Connection & Latency</span>
           </button>
         </div>
 

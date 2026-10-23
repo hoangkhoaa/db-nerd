@@ -12,7 +12,6 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     activeConnection,
     selectedTable,
     isConnecting,
-    connectingPhase,
     networkSpeed,
     resolvedTheme,
   } = useAppStore();
@@ -230,19 +229,7 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
 
         {/* Monospace High-Contrast Foreground Content */}
         <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-slate-800 dark:text-white leading-none dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
-          {isConnecting ? (
-            /* Connecting Telemetry Status */
-            <div className="flex items-center space-x-2 truncate">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500 dark:bg-sky-300" />
-              </span>
-              <span className="font-extrabold text-sky-700 dark:text-sky-200 tracking-wide uppercase">
-                {connectingPhase || 'Establishing TLSv1.3 Handshake...'}
-              </span>
-            </div>
-          ) : (
-            /* TablePlus Standard Formatted Connection Banner */
+            {/* TablePlus Standard Formatted Connection Banner */}
             <div className="flex items-center space-x-1.5 truncate text-[11px]">
               <span className="font-extrabold tracking-wider text-slate-900 dark:text-white">{envTag}</span>
               <span className="opacity-40">|</span>
@@ -258,7 +245,6 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
               <span className="opacity-40">:</span>
               <span className="truncate max-w-[120px] text-slate-600 dark:text-slate-300">public.{selectedTable}</span>
             </div>
-          )}
 
           {/* Right Speed Meter */}
           <div className="flex items-center space-x-1.5 shrink-0 pl-2">
