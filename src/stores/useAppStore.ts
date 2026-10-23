@@ -1296,24 +1296,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       ],
     });
 
-    // Subtle audio feedback
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const audioCtx = new AudioCtx();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.08);
-      }
-    } catch {}
 
     await new Promise((r) => setTimeout(r, 160));
 
@@ -1350,24 +1332,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     await new Promise((r) => setTimeout(r, 200));
 
-    // Completion chime
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const audioCtx = new AudioCtx();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
-      }
-    } catch {}
 
     set((state) => ({
       isConnecting: false,
