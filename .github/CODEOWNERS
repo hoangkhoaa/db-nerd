@@ -7,12 +7,12 @@
 # Syntax reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Global repository owner: all code, workflows, and configurations
-* @khoa-nguyen @khoa-goessor @nerd-riot
+* @khoa-nguyen @nerd-riot
 
 # Core infrastructure & release workflows
-/.github/                     @khoa-nguyen @khoa-goessor @nerd-riot
-/src-tauri/                   @khoa-nguyen @khoa-goessor @nerd-riot
-package.json                  @khoa-nguyen @khoa-goessor @nerd-riot
-pnpm-lock.yaml                @khoa-nguyen @khoa-goessor @nerd-riot
-tsconfig.json                 @khoa-nguyen @khoa-goessor @nerd-riot
-vite.config.ts                @khoa-nguyen @khoa-goessor @nerd-riot
+/.github/                     @khoa-nguyen @nerd-riot
+/src-tauri/                   @khoa-nguyen @nerd-riot
+package.json                  @khoa-nguyen @nerd-riot
+pnpm-lock.yaml                @khoa-nguyen @nerd-riot
+tsconfig.json                 @khoa-nguyen @nerd-riot
+vite.config.ts                @khoa-nguyen @nerd-riot

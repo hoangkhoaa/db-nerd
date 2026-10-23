@@ -1,9 +1,6 @@
-name: Release - Automated SemVer & Release Notes
+name: Release - SemVer & Release Notes
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       bump_type:
