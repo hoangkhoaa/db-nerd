@@ -68,6 +68,7 @@ export const ALL_TABLEPLUS_CONNECTORS: ConnectorMetadata[] = [
   CONNECTOR_METADATA.cockroach,
   CONNECTOR_METADATA.greenplum,
   CONNECTOR_METADATA.vertica,
+  CONNECTOR_METADATA.generic,
 ];
 
 const ENGINE_COLORS: Record<string, { bg: string; text: string }> = {

@@ -223,7 +223,7 @@ async function main() {
       checkbox.click();
     }
     const rightPanel = document.querySelector('.overflow-y-auto');
-    if (rightPanel) rightPanel.scrollBy({ top: 160, behavior: 'instant' });
+    if (rightPanel) rightPanel.scrollBy({ top: 100, behavior: 'instant' });
   }`);
   await new Promise((r) => setTimeout(r, 800));
   await capture('connection-manager.png');
