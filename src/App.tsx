@@ -97,6 +97,26 @@ export function App() {
         e.preventDefault();
         useAppStore.getState().toggleBottomPanel();
       }
+      // ⇧⌘Enter: Run All Queries in Active Tab
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'Enter' || e.code === 'Enter')) {
+        const activeTab = useAppStore.getState().tabs.find((t) => t.id === useAppStore.getState().activeTabId);
+        if (activeTab?.type === 'sql') {
+          e.preventDefault();
+          e.stopPropagation();
+          useAppStore.getState().runSqlQuery(activeTab.id, undefined, { mode: 'all' });
+          return;
+        }
+      }
+      // ⌘. : Cancel Active Query Execution
+      if ((e.metaKey || e.ctrlKey) && (e.key === '.' || e.code === 'Period')) {
+        const activeTab = useAppStore.getState().tabs.find((t) => t.id === useAppStore.getState().activeTabId);
+        if (activeTab?.type === 'sql') {
+          e.preventDefault();
+          e.stopPropagation();
+          useAppStore.getState().cancelSqlQuery(activeTab.id);
+          return;
+        }
+      }
       // ⌘⇧R: Reconnect Workspace (TablePlus shortcut)
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();

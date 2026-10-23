@@ -16,11 +16,16 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     reconnectActiveConnection,
     networkSpeed,
     resolvedTheme,
+    sqlTabStates,
+    activeTabId,
   } = useAppStore();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [speedDisplay, setSpeedDisplay] = useState(networkSpeed || '355 KB/s');
   const [showTooltip, setShowTooltip] = useState(false);
+
+  const currentTabState = sqlTabStates[activeTabId];
+  const executionProgress = currentTabState?.executionProgress;
 
   const env = activeConnection.env; // 'prod' | 'staging' | 'dev'
 
@@ -261,6 +266,21 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
             <span className="text-[10px] bg-black/30 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">
               {isReconnecting ? 'Reconnecting' : 'Offline'}
             </span>
+          </div>
+        ) : executionProgress ? (
+          <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-white leading-none font-mono text-[11px]">
+            <div className="flex items-center space-x-1.5 truncate">
+              <span className="font-extrabold tracking-wider text-amber-300 dark:text-amber-400">{envTag}</span>
+              <span className="opacity-40">|</span>
+              <span className="font-bold text-white tracking-wide">
+                Executed Statements Count: {executionProgress.current}/{executionProgress.total}
+              </span>
+            </div>
+            <div className="flex items-center space-x-1.5 shrink-0 pl-2">
+              <span className="text-[10px] font-mono font-bold text-white/90 bg-black/40 px-1.5 py-0.5 rounded leading-none border border-white/10 shadow-2xs">
+                0 B/s
+              </span>
+            </div>
           </div>
         ) : (
           <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-slate-800 dark:text-white leading-none dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">

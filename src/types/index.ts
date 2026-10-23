@@ -113,6 +113,19 @@ export interface TabItem {
   canClose?: boolean;
 }
 
+export interface SqlQueryResultItem {
+  id: string; // e.g. "q-1"
+  title: string; // e.g. "Query 1", "Query 2"
+  query: string;
+  results: any[];
+  columns: string[];
+  durationMs: number;
+  rowsCount: number;
+  executedAt: string;
+  error?: string;
+  status: 'pending' | 'running' | 'success' | 'error';
+}
+
 export interface SqlTabState {
   tabId: string;
   query: string;
@@ -124,6 +137,12 @@ export interface SqlTabState {
   executedAt?: string;
   isExecuting?: boolean;
   error?: string;
+  queryResults?: SqlQueryResultItem[];
+  activeResultId?: string;
+  executionProgress?: {
+    current: number;
+    total: number;
+  };
 }
 
 export interface GridRow {
