@@ -3,6 +3,7 @@ name = "dbnerd"
 version = "0.1.0"
 description = "A fast, lightweight, native-feel database client for developers"
 authors = ["Khoa Nguyen"]
+license = "MIT"
 edition = "2021"
 
 [[bin]]

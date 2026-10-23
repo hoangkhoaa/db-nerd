@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?logo=apple&logoColor=white" alt="macOS" />
   <img src="https://img.shields.io/badge/RAM-~45--65MB-success" alt="RAM" />
   <img src="https://img.shields.io/badge/FPS-120%20Hz-brightgreen" alt="120 FPS" />
-  <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License Proprietary" />
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License MIT" />
 </p>
 
 ---
@@ -232,5 +232,6 @@ Whenever updating the README, you can prompt the AI assistant with `update readm
 
 ## 📄 License
 
-Copyright © 2026 **Khoa Nguyen** & `DBNerd`. All rights reserved.
-Unauthorized copying, modification, distribution, or commercial use without explicit permission is strictly prohibited.
+Distributed under the **MIT License**. Created with 💖 for developers by **Khoa Nguyen** and the `DBNerd` open source contributors.
+
+See the [LICENSE](LICENSE) file for more details.
