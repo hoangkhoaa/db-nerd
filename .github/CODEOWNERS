@@ -1,0 +1,18 @@
+# ==============================================================================
+# GitHub CODEOWNERS for nerd-riot/db-nerd
+# ==============================================================================
+# In Trunk-Based Development, the repository owner maintains exclusive direct
+# authority over the main branch and approves all contributor pull requests.
+#
+# Syntax reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global repository owner: all code, workflows, and configurations
+* @khoa-nguyen @khoa-goessor @nerd-riot
+
+# Core infrastructure & release workflows
+/.github/                     @khoa-nguyen @khoa-goessor @nerd-riot
+/src-tauri/                   @khoa-nguyen @khoa-goessor @nerd-riot
+package.json                  @khoa-nguyen @khoa-goessor @nerd-riot
+pnpm-lock.yaml                @khoa-nguyen @khoa-goessor @nerd-riot
+tsconfig.json                 @khoa-nguyen @khoa-goessor @nerd-riot
+vite.config.ts                @khoa-nguyen @khoa-goessor @nerd-riot

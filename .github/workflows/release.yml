@@ -1,0 +1,178 @@
+name: Release - Automated SemVer & Release Notes
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Release type to bump (Trunk-Based SemVer: 1.0.xx)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_tag:
+        description: 'Custom tag (e.g. v1.0.0) - only used if bump_type is "custom"'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (calculate next version without publishing release)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  release:
+    name: Create SemVer Tag & GitHub Release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip release]') && !contains(github.event.head_commit.message, '[skip ci]')"
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Determine Previous and Next SemVer Tag
+        id: semver
+        shell: bash
+        run: |
+          set -e
+
+          # Fetch all tags from remote
+          git fetch --tags --force
+
+          # Find latest semver tag
+          LATEST_TAG=$(git tag -l "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)
+          echo "Previous release tag: ${LATEST_TAG:-none}"
+          echo "previous_tag=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$LATEST_TAG" ]; then
+            # Initial baseline release tag (Best Practice: v1.0.0)
+            NEXT_TAG="v1.0.0"
+            echo "No previous tags found. Initializing trunk baseline at ${NEXT_TAG}."
+          else
+            # Strip leading 'v'
+            VERSION="${LATEST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+            # Check trigger type
+            EVENT_NAME="${{ github.event_name }}"
+            MANUAL_BUMP="${{ github.event.inputs.bump_type }}"
+            CUSTOM_TAG="${{ github.event.inputs.custom_tag }}"
+
+            if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$MANUAL_BUMP" ]; then
+              if [ "$MANUAL_BUMP" = "major" ]; then
+                NEXT_TAG="v$((MAJOR + 1)).0.0"
+              elif [ "$MANUAL_BUMP" = "minor" ]; then
+                NEXT_TAG="v${MAJOR}.$((MINOR + 1)).0"
+              elif [ "$MANUAL_BUMP" = "custom" ] && [ -n "$CUSTOM_TAG" ]; then
+                # Ensure custom tag starts with 'v'
+                [[ "$CUSTOM_TAG" =~ ^v ]] && NEXT_TAG="$CUSTOM_TAG" || NEXT_TAG="v$CUSTOM_TAG"
+              else
+                # Default patch (v1.0.xx)
+                NEXT_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+              fi
+            else
+              # Automated calculation from commit history since last tag
+              COMMITS_SINCE_TAG=$(git log "${LATEST_TAG}..HEAD" --oneline || true)
+
+              if [ -z "$COMMITS_SINCE_TAG" ]; then
+                echo "No new commits since ${LATEST_TAG}. Skipping automated release."
+                echo "skip_release=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+
+              # Inspect Conventional Commits
+              if echo "$COMMITS_SINCE_TAG" | grep -qE 'BREAKING CHANGE|!:'; then
+                NEXT_TAG="v$((MAJOR + 1)).0.0"
+              elif echo "$COMMITS_SINCE_TAG" | grep -qE '^[a-f0-9]+ feat(\(.*\))?:'; then
+                NEXT_TAG="v${MAJOR}.$((MINOR + 1)).0"
+              else
+                # Patch bump (v1.0.xx pattern)
+                NEXT_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+              fi
+            fi
+          fi
+
+          echo "Calculated next release tag: ${NEXT_TAG}"
+          echo "next_tag=${NEXT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "skip_release=false" >> "$GITHUB_OUTPUT"
+
+      - name: 📝 Generate Release Notes via GitHub API
+        if: steps.semver.outputs.skip_release != 'true'
+        id: release_notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const nextTag = '${{ steps.semver.outputs.next_tag }}';
+            const prevTag = '${{ steps.semver.outputs.previous_tag }}' || undefined;
+            
+            console.log(`Generating release notes for ${nextTag} (previous: ${prevTag || 'none'})...`);
+            
+            try {
+              const res = await github.rest.repos.generateReleaseNotes({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: nextTag,
+                previous_tag_name: prevTag,
+                target_commitish: 'main'
+              });
+              
+              core.setOutput('name', res.data.name || `Release ${nextTag}`);
+              core.setOutput('body', res.data.body || `Automated Trunk-Based Release ${nextTag}`);
+            } catch (err) {
+              console.warn('Failed to call generateReleaseNotes, using fallback template:', err.message);
+              core.setOutput('name', `Release ${nextTag}`);
+              core.setOutput('body', `### 🚀 Release ${nextTag}\n\nAutomated Trunk-Based release generated from \`main\` branch.\n\n* Full Commits: https://github.com/${context.repo.owner}/${context.repo.repo}/commits/${nextTag}`);
+            }
+
+      - name: 🚀 Publish GitHub Release & Tag
+        if: steps.semver.outputs.skip_release != 'true' && github.event.inputs.dry_run != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const nextTag = '${{ steps.semver.outputs.next_tag }}';
+            const releaseName = `${{ steps.release_notes.outputs.name }}` || `Release ${nextTag}`;
+            const releaseBody = `${{ steps.release_notes.outputs.body }}`;
+            
+            console.log(`Publishing Release ${nextTag} with name: "${releaseName}"...`);
+            
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: nextTag,
+              target_commitish: 'main',
+              name: releaseName,
+              body: releaseBody,
+              draft: false,
+              prerelease: false,
+              generate_release_notes: false
+            });
+            
+            console.log(`Successfully created release: ${release.data.html_url}`);
+
+      - name: 📋 Dry Run Summary
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "================ DRY RUN SUMMARY ================"
+          echo "Next Tag: ${{ steps.semver.outputs.next_tag }}"
+          echo "Release Name: ${{ steps.release_notes.outputs.name }}"
+          echo "Release Body:"
+          echo "${{ steps.release_notes.outputs.body }}"
+          echo "================================================="
