@@ -22,6 +22,7 @@ import { SafetyModeSelector } from './SafetyModeSelector';
 export const Titlebar = () => {
   const {
     activeConnection,
+    openSessionIds,
     setConnectionModalOpen,
     setDatabaseModalOpen,
     setRunningQueriesModalOpen,
@@ -131,13 +132,13 @@ export const Titlebar = () => {
           title="Connections (⌘K)"
         >
           <HeartbeatDot 
-            color={activeConnection.connectionStatus === 'failed' ? 'red' : activeConnection.env === 'prod' ? 'red' : activeConnection.env === 'staging' ? 'amber' : 'green'} 
+            color={openSessionIds.length === 0 ? 'slate' : activeConnection.connectionStatus === 'failed' ? 'red' : activeConnection.env === 'prod' ? 'red' : activeConnection.env === 'staging' ? 'amber' : 'green'} 
             size="xs" 
-            showWave={activeConnection.connectionStatus !== 'failed'} 
+            showWave={openSessionIds.length > 0 && activeConnection.connectionStatus !== 'failed'} 
           />
           <Database className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
           <span className="font-mono text-[11px] font-bold truncate max-w-[70px] sm:max-w-[95px] xl:max-w-[125px] leading-none text-slate-800 dark:text-slate-200">
-            {activeConnection.name}
+            {openSessionIds.length === 0 ? 'No Connection' : activeConnection.name}
           </span>
         </button>
 

@@ -855,7 +855,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { openSessionIds, activeConnection, switchActiveConnection, showToast } = get();
     const nextOpen = openSessionIds.filter((id) => id !== connId);
     if (nextOpen.length === 0) {
-      showToast('⚠️ At least one connection must remain open');
+      set({
+        openSessionIds: [],
+        tabs: [],
+        activeTabId: '',
+        activeTab: 'default',
+        isConnectionModalOpen: true,
+      });
+      showToast('All connections closed — returned to Connection Manager');
       return;
     }
     if (activeConnection.id === connId) {

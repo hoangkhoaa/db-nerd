@@ -91,18 +91,16 @@ export const ConnectionRail: React.FC = () => {
                 </span>
 
                 {/* Quick Close Button (appears on hover) */}
-                {openConnections.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeSession(conn.id);
-                    }}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-slate-200 dark:bg-slate-800 hover:bg-rose-600 text-slate-600 dark:text-slate-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-[9px] shadow-sm cursor-pointer z-10"
-                    title={`Close session "${conn.name}"`}
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeSession(conn.id);
+                  }}
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-slate-200 dark:bg-slate-800 hover:bg-rose-600 text-slate-600 dark:text-slate-400 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-[9px] shadow-sm cursor-pointer z-10"
+                  title={`Close session "${conn.name}"`}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
               </button>
             </div>
           );
@@ -168,20 +166,16 @@ export const ConnectionRail: React.FC = () => {
               setContextPos(null);
             }}
           />
-          {openConnections.length > 1 && (
-            <>
-              <ContextMenuDivider />
-              <ContextMenuItem
-                icon={<LogOut className="w-3.5 h-3.5 text-rose-400" />}
-                label="Disconnect / Close Session"
-                danger
-                onClick={() => {
-                  closeSession(targetConn.id);
-                  setContextPos(null);
-                }}
-              />
-            </>
-          )}
+          <ContextMenuDivider />
+          <ContextMenuItem
+            icon={<LogOut className="w-3.5 h-3.5 text-rose-400" />}
+            label="Disconnect / Close Session"
+            danger
+            onClick={() => {
+              closeSession(targetConn.id);
+              setContextPos(null);
+            }}
+          />
         </ContextMenuContainer>
       )}
     </aside>

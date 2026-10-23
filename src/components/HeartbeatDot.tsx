@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type HeartbeatColor = 'green' | 'red' | 'amber' | 'sky' | 'purple';
+export type HeartbeatColor = 'green' | 'red' | 'amber' | 'sky' | 'purple' | 'slate';
 
 interface HeartbeatDotProps {
   color?: HeartbeatColor;
@@ -29,6 +29,10 @@ const COLOR_CLASSES: Record<HeartbeatColor, { core: string; wave: string }> = {
   purple: {
     core: 'bg-purple-400 heartbeat-red',
     wave: 'bg-purple-400 heartbeat-wave',
+  },
+  slate: {
+    core: 'bg-slate-400',
+    wave: 'bg-slate-400 opacity-0',
   },
 };
 

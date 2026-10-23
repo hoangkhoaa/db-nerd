@@ -81,6 +81,10 @@ export function App() {
   const [tabContextPos, setTabContextPos] = useState<ContextMenuPosition | null>(null);
   const [targetTabId, setTargetTabId] = useState<string | null>(null);
 
+  if (typeof window !== 'undefined') {
+    (window as any).useAppStore = useAppStore;
+  }
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // ⌘B: Toggle Sidebar
@@ -141,12 +145,44 @@ export function App() {
         e.stopPropagation();
         openNewQueryTab();
       }
-      // ⌘W: Close Active Tab
+      // ⌘W: Close Active Tab, or if out of tabs, Close Active Connection (TablePlus Standard)
       if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'W' || e.code === 'KeyW')) {
         e.preventDefault();
         e.stopPropagation();
-        const activeId = useAppStore.getState().activeTabId;
-        closeTab(activeId);
+        const state = useAppStore.getState();
+        const {
+          tabs,
+          activeTabId,
+          activeConnection,
+          closeTab,
+          closeSession,
+          isConnectionModalOpen,
+          setConnectionModalOpen,
+          openSessionIds,
+        } = state;
+
+        // If connection modal is open and there are open sessions, ⌘W closes the modal
+        if (isConnectionModalOpen && openSessionIds.length > 0) {
+          setConnectionModalOpen(false);
+          return;
+        }
+
+        // 1. If there are tabs open in current connection, close the active tab
+        if (tabs.length > 0 && activeTabId) {
+          closeTab(activeTabId);
+          return;
+        }
+
+        // 2. If out of tabs (hết tab), close the current active connection
+        if (activeConnection?.id && openSessionIds.includes(activeConnection.id)) {
+          closeSession(activeConnection.id);
+          return;
+        }
+
+        // 3. If all connections closed, open connection list modal
+        if (openSessionIds.length === 0 && !isConnectionModalOpen) {
+          setConnectionModalOpen(true);
+        }
       }
       // ⌘K: Connection Manager
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {

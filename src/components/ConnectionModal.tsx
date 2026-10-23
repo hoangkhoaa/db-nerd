@@ -915,6 +915,11 @@ export const ConnectionModal = () => {
                                   onDragLeave={(e) => handleConnDragLeave(e, conn.id)}
                                   onDrop={(e) => handleConnDrop(e, conn)}
                                   onClick={() => handleSelectConnection(conn)}
+                                  onDoubleClick={() => {
+                                    switchActiveConnection(conn.id);
+                                    setConnectionModalOpen(false);
+                                    showToast(`Connected to ${conn.name}`);
+                                  }}
                                   onContextMenu={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();

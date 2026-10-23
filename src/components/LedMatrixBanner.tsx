@@ -10,6 +10,8 @@ interface LedMatrixBannerProps {
 export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabaseModal }) => {
   const {
     activeConnection,
+    openSessionIds,
+    setConnectionModalOpen,
     selectedTable,
     isConnecting,
     isReconnecting,
@@ -192,7 +194,13 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
 
   const isFailed = activeConnection.connectionStatus === 'failed';
 
+  const hasNoSessions = openSessionIds.length === 0;
+
   const handleClick = () => {
+    if (hasNoSessions) {
+      setConnectionModalOpen(true);
+      return;
+    }
     if (isFailed) {
       reconnectActiveConnection();
     } else {
@@ -294,47 +302,59 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
           }`}>
             {/* TablePlus Standard Formatted Connection Banner */}
             <div className="flex items-center space-x-1 sm:space-x-1.5 truncate text-[11px] min-w-0 flex-1">
-              {/* Env Tag: Always visible */}
-              <span className={`font-extrabold tracking-wider shrink-0 ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{envTag}</span>
-              <span className="opacity-40 shrink-0">|</span>
-
-              {/* Engine: Full version on xl, short on lg, hidden on md */}
-              <span className="hidden xl:inline shrink-0">{engineLabel}</span>
-              <span className="hidden lg:inline xl:hidden shrink-0">{activeConnection.engine === 'postgres' ? 'PostgreSQL' : activeConnection.engine === 'mysql' ? 'MySQL' : activeConnection.engine}</span>
-              <span className="opacity-40 hidden lg:inline shrink-0">:</span>
-
-              {/* TLSv1.3: only on xl */}
-              <span className="hidden xl:inline shrink-0">TLSv1.3</span>
-              <span className="opacity-40 hidden xl:inline shrink-0">:</span>
-
-              {/* SSH tag if enabled */}
-              {activeConnection.useSsh && (
+              {hasNoSessions ? (
                 <>
-                  <span className="shrink-0 font-bold hidden sm:inline">SSH</span>
-                  <span className="opacity-40 hidden sm:inline shrink-0">:</span>
+                  <span className="font-extrabold tracking-wider shrink-0 text-slate-400 dark:text-slate-500">STANDBY</span>
+                  <span className="opacity-40 shrink-0">|</span>
+                  <span className="truncate font-bold text-slate-600 dark:text-slate-300">
+                    No Active Connection • Tap to open (⌘K)
+                  </span>
+                </>
+              ) : (
+                <>
+                  {/* Env Tag: Always visible */}
+                  <span className={`font-extrabold tracking-wider shrink-0 ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{envTag}</span>
+                  <span className="opacity-40 shrink-0">|</span>
+
+                  {/* Engine: Full version on xl, short on lg, hidden on md */}
+                  <span className="hidden xl:inline shrink-0">{engineLabel}</span>
+                  <span className="hidden lg:inline xl:hidden shrink-0">{activeConnection.engine === 'postgres' ? 'PostgreSQL' : activeConnection.engine === 'mysql' ? 'MySQL' : activeConnection.engine}</span>
+                  <span className="opacity-40 hidden lg:inline shrink-0">:</span>
+
+                  {/* TLSv1.3: only on xl */}
+                  <span className="hidden xl:inline shrink-0">TLSv1.3</span>
+                  <span className="opacity-40 hidden xl:inline shrink-0">:</span>
+
+                  {/* SSH tag if enabled */}
+                  {activeConnection.useSsh && (
+                    <>
+                      <span className="shrink-0 font-bold hidden sm:inline">SSH</span>
+                      <span className="opacity-40 hidden sm:inline shrink-0">:</span>
+                    </>
+                  )}
+
+                  {/* Connection name */}
+                  <span className={`truncate max-w-[80px] sm:max-w-[110px] xl:max-w-[140px] font-bold shrink-0 ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
+                    {activeConnection.name}
+                  </span>
+
+                  {/* Database name on sm+ */}
+                  <span className="opacity-40 shrink-0 hidden sm:inline">:</span>
+                  <span className={`underline underline-offset-2 truncate max-w-[70px] sm:max-w-[100px] xl:max-w-[120px] hidden sm:inline ${
+                    env === 'prod' ? 'decoration-white/60 text-white' : 'decoration-slate-400/50 dark:decoration-white/50'
+                  }`}>
+                    {activeConnection.database || 'postgres'}
+                  </span>
+
+                  {/* Tab/Table title on md+ */}
+                  <span className="opacity-40 shrink-0 hidden md:inline">:</span>
+                  <span className={`truncate max-w-[80px] md:max-w-[110px] xl:max-w-[130px] hidden md:inline ${
+                    env === 'prod' ? 'text-rose-100 font-medium' : 'text-slate-600 dark:text-slate-300'
+                  }`}>
+                    {activeTabTitle || `public.${selectedTable}`}
+                  </span>
                 </>
               )}
-
-              {/* Connection name */}
-              <span className={`truncate max-w-[80px] sm:max-w-[110px] xl:max-w-[140px] font-bold shrink-0 ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
-                {activeConnection.name}
-              </span>
-
-              {/* Database name on sm+ */}
-              <span className="opacity-40 shrink-0 hidden sm:inline">:</span>
-              <span className={`underline underline-offset-2 truncate max-w-[70px] sm:max-w-[100px] xl:max-w-[120px] hidden sm:inline ${
-                env === 'prod' ? 'decoration-white/60 text-white' : 'decoration-slate-400/50 dark:decoration-white/50'
-              }`}>
-                {activeConnection.database || 'postgres'}
-              </span>
-
-              {/* Tab/Table title on md+ */}
-              <span className="opacity-40 shrink-0 hidden md:inline">:</span>
-              <span className={`truncate max-w-[80px] md:max-w-[110px] xl:max-w-[130px] hidden md:inline ${
-                env === 'prod' ? 'text-rose-100 font-medium' : 'text-slate-600 dark:text-slate-300'
-              }`}>
-                {activeTabTitle || `public.${selectedTable}`}
-              </span>
             </div>
 
             {/* Right Speed Meter */}
@@ -344,7 +364,7 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
                   ? 'text-white bg-black/30 border-white/20'
                   : 'text-slate-700 dark:text-white/90 bg-white/80 dark:bg-black/35 border-slate-200 dark:border-white/10'
               }`}>
-                {speedDisplay}
+                {hasNoSessions ? '0 KB/s' : speedDisplay}
               </span>
             </div>
           </div>

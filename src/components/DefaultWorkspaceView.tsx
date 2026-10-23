@@ -6,6 +6,7 @@ import {
   Layers,
   ShieldCheck,
   Zap,
+  Database,
 } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
 import { BorderChase } from './BorderChase';
@@ -15,11 +16,15 @@ import appIcon from '../assets/app-icon.png';
 export const DefaultWorkspaceView: React.FC = () => {
   const {
     activeConnection,
+    openSessionIds,
+    setConnectionModalOpen,
     openNewQueryTab,
     openTableGridTab,
     isConnecting,
     triggerConnectingAnimation,
   } = useAppStore();
+
+  const hasNoSessions = openSessionIds.length === 0;
 
   const [imgError, setImgError] = React.useState(false);
 
@@ -103,58 +108,88 @@ export const DefaultWorkspaceView: React.FC = () => {
         <div className="space-y-1.5 pt-1">
           <div className="flex items-center justify-center space-x-2">
             <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 font-mono tracking-tight">
-              {activeConnection.database || 'postgres'}
+              {hasNoSessions ? 'No Connection Open' : (activeConnection.database || 'postgres')}
             </h1>
-            <span className="text-slate-400 dark:text-slate-600 font-mono">/</span>
-            <span className="text-xs font-mono text-sky-600 dark:text-sky-400 font-semibold">
-              public
-            </span>
+            {!hasNoSessions && (
+              <>
+                <span className="text-slate-400 dark:text-slate-600 font-mono">/</span>
+                <span className="text-xs font-mono text-sky-600 dark:text-sky-400 font-semibold">
+                  public
+                </span>
+              </>
+            )}
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center space-x-1.5 font-mono">
-            <span>{engineName}</span>
-            <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span>{activeConnection.host}:{activeConnection.port}</span>
-            <span className="text-slate-300 dark:text-slate-600">•</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1">
-              <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-              <span>TLSv1.3</span>
-            </span>
+            {hasNoSessions ? (
+              <span>All sessions closed • Press ⌘K to select or connect a database</span>
+            ) : (
+              <>
+                <span>{engineName}</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span>{activeConnection.host}:{activeConnection.port}</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span>TLSv1.3</span>
+                </span>
+              </>
+            )}
           </p>
         </div>
 
         {/* Quick Action Tiles */}
-        <div className="grid grid-cols-2 gap-3 w-full max-w-md">
-          {/* Action 1: New SQL Console */}
-          <button
-            onClick={() => openNewQueryTab()}
-            className="p-3.5 rounded-xl bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-sky-400 dark:hover:border-sky-500/50 flex flex-col items-start transition-all duration-150 cursor-pointer group shadow-2xs text-left active:scale-[0.98]"
-          >
-            <div className="p-2 bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 rounded-lg group-hover:scale-105 transition-transform mb-2">
-              <Terminal className="w-4 h-4" />
-            </div>
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-700 dark:group-hover:text-white">New SQL Query</span>
-              <kbd className="text-[10px] font-mono text-slate-400 dark:text-slate-500 group-hover:text-sky-600 dark:group-hover:text-sky-300 font-bold">⌘E</kbd>
-            </div>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Write and execute raw SQL statements</span>
-          </button>
+        {hasNoSessions ? (
+          <div className="w-full max-w-md">
+            <button
+              onClick={() => setConnectionModalOpen(true)}
+              className="w-full p-4 rounded-xl bg-sky-50 dark:bg-sky-500/15 hover:bg-sky-100 dark:hover:bg-sky-500/25 border border-sky-300 dark:border-sky-500/40 flex items-center justify-between transition-all duration-150 cursor-pointer group shadow-sm text-left active:scale-[0.98]"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-sky-600 text-white rounded-lg group-hover:scale-105 transition-transform">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-sky-950 dark:text-white block">Open Connection Manager</span>
+                  <span className="text-[11px] text-sky-700 dark:text-sky-300">Choose a database profile or configure a new connection</span>
+                </div>
+              </div>
+              <kbd className="px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-300 border border-sky-200 dark:border-sky-700 rounded-md font-bold shadow-2xs">⌘K</kbd>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 w-full max-w-md">
+            {/* Action 1: New SQL Console */}
+            <button
+              onClick={() => openNewQueryTab()}
+              className="p-3.5 rounded-xl bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-sky-400 dark:hover:border-sky-500/50 flex flex-col items-start transition-all duration-150 cursor-pointer group shadow-2xs text-left active:scale-[0.98]"
+            >
+              <div className="p-2 bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 rounded-lg group-hover:scale-105 transition-transform mb-2">
+                <Terminal className="w-4 h-4" />
+              </div>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-700 dark:group-hover:text-white">New SQL Query</span>
+                <kbd className="text-[10px] font-mono text-slate-400 dark:text-slate-500 group-hover:text-sky-600 dark:group-hover:text-sky-300 font-bold">⌘E</kbd>
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Write and execute raw SQL statements</span>
+            </button>
 
-          {/* Action 2: Open Default Table Grid */}
-          <button
-            onClick={() => openTableGridTab(defaultSuggestedTable)}
-            className="p-3.5 rounded-xl bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 flex flex-col items-start transition-all duration-150 cursor-pointer group shadow-2xs text-left active:scale-[0.98]"
-          >
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-lg group-hover:scale-105 transition-transform mb-2">
-              <TableIcon className="w-4 h-4" />
-            </div>
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-white">Open Table</span>
-              <kbd className="text-[10px] font-mono text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 font-bold">⌘O</kbd>
-            </div>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Explore {defaultSuggestedTable} data grid</span>
-          </button>
-        </div>
+            {/* Action 2: Open Default Table Grid */}
+            <button
+              onClick={() => openTableGridTab(defaultSuggestedTable)}
+              className="p-3.5 rounded-xl bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 flex flex-col items-start transition-all duration-150 cursor-pointer group shadow-2xs text-left active:scale-[0.98]"
+            >
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-lg group-hover:scale-105 transition-transform mb-2">
+                <TableIcon className="w-4 h-4" />
+              </div>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-white">Open Table</span>
+                <kbd className="text-[10px] font-mono text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 font-bold">⌘O</kbd>
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Explore {defaultSuggestedTable} data grid</span>
+            </button>
+          </div>
+        )}
 
         {/* Hype Ping Benchmark & Shortcuts Banner */}
         <div className="w-full max-w-md flex items-center justify-between space-x-2">
