@@ -230,6 +230,10 @@ export function App() {
     if (urlSettings === 'open' || urlSettings === 'true') {
       useAppStore.getState().setSettingsModalOpen(true);
     }
+    const urlModal = urlParams.get('modal');
+    if (urlModal === 'connection' || urlModal === 'conn') {
+      useAppStore.getState().setConnectionModalOpen(true);
+    }
 
     const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
     if (mediaQuery) {

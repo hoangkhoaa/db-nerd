@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { DatabaseEngine, ConnectionProfile, ConnectionGroup } from '../types';
 import {
@@ -18,6 +18,10 @@ import {
   FolderOpen,
   Link,
   AlertCircle,
+  Key,
+  FileKey,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { HeartbeatDot, HeartbeatColor } from './HeartbeatDot';
 import { BorderChase } from './BorderChase';
@@ -112,6 +116,8 @@ export const ConnectionModal = () => {
   const [groupColor, setGroupColor] = useState<string>('emerald');
 
   // Connection Form state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showSshPassword, setShowSshPassword] = useState(false);
   const [formData, setFormData] = useState<Omit<ConnectionProfile, 'id'>>({
     name: 'new-postgres-connection',
     groupId: connectionGroups[0]?.id || 'group-prod',
@@ -123,7 +129,13 @@ export const ConnectionModal = () => {
     username: 'postgres',
     password: '',
     useSsh: false,
-    sshHost: 'bastion.infra.net',
+    sshHost: '',
+    sshPort: 22,
+    sshUser: 'ec2-user',
+    sshPassword: '',
+    useSshKey: true,
+    sshKeyPath: 'id_rsa',
+    sshPassphrase: '',
     accountIdentifier: '',
     warehouse: '',
     active: false,
@@ -151,6 +163,12 @@ export const ConnectionModal = () => {
           password: conn.password || '',
           useSsh: conn.useSsh || false,
           sshHost: conn.sshHost || '',
+          sshPort: conn.sshPort || 22,
+          sshUser: conn.sshUser || '',
+          sshPassword: conn.sshPassword || '',
+          useSshKey: conn.useSshKey ?? true,
+          sshKeyPath: conn.sshKeyPath || (conn.useSsh ? 'id_rsa' : ''),
+          sshPassphrase: conn.sshPassphrase || '',
           accountIdentifier: conn.accountIdentifier || '',
           warehouse: conn.warehouse || '',
           active: conn.active,
@@ -159,6 +177,14 @@ export const ConnectionModal = () => {
       }
     }
   }, [selectedConnId, isCreatingNew, connections]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlConn = urlParams.get('conn');
+    if (urlConn) {
+      setSelectedConnId(urlConn);
+    }
+  }, []);
 
   if (!isConnectionModalOpen) return null;
 
@@ -194,7 +220,13 @@ export const ConnectionModal = () => {
       username: 'postgres',
       password: '',
       useSsh: false,
-      sshHost: 'bastion.corp.io',
+      sshHost: '',
+      sshPort: 22,
+      sshUser: 'ec2-user',
+      sshPassword: '',
+      useSshKey: true,
+      sshKeyPath: 'id_rsa',
+      sshPassphrase: '',
       accountIdentifier: '',
       warehouse: '',
       active: false,
@@ -239,7 +271,12 @@ export const ConnectionModal = () => {
         password: parsed.password || '',
         useSsh: parsed.useSsh || false,
         sshHost: parsed.sshHost || '',
+        sshPort: parsed.sshPort || 22,
         sshUser: parsed.sshUser || '',
+        sshPassword: parsed.sshPassword || '',
+        useSshKey: parsed.useSshKey ?? true,
+        sshKeyPath: parsed.sshKeyPath || (parsed.useSsh ? 'id_rsa' : ''),
+        sshPassphrase: '',
         accountIdentifier: '',
         warehouse: '',
         active: false,
@@ -465,7 +502,7 @@ export const ConnectionModal = () => {
 
   return (
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in duration-150">
-      <div className="w-full max-w-4xl h-[650px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-black/5 dark:ring-white/10 animate-in zoom-in-95 duration-150 font-sans">
+      <div className="w-full max-w-4xl h-[720px] max-h-[90vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-black/5 dark:ring-white/10 animate-in zoom-in-95 duration-150 font-sans">
         
         {/* Titlebar */}
         <div className="h-11 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between select-none">
@@ -1134,48 +1171,182 @@ export const ConnectionModal = () => {
               </div>
             </div>
 
-            {/* Smooth Collapsible SSH Bastion Tunnel Option */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 shadow-2xs">
-              <label className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 cursor-pointer font-semibold">
-                <input
-                  type="checkbox"
-                  checked={formData.useSsh || false}
-                  onChange={(e) => setFormData({ ...formData, useSsh: e.target.checked })}
-                  className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sky-500"
-                />
-                <Shield className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                <span>Connect via SSH Bastion Tunnel (Zero-Trust)</span>
-              </label>
+            {/* TablePlus-grade SSH Bastion Tunnel (Zero-Trust Jump Host) Option */}
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 cursor-pointer font-semibold select-none text-xs">
+                  <input
+                    type="checkbox"
+                    checked={formData.useSsh || false}
+                    onChange={(e) => setFormData({ ...formData, useSsh: e.target.checked })}
+                    className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sky-500 focus:ring-sky-500"
+                  />
+                  <Shield className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                  <span>Connect via SSH Bastion Tunnel (Zero-Trust)</span>
+                </label>
+                {formData.useSsh && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-medium">
+                    Over SSH
+                  </span>
+                )}
+              </div>
 
-              <div
-                className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-                  formData.useSsh ? 'grid-rows-[1fr] opacity-100 pt-2' : 'grid-rows-[0fr] opacity-0'
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">SSH Bastion Host</label>
+              {formData.useSsh && (
+                <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800 animate-in fade-in duration-150">
+                  {/* Row 1: SSH Server Host & Port */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">
+                        Server (SSH Host)
+                      </label>
                       <input
                         type="text"
                         value={formData.sshHost || ''}
                         onChange={(e) => setFormData({ ...formData, sshHost: e.target.value })}
-                        placeholder="bastion.internal.cloud"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs"
+                        placeholder="13.212.189.147"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">SSH Port / Protocol</label>
+                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">
+                        Port
+                      </label>
                       <input
-                        type="text"
-                        defaultValue="22 (Standard SSH Key Auth)"
-                        disabled
-                        className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-slate-500 font-mono text-xs"
+                        type="number"
+                        value={formData.sshPort ?? 22}
+                        onChange={(e) => setFormData({ ...formData, sshPort: parseInt(e.target.value, 10) || 22 })}
+                        placeholder="22"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
                       />
                     </div>
                   </div>
+
+                  {/* Row 2: SSH User & SSH Password */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">
+                        User
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.sshUser || ''}
+                        onChange={(e) => setFormData({ ...formData, sshUser: e.target.value })}
+                        placeholder="ec2-user"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-slate-600 dark:text-slate-400 text-[10px] font-semibold">
+                          Password
+                        </label>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">Store in keychain</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showSshPassword ? 'text' : 'password'}
+                          value={formData.sshPassword || ''}
+                          onChange={(e) => setFormData({ ...formData, sshPassword: e.target.value })}
+                          placeholder="password"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 pr-8 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSshPassword(!showSshPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                        >
+                          {showSshPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Use SSH Key (RSA / Ed25519) */}
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 cursor-pointer font-medium text-xs select-none">
+                        <input
+                          type="checkbox"
+                          checked={formData.useSshKey ?? true}
+                          onChange={(e) => setFormData({ ...formData, useSshKey: e.target.checked })}
+                          className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sky-500 focus:ring-sky-500"
+                        />
+                        <Key className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Use SSH key</span>
+                      </label>
+
+                      {/* Quick preset chips */}
+                      {formData.useSshKey && (
+                        <div className="flex items-center space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, sshKeyPath: 'id_rsa' })}
+                            className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-sky-500 transition-colors"
+                          >
+                            id_rsa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, sshKeyPath: 'id_ed25519' })}
+                            className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-sky-500 transition-colors"
+                          >
+                            id_ed25519
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {formData.useSshKey && (
+                      <div className="space-y-2 pl-5">
+                        <div className="flex items-center space-x-1.5">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setFormData({ ...formData, sshKeyPath: file.name });
+                              }
+                            }}
+                          />
+                          <input
+                            type="text"
+                            value={formData.sshKeyPath || ''}
+                            onChange={(e) => setFormData({ ...formData, sshKeyPath: e.target.value })}
+                            placeholder="id_rsa"
+                            className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Browse private key file"
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-700 transition-colors shrink-0 flex items-center space-x-1"
+                          >
+                            <FileKey className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Browse…</span>
+                          </button>
+                        </div>
+
+                        {/* Optional Passphrase */}
+                        <div>
+                          <input
+                            type="password"
+                            value={formData.sshPassphrase || ''}
+                            onChange={(e) => setFormData({ ...formData, sshPassphrase: e.target.value })}
+                            placeholder="Passphrase (optional)"
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono leading-relaxed">
+                          DBNerd will use <span className="text-slate-600 dark:text-slate-300 font-semibold">~/.ssh/config</span> if you leave private key empty
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
           </div>

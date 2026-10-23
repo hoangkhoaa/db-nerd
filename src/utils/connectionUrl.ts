@@ -12,6 +12,10 @@ export interface ParsedConnectionUrl {
   useSsh?: boolean;
   sshHost?: string;
   sshUser?: string;
+  sshPort?: number;
+  sshPassword?: string;
+  useSshKey?: boolean;
+  sshKeyPath?: string;
   statusColor?: string;
   rawParams?: Record<string, string>;
 }
@@ -83,23 +87,44 @@ export function parseConnectionUrl(urlString: string): ParsedConnectionUrl {
   }
 
   let sshUser = '';
+  let sshPassword = '';
   let sshHost = '';
+  let sshPort = 22;
   let dbPart = pathPart;
 
   // 3. Handle SSH prefix if present
   if (useSsh) {
-    // Format: sshUser@sshHost[:sshPort]/dbUser:dbPass@dbHost...
+    // Format: sshUser[:sshPassword]@sshHost[:sshPort]/dbUser:dbPass@dbHost...
     const firstSlashIdx = pathPart.indexOf('/');
     if (firstSlashIdx !== -1) {
       const sshSegment = pathPart.substring(0, firstSlashIdx);
       dbPart = pathPart.substring(firstSlashIdx + 1);
 
       if (sshSegment.includes('@')) {
-        const [user, hostPort] = sshSegment.split('@');
-        sshUser = decodeURIComponent(user);
-        sshHost = decodeURIComponent(hostPort.split(':')[0]);
+        const [userPass, hostPort] = sshSegment.split('@');
+        if (userPass.includes(':')) {
+          const colonIdx = userPass.indexOf(':');
+          sshUser = decodeURIComponent(userPass.substring(0, colonIdx));
+          sshPassword = decodeURIComponent(userPass.substring(colonIdx + 1));
+        } else {
+          sshUser = decodeURIComponent(userPass);
+        }
+
+        if (hostPort.includes(':')) {
+          const [h, p] = hostPort.split(':');
+          sshHost = decodeURIComponent(h);
+          sshPort = parseInt(p, 10) || 22;
+        } else {
+          sshHost = decodeURIComponent(hostPort);
+        }
       } else {
-        sshHost = decodeURIComponent(sshSegment.split(':')[0]);
+        if (sshSegment.includes(':')) {
+          const [h, p] = sshSegment.split(':');
+          sshHost = decodeURIComponent(h);
+          sshPort = parseInt(p, 10) || 22;
+        } else {
+          sshHost = decodeURIComponent(sshSegment);
+        }
       }
     }
   }
@@ -167,6 +192,18 @@ export function parseConnectionUrl(urlString: string): ParsedConnectionUrl {
     env = 'staging';
   }
 
+  const useSshKey =
+    queryParams['usePrivateKey'] === 'true' ||
+    queryParams['usePrivateKey'] === '1' ||
+    Boolean(queryParams['privateKeyPath']) ||
+    Boolean(queryParams['sshKeyPath']) ||
+    (useSsh && !sshPassword);
+
+  const sshKeyPath =
+    queryParams['privateKeyPath'] ||
+    queryParams['sshKeyPath'] ||
+    (useSshKey ? 'id_rsa' : undefined);
+
   return {
     name,
     engine,
@@ -179,6 +216,10 @@ export function parseConnectionUrl(urlString: string): ParsedConnectionUrl {
     useSsh,
     sshHost: sshHost || (useSsh ? '13.212.189.147' : undefined),
     sshUser: sshUser || (useSsh ? 'ec2-user' : undefined),
+    sshPort: sshPort || 22,
+    sshPassword: sshPassword || undefined,
+    useSshKey: useSsh ? useSshKey : undefined,
+    sshKeyPath: useSsh ? (sshKeyPath || 'id_rsa') : undefined,
     statusColor: queryParams['statusColor'],
     rawParams: queryParams,
   };
@@ -199,9 +240,22 @@ export function serializeConnectionUrl(conn: ConnectionProfile): string {
   params.set('tLSMode', '0');
 
   if (conn.useSsh && conn.sshHost) {
-    const sshCreds = conn.sshUser ? `${encodeURIComponent(conn.sshUser)}@` : '';
-    const sshHost = conn.sshHost;
-    return `${engine}+ssh://${sshCreds}${sshHost}/${creds}@${hostPort}/${db}?${params.toString()}`;
+    let sshCreds = '';
+    if (conn.sshUser) {
+      sshCreds = encodeURIComponent(conn.sshUser);
+      if (conn.sshPassword) {
+        sshCreds += `:${encodeURIComponent(conn.sshPassword)}`;
+      }
+      sshCreds += '@';
+    }
+    const sshHostPort = `${conn.sshHost}${conn.sshPort && conn.sshPort !== 22 ? `:${conn.sshPort}` : ''}`;
+    if (conn.useSshKey) {
+      params.set('usePrivateKey', 'true');
+      if (conn.sshKeyPath) {
+        params.set('privateKeyPath', conn.sshKeyPath);
+      }
+    }
+    return `${engine}+ssh://${sshCreds}${sshHostPort}/${creds}@${hostPort}/${db}?${params.toString()}`;
   }
 
   return `${engine}://${creds}@${hostPort}/${db}?${params.toString()}`;

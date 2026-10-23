@@ -8,6 +8,14 @@ export interface DbConfigPayload {
   database: string;
   username?: string;
   password?: string;
+  use_ssh?: boolean;
+  ssh_host?: string;
+  ssh_user?: string;
+  ssh_port?: number;
+  ssh_password?: string;
+  use_ssh_key?: boolean;
+  ssh_key_path?: string;
+  ssh_passphrase?: string;
 }
 
 export interface RealQueryResult {
@@ -54,6 +62,14 @@ export const profileToConfig = (profile: ConnectionProfile): DbConfigPayload => 
     database: profile.database || (profile.engine === 'postgres' ? 'ecom_prod_db' : profile.engine === 'mysql' ? 'analytics_staging' : '0'),
     username,
     password,
+    use_ssh: profile.useSsh,
+    ssh_host: profile.sshHost,
+    ssh_user: profile.sshUser,
+    ssh_port: profile.sshPort,
+    ssh_password: profile.sshPassword,
+    use_ssh_key: profile.useSshKey,
+    ssh_key_path: profile.sshKeyPath,
+    ssh_passphrase: profile.sshPassphrase,
   };
 };
 

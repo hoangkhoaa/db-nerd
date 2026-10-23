@@ -69,6 +69,11 @@ export interface ConnectionProfile {
   useSsh?: boolean;
   sshHost?: string;
   sshUser?: string;
+  sshPort?: number;
+  sshPassword?: string;
+  useSshKey?: boolean;
+  sshKeyPath?: string;
+  sshPassphrase?: string;
   accountIdentifier?: string;
   warehouse?: string;
   active: boolean;

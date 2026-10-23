@@ -526,6 +526,28 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     active: false,
     latencyMs: 24.5,
   },
+  {
+    id: 'conn-5',
+    name: '[Production] [VN] Vigo DB (SSH)',
+    groupId: 'group-prod',
+    engine: 'postgres',
+    env: 'prod',
+    host: 'oms.coy4vltic3yw.ap-southeast-1.rds.amazonaws.com',
+    port: 5432,
+    database: 'app_db',
+    databases: ['app_db', 'postgres'],
+    username: 'postgres',
+    password: '••••••••••••',
+    useSsh: true,
+    sshHost: '13.212.189.147',
+    sshPort: 22,
+    sshUser: 'ec2-user',
+    sshPassword: '',
+    useSshKey: true,
+    sshKeyPath: 'id_rsa',
+    active: false,
+    latencyMs: 14.2,
+  },
 ];
 
 const createDefaultSessionForConnection = (conn: ConnectionProfile): ConnectionSession => {

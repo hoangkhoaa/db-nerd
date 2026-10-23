@@ -9,6 +9,22 @@ pub struct DbConfig {
     pub database: String,
     pub username: Option<String>,
     pub password: Option<String>,
+    #[serde(default)]
+    pub use_ssh: Option<bool>,
+    #[serde(default)]
+    pub ssh_host: Option<String>,
+    #[serde(default)]
+    pub ssh_user: Option<String>,
+    #[serde(default)]
+    pub ssh_port: Option<u16>,
+    #[serde(default)]
+    pub ssh_password: Option<String>,
+    #[serde(default)]
+    pub use_ssh_key: Option<bool>,
+    #[serde(default)]
+    pub ssh_key_path: Option<String>,
+    #[serde(default)]
+    pub ssh_passphrase: Option<String>,
 }
 
 #[derive(Serialize, Debug, Clone)]
