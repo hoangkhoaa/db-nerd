@@ -56,6 +56,47 @@ button.no-drag:not(:disabled) {
   cursor: pointer !important;
 }
 
+/* TablePlus-Grade Native CSS Grid for 100% Dead-Center Alignment & No-Overlap Guarantee */
+.titlebar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 34px;
+}
+
+.titlebar-left {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.titlebar-center {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.titlebar-right {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+
 /* Interactive elements with cursor-pointer class */
 .cursor-pointer,
 [class*="cursor-pointer"] {

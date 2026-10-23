@@ -102,10 +102,10 @@ export const Titlebar = () => {
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="drag-region h-[34px] bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 select-none z-30 flex-shrink-0 cursor-default grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center relative"
+      className="drag-region titlebar-grid bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 select-none z-30 flex-shrink-0 cursor-default"
     >
       {/* Left: Window Controls spacer + Sidebar Toggle + Connection Selector + SQL Capsule + Filter Toggle */}
-      <div className="flex items-center space-x-1.5 pointer-events-auto min-w-0 pl-[70px]">
+      <div className="titlebar-left pl-[70px] space-x-1.5 pointer-events-auto">
         {/* Sidebar Toggle */}
         <button
           onClick={toggleSidebar}
@@ -166,12 +166,12 @@ export const Titlebar = () => {
       </div>
 
       {/* Center: TablePlus Iconic LED Dot-Matrix Banner with Live Telemetry */}
-      <div className="flex items-center justify-center pointer-events-auto min-w-0 px-2 justify-self-center max-w-full">
+      <div className="titlebar-center px-2 pointer-events-auto">
         <LedMatrixBanner onOpenDatabaseModal={() => setDatabaseModalOpen(true)} />
       </div>
 
       {/* Right: Clean, un-cluttered actions matching TablePlus */}
-      <div className="flex items-center space-x-1.5 pointer-events-auto justify-end min-w-0">
+      <div className="titlebar-right space-x-1.5 pointer-events-auto">
         {pendingEditsCount > 0 && (
           <div className="flex items-center space-x-1.5 animate-in fade-in">
             <div className="h-7 px-2 bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-semibold flex items-center space-x-1 leading-none shrink-0">
