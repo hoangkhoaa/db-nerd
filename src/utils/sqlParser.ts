@@ -312,3 +312,31 @@ export function getQueryToExecute(
     totalStatements: statements.length,
   };
 }
+
+/**
+ * Infers primary target table name and primary key column from a SQL query and result columns.
+ */
+export function extractTableAndPkFromQuery(sql: string, columns: string[] = []): { table: string; pkColumn: string } {
+  const cleanSql = (sql || '')
+    .replace(/--.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .trim();
+
+  let table = 'users';
+  const fromMatch = cleanSql.match(/\bFROM\s+([`"a-zA-Z0-9_.]+)/i);
+  if (fromMatch && fromMatch[1]) {
+    const rawTable = fromMatch[1].replace(/[`"]/g, '').trim();
+    const parts = rawTable.split('.');
+    table = parts[parts.length - 1] || 'users';
+  }
+
+  let pkColumn = 'id';
+  if (columns && columns.length > 0) {
+    const foundId = columns.find((c) => c.toLowerCase() === 'id');
+    const foundEndingId = columns.find((c) => c.toLowerCase().endsWith('_id'));
+    const foundAnyId = columns.find((c) => c.toLowerCase().includes('id'));
+    pkColumn = foundId || foundEndingId || foundAnyId || columns[0] || 'id';
+  }
+
+  return { table, pkColumn };
+}

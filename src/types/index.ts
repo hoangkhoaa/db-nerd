@@ -144,6 +144,18 @@ export interface SqlQueryResultItem {
   statusMessage?: string; // e.g. "Query 4 OK: COMMIT" or "Query 1: 3 rows"
 }
 
+export interface PendingQueryEdit {
+  rowId: any;
+  rowIndex: number;
+  field: string;
+  originalValue: any;
+  newValue: any;
+  table: string;
+  pkColumn: string;
+  pkValue: any;
+  generatedSql: string;
+}
+
 export interface SqlTabState {
   tabId: string;
   query: string;

@@ -47,7 +47,10 @@ import { TableContextMenu } from './TableContextMenu';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
 import { BorderChase } from './BorderChase';
 import { format as formatSql } from 'sql-formatter';
-import { getQueryToExecute } from '../utils/sqlParser';
+import { getQueryToExecute, extractTableAndPkFromQuery } from '../utils/sqlParser';
+import { InlineCellEditor } from './InlineCellEditor';
+import { QueryEditUpdateModal } from './QueryEditUpdateModal';
+import { ColumnDefinition, PendingQueryEdit } from '../types';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -220,7 +223,22 @@ export const SqlEditor: React.FC = () => {
     return () => clearInterval(interval);
   }, [tabState.isExecuting]);
 
-  // Close dropdown menus when clicking outside or pressing Escape
+  // Inline editing state for query results
+  const [editingCell, setEditingCell] = useState<{ rowId: any; col: string; rowIndex: number } | null>(null);
+  const [pendingEdits, setPendingEdits] = useState<Record<string, PendingQueryEdit>>({});
+  const [editedRowOverrides, setEditedRowOverrides] = useState<Record<string, Record<string, any>>>({});
+  const [isQueryEditModalOpen, setIsQueryEditModalOpen] = useState(false);
+  const pendingEditsRef = useRef(pendingEdits);
+  pendingEditsRef.current = pendingEdits;
+
+  // Reset cell edits on query tab switch or new result selection
+  useEffect(() => {
+    setPendingEdits({});
+    setEditedRowOverrides({});
+    setEditingCell(null);
+  }, [activeTabId, tabState.activeResultId]);
+
+  // Close dropdown menus when clicking outside or pressing Escape, and handle ⌘S for query edits
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (runMenuRef.current && !runMenuRef.current.contains(e.target as Node)) {
@@ -243,6 +261,12 @@ export const SqlEditor: React.FC = () => {
         setIsBeautifyMenuOpen(false);
         setIsExportMenuOpen(false);
         setIsSearchOpen(false);
+        setEditingCell(null);
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')) {
+        if (Object.keys(pendingEditsRef.current).length > 0) {
+          e.preventDefault();
+          setIsQueryEditModalOpen(true);
+        }
       }
     };
     document.addEventListener('mousedown', handleOutside);
@@ -252,6 +276,103 @@ export const SqlEditor: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Helper to format values for SQL queries
+  const formatSqlLiteral = (val: any): string => {
+    if (val === null || val === undefined) return 'NULL';
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+    if (typeof val === 'object') return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
+    return `'${String(val).replace(/'/g, "''")}'`;
+  };
+
+  // Helper to infer column type
+  const inferColumnType = (val: any, colName: string): string => {
+    for (const schema of Object.values(TABLE_SCHEMAS)) {
+      const match = schema.columns.find((c) => c.name.toLowerCase() === colName.toLowerCase());
+      if (match) return match.type;
+    }
+    if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'numeric';
+    if (typeof val === 'boolean') return 'boolean';
+    if (val instanceof Date) return 'timestamp';
+    if (typeof val === 'object' && val !== null) return 'jsonb';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) return 'timestamp';
+    return 'varchar';
+  };
+
+  const handleStartEditing = (rowId: any, rowIndex: number, col: string) => {
+    if (col.toLowerCase() === 'error' || tabState.isExecuting) return;
+    setEditingCell({ rowId, col, rowIndex });
+  };
+
+  const handleSaveCell = (rowId: any, rowIndex: number, col: string, newVal: any, rowObj: any) => {
+    const currentVal = rowObj[col];
+    if (currentVal === newVal) {
+      setEditingCell(null);
+      return;
+    }
+
+    const currentQuery = activeResultItem?.query || tabState.query;
+    const { table: detectedTable, pkColumn: detectedPk } = extractTableAndPkFromQuery(currentQuery, columns);
+
+    const pkValue = rowObj[detectedPk] !== undefined ? rowObj[detectedPk] : (rowObj.id !== undefined ? rowObj.id : rowId);
+
+    const formattedVal = formatSqlLiteral(newVal);
+    const formattedPk = formatSqlLiteral(pkValue);
+    const generatedSql = `UPDATE ${detectedTable}\nSET ${col} = ${formattedVal}\nWHERE ${detectedPk} = ${formattedPk};`;
+
+    setEditedRowOverrides((prev) => ({
+      ...prev,
+      [rowId]: {
+        ...(prev[rowId] || {}),
+        [col]: newVal,
+      },
+    }));
+
+    const editKey = `${rowId}:${col}`;
+    setPendingEdits((prev) => ({
+      ...prev,
+      [editKey]: {
+        rowId,
+        rowIndex,
+        field: col,
+        originalValue: currentVal,
+        newValue: newVal,
+        table: detectedTable,
+        pkColumn: detectedPk,
+        pkValue,
+        generatedSql,
+      },
+    }));
+
+    setEditingCell(null);
+    showToast(`✏️ Modified ${col} ➔ Press ⌘S or Review & Execute SQL to apply`);
+  };
+
+  const handleDiscardPendingEdits = () => {
+    setPendingEdits({});
+    setEditedRowOverrides({});
+    setEditingCell(null);
+    showToast('↩️ Discarded pending cell modifications');
+  };
+
+  const handleApplySuccess = (_executedSql: string, rowsAffected: number) => {
+    setIsQueryEditModalOpen(false);
+    setPendingEdits({});
+    showToast(`✅ Executed UPDATE successfully (${rowsAffected || 1} record(s) updated)`);
+  };
+
+  const handleSendToEditor = (sql: string) => {
+    if (viewRef.current) {
+      const currentDoc = viewRef.current.state.doc.toString();
+      const newDoc = currentDoc.trim() ? `${currentDoc}\n\n${sql}` : sql;
+      viewRef.current.dispatch({
+        changes: { from: 0, to: viewRef.current.state.doc.length, insert: newDoc },
+      });
+      setSqlTabQuery(activeTabId, newDoc);
+      showToast('📝 Inserted UPDATE statement into SQL Editor');
+    }
+  };
 
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [contextMenuRows, setContextMenuRows] = useState<any[]>([]);
@@ -525,6 +646,16 @@ export const SqlEditor: React.FC = () => {
             },
           },
           {
+            key: 'Mod-s',
+            run: () => {
+              if (Object.keys(pendingEditsRef.current).length > 0) {
+                setIsQueryEditModalOpen(true);
+                return true;
+              }
+              return false;
+            },
+          },
+          {
             key: 'Mod-t',
             run: () => {
               openNewQueryTab();
@@ -613,13 +744,19 @@ export const SqlEditor: React.FC = () => {
     ? tabState.columns
     : Object.keys(rawResults[0] || {});
 
+  const modifiedResults = (rawResults || []).map((r, idx) => {
+    const rowId = r.id !== undefined ? r.id : `row-${idx}`;
+    const overrides = editedRowOverrides[rowId];
+    return overrides ? { ...r, ...overrides } : r;
+  });
+
   const displayResults = searchFilter.trim()
-    ? rawResults.filter((r) =>
+    ? modifiedResults.filter((r) =>
         Object.values(r).some((v) =>
           String(v).toLowerCase().includes(searchFilter.trim().toLowerCase())
         )
       )
-    : rawResults;
+    : modifiedResults;
 
   const results = displayResults;
   const activeDuration = activeResultItem ? activeResultItem.durationMs : tabState.durationMs;
@@ -1166,12 +1303,13 @@ export const SqlEditor: React.FC = () => {
                       </tr>
                     ) : (
                       results.map((r, index) => {
+                        const rowId = r.id !== undefined ? r.id : `row-${index}`;
                         const isSelected = selectedRowIds.has(r.id);
                         const isEven = index % 2 === 0;
 
                         return (
                           <tr
-                            key={r.id ?? index}
+                            key={rowId}
                             onClick={(e) => {
                               if (e.metaKey || e.ctrlKey) {
                                 const next = new Set(selectedRowIds);
@@ -1184,7 +1322,6 @@ export const SqlEditor: React.FC = () => {
                             }}
                             onContextMenu={(e) => {
                               e.preventDefault();
-                              const rowId = r.id !== undefined ? r.id : index;
                               setContextMenuRows([r]);
                               setSelectedRowIds(new Set([rowId]));
                               setContextMenuPos({ x: e.clientX, y: e.clientY });
@@ -1202,19 +1339,61 @@ export const SqlEditor: React.FC = () => {
                             </td>
                             {columns.map((col) => {
                               const val = r[col];
+                              const editKey = `${rowId}:${col}`;
+                              const isDirty = pendingEdits[editKey] !== undefined;
+                              const isEditing = editingCell?.rowId === rowId && editingCell?.col === col;
                               const isErrorCol = col.toLowerCase() === 'error';
                               const shouldWrap = wrapText || isErrorCol;
+
+                              const colDef: ColumnDefinition = {
+                                name: col,
+                                type: inferColumnType(val, col),
+                                isPrimaryKey: col.toLowerCase() === 'id' || col.toLowerCase().endsWith('_id'),
+                                isNullable: true,
+                              };
+
+                              if (isEditing) {
+                                return (
+                                  <td
+                                    key={col}
+                                    className="p-0 border-r border-slate-200 dark:border-slate-800/60 relative overflow-visible z-20"
+                                  >
+                                    <InlineCellEditor
+                                      col={colDef}
+                                      initialValue={val}
+                                      onSave={(newVal) => handleSaveCell(rowId, index, col, newVal, r)}
+                                      onCancel={() => setEditingCell(null)}
+                                    />
+                                  </td>
+                                );
+                              }
 
                               return (
                                 <td 
                                   key={col} 
-                                  className={`px-3 py-2 border-r border-slate-200 dark:border-slate-800/60 select-text ${
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEditing(rowId, index, col);
+                                  }}
+                                  className={`px-3 py-2 border-r border-slate-200 dark:border-slate-800/60 select-text relative transition-colors ${
+                                    isDirty
+                                      ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-100 font-medium'
+                                      : ''
+                                  } ${
                                     shouldWrap
                                       ? 'whitespace-pre-wrap break-words leading-relaxed'
                                       : 'whitespace-nowrap overflow-hidden text-ellipsis max-w-md'
                                   } ${isErrorCol ? 'bg-rose-50/40 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 font-mono' : ''}`}
                                   title={val ? String(val) : undefined}
                                 >
+                                  {/* Dirty indicator dot */}
+                                  {isDirty && (
+                                    <span
+                                      className="absolute bottom-1 right-1 w-1.5 h-1.5 bg-amber-500 dark:bg-amber-400 rounded-full shadow-xs ring-1 ring-amber-600/30"
+                                      title="Cell modified. Press ⌘S or click 'Review & Execute SQL' to apply."
+                                    />
+                                  )}
+
                                   {val === null || val === undefined ? (
                                     <span className="text-slate-400 dark:text-slate-500 italic select-none font-mono">NULL</span>
                                   ) : typeof val === 'boolean' ? (
@@ -1304,6 +1483,31 @@ export const SqlEditor: React.FC = () => {
                     {activeResultItem?.statusMessage ||
                       `Query ${queryItems.findIndex(q => q.id === (tabState.activeResultId || queryItems[0].id)) + 1} OK: ${results.length} rows`}
                   </span>
+                </div>
+              )}
+
+              {/* Pending Inline Edits Indicator Pill (⌘S to review & execute) */}
+              {Object.keys(pendingEdits).length > 0 && (
+                <div className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-medium text-[11px] animate-in fade-in duration-150">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span>{Object.keys(pendingEdits).length} modified</span>
+                  <span className="text-slate-400">·</span>
+                  <button
+                    onClick={handleDiscardPendingEdits}
+                    className="hover:underline text-rose-600 dark:text-rose-400 cursor-pointer"
+                    title="Discard all pending cell changes"
+                  >
+                    Discard
+                  </button>
+                  <span className="text-slate-400">·</span>
+                  <button
+                    onClick={() => setIsQueryEditModalOpen(true)}
+                    className="hover:underline font-bold text-amber-700 dark:text-amber-300 flex items-center space-x-1 cursor-pointer"
+                    title="Review & Execute generated UPDATE SQL (⌘S)"
+                  >
+                    <span>Review & Execute SQL</span>
+                    <kbd className="px-1 py-0.2 bg-amber-500/20 rounded text-[9px] font-mono">⌘S</kbd>
+                  </button>
                 </div>
               )}
             </div>
@@ -1655,6 +1859,18 @@ export const SqlEditor: React.FC = () => {
           />
         </ContextMenuContainer>
       )}
+
+      {/* Review & Execute Generated UPDATE Statement Modal */}
+      <QueryEditUpdateModal
+        isOpen={isQueryEditModalOpen}
+        onClose={() => setIsQueryEditModalOpen(false)}
+        pendingEdits={pendingEdits}
+        activeConnection={activeConnection}
+        onApplySuccess={handleApplySuccess}
+        onDiscard={handleDiscardPendingEdits}
+        onShowToast={showToast}
+        onSendToEditor={handleSendToEditor}
+      />
     </div>
   );
 };
