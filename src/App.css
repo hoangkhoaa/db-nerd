@@ -56,45 +56,70 @@ button.no-drag:not(:disabled) {
   cursor: pointer !important;
 }
 
-/* TablePlus-Grade Native CSS Grid for 100% Dead-Center Alignment & No-Overlap Guarantee */
+/* TablePlus-Grade Native macOS Titlebar: 100% Dead-Center Alignment & No-Collision Guarantee */
 .titlebar-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  grid-template-rows: 1fr;
-  align-items: center;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
-  height: 34px;
+  height: 38px;
 }
 
 .titlebar-left {
-  grid-column: 1;
-  grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   min-width: 0;
+  max-width: calc(50% - 160px);
   overflow: hidden;
+  z-index: 20;
 }
 
 .titlebar-center {
-  grid-column: 2;
-  grid-row: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 0;
-  max-width: 100%;
+  max-width: calc(100% - 320px);
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .titlebar-right {
-  grid-column: 3;
-  grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   min-width: 0;
+  max-width: calc(50% - 160px);
   overflow: hidden;
+  z-index: 20;
+  margin-left: auto;
+}
+
+/* Sleek Native-Feel Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.35);
 }
 
 /* Interactive elements with cursor-pointer class */

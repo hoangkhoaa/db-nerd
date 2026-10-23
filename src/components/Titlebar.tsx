@@ -137,7 +137,7 @@ export const Titlebar = () => {
             showWave={openSessionIds.length > 0 && activeConnection.connectionStatus !== 'failed'} 
           />
           <Database className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
-          <span className="font-mono text-[11px] font-bold truncate max-w-[70px] sm:max-w-[95px] xl:max-w-[125px] leading-none text-slate-800 dark:text-slate-200">
+          <span className="font-mono text-[11px] font-bold truncate max-w-[55px] sm:max-w-[75px] 2xl:max-w-[115px] leading-none text-slate-800 dark:text-slate-200">
             {openSessionIds.length === 0 ? 'No Connection' : activeConnection.name}
           </span>
         </button>
@@ -149,13 +149,13 @@ export const Titlebar = () => {
           title="SQL Query (⌘E / ⌘T)"
         >
           <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
-          <span className="font-mono text-[11px] leading-none hidden sm:inline">SQL</span>
+          <span className="font-mono text-[11px] leading-none hidden 2xl:inline">SQL</span>
         </button>
 
         {/* Inline Filter Bar Toggle */}
         <button
           onClick={toggleFilterBar}
-          className={`no-drag h-7 w-7 hidden md:flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
+          className={`no-drag h-7 w-7 hidden 2xl:flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
             isFilterBarOpen
               ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-500/50 shadow-xs'
               : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-slate-300 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
