@@ -409,11 +409,17 @@ html.light body,
   padding: 1.5px;
   overflow: hidden;
   pointer-events: none;
-  z-index: 10;
+  z-index: 0;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
+}
+
+/* Guarantee that any sibling text, icons, or badges inside a BorderChase container stay strictly on top */
+*:has(> .border-chase-root) > *:not(.border-chase-root) {
+  position: relative;
+  z-index: 1;
 }
 
 .border-chase-rotor {

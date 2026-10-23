@@ -80,18 +80,18 @@ export const DefaultWorkspaceView: React.FC = () => {
               <img
                 src={appIcon}
                 alt="DBNerd Mascot"
-                className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+                className="relative z-1 w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center rounded-2xl bg-slate-100/80 dark:bg-slate-800/50">
+              <div className="relative z-1 w-full h-full flex flex-col items-center justify-center rounded-2xl bg-slate-100/80 dark:bg-slate-800/50">
                 <ConnectorIcon engine={activeConnection.engine} size="xl" className="w-20 h-20" />
               </div>
             )}
           </div>
 
           {/* Engine Badge */}
-          <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-slate-900 border border-slate-700/80 rounded-full flex items-center space-x-1.5 shadow-md">
+          <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-slate-900 border border-slate-700/80 rounded-full flex items-center space-x-1.5 shadow-md z-10">
             <HeartbeatDot color={isConnecting ? 'amber' : 'green'} size="xs" showWave={true} />
             <span className="text-[10px] font-mono font-bold text-slate-200 uppercase tracking-wider">
               {activeConnection.engine}
@@ -167,8 +167,8 @@ export const DefaultWorkspaceView: React.FC = () => {
             {isConnecting && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>⚡ Test Connection & Latency</span>
+            <Zap className="relative z-1 w-3.5 h-3.5 fill-current" />
+            <span className="relative z-1">⚡ Test Connection & Latency</span>
           </button>
         </div>
 

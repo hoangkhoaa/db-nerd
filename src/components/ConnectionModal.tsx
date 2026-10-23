@@ -1618,7 +1618,7 @@ export const ConnectionModal = () => {
                   {isTesting && (
                     <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
                   )}
-                  {isTesting ? 'Pinging host...' : 'Test Connection'}
+                  <span className="relative z-1">{isTesting ? 'Pinging host...' : 'Test Connection'}</span>
                 </button>
 
                 <button

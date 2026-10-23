@@ -968,9 +968,9 @@ export const SqlEditor: React.FC = () => {
                     title="Cancel Query Execution (⌘.)"
                   >
                     <BorderChase color="amber" dual={true} speed="fast" borderWidth={2} glow={true} />
-                    <Square className="w-3 h-3 fill-current shrink-0 animate-pulse" />
-                    <span>Cancel</span>
-                    <kbd className="px-1 py-0.2 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘.</kbd>
+                    <Square className="relative z-1 w-3 h-3 fill-current shrink-0 animate-pulse" />
+                    <span className="relative z-1">Cancel</span>
+                    <kbd className="relative z-1 px-1 py-0.2 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘.</kbd>
                   </button>
                   <div className="h-3 w-px bg-white/20" />
                   <button

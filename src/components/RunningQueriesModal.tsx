@@ -231,7 +231,7 @@ export const RunningQueriesModal: React.FC = () => {
         )}
         
         {/* Titlebar matching TablePlus */}
-        <div className="h-10 bg-slate-50 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between flex-shrink-0">
+        <div className="relative z-1 h-10 bg-slate-50 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between flex-shrink-0">
           <div className="w-16" />
           <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-wide">Running Queries</h2>
           <div className="w-16 flex justify-end">
@@ -345,8 +345,8 @@ export const RunningQueriesModal: React.FC = () => {
               {loading && (
                 <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
               )}
-              <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-sky-500' : ''}`} />
-              <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+              <RefreshCw className={`relative z-1 w-3 h-3 ${loading ? 'animate-pulse text-sky-500' : ''}`} />
+              <span className="relative z-1">{loading ? 'Refreshing...' : 'Refresh'}</span>
             </button>
 
             <button

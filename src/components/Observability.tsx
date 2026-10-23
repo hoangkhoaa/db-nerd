@@ -125,8 +125,8 @@ export const Observability: React.FC = () => {
         <div className="flex items-center space-x-2">
           <div className="relative overflow-hidden px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-mono font-bold flex items-center space-x-1.5 shadow-2xs">
             <BorderChase color="emerald" dual={true} speed="slow" borderWidth={1.5} glow={true} />
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>STREAMING PG_STAT</span>
+            <span className="relative z-1 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="relative z-1">STREAMING PG_STAT</span>
           </div>
           <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">{processes.length} threads</span>
         </div>

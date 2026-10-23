@@ -217,7 +217,7 @@ export const Titlebar = () => {
             {isReloading && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <RefreshCw className={`w-3.5 h-3.5 ${isReloading ? 'text-sky-600 dark:text-sky-400 animate-pulse' : ''}`} />
+            <RefreshCw className={`relative z-1 w-3.5 h-3.5 ${isReloading ? 'text-sky-600 dark:text-sky-400 animate-pulse' : ''}`} />
           </button>
 
           {/* Preferences & Settings */}

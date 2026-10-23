@@ -78,7 +78,7 @@ export const ConnectionRail: React.FC = () => {
                 )}
 
                 {/* Engine Icon & Status LED */}
-                <div className="relative flex items-center justify-center mb-0.5">
+                <div className="relative z-1 flex items-center justify-center mb-0.5">
                   <ConnectorIcon engine={conn.engine} size="sm" />
                   <span className="absolute -bottom-1 -right-1">
                     <HeartbeatDot color={envColor} size="xs" showWave={isActive} />
@@ -86,7 +86,7 @@ export const ConnectionRail: React.FC = () => {
                 </div>
 
                 {/* Connection Name - truncated cleanly without ugly wrap */}
-                <span className="text-[10px] font-semibold truncate max-w-[48px] text-center tracking-tight leading-tight block">
+                <span className="relative z-1 text-[10px] font-semibold truncate max-w-[48px] text-center tracking-tight leading-tight block">
                   {conn.name}
                 </span>
 

@@ -297,8 +297,8 @@ export const AllTableStatsView: React.FC = () => {
             {loading && (
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={1.5} glow={true} />
             )}
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-pulse text-sky-500 dark:text-sky-400' : ''}`} />
-            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+            <RefreshCw className={`relative z-1 w-3 h-3 ${loading ? 'animate-pulse text-sky-500 dark:text-sky-400' : ''}`} />
+            <span className="relative z-1">{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
