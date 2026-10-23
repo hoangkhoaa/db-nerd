@@ -102,10 +102,10 @@ export const Titlebar = () => {
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="drag-region h-[34px] bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 pl-[78px] flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
+      className="drag-region h-[34px] bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 select-none z-30 flex-shrink-0 cursor-default grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center relative"
     >
       {/* Left: Window Controls spacer + Sidebar Toggle + Connection Selector + SQL Capsule + Filter Toggle */}
-      <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
+      <div className="flex items-center space-x-1.5 pointer-events-auto min-w-0 pl-[70px]">
         {/* Sidebar Toggle */}
         <button
           onClick={toggleSidebar}
@@ -120,12 +120,14 @@ export const Titlebar = () => {
         </button>
 
         {/* Safety Mode Selector Capsule (TablePlus Style) */}
-        <SafetyModeSelector />
+        <div className="shrink-0">
+          <SafetyModeSelector />
+        </div>
 
         {/* Connection Switcher Pill */}
         <button
           onClick={() => setConnectionModalOpen(true)}
-          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700/80 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white transition shadow-xs group active:scale-[0.98] shrink-0 leading-none cursor-pointer"
+          className="no-drag h-7 px-2 sm:px-2.5 flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700/80 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white transition shadow-xs group active:scale-[0.98] shrink-0 leading-none cursor-pointer min-w-0"
           title="Connections (⌘K)"
         >
           <HeartbeatDot 
@@ -134,23 +136,25 @@ export const Titlebar = () => {
             showWave={activeConnection.connectionStatus !== 'failed'} 
           />
           <Database className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
-          <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none text-slate-800 dark:text-slate-200">{activeConnection.name}</span>
+          <span className="font-mono text-[11px] font-bold truncate max-w-[70px] sm:max-w-[95px] xl:max-w-[125px] leading-none text-slate-800 dark:text-slate-200">
+            {activeConnection.name}
+          </span>
         </button>
 
         {/* SQL Query Console Capsule (TablePlus Style) */}
         <button
           onClick={() => openNewQueryTab()}
-          className="no-drag h-7 px-2.5 flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 rounded-lg text-xs font-bold text-sky-700 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white transition group shadow-xs active:scale-95 shrink-0 leading-none cursor-pointer"
+          className="no-drag h-7 px-2 sm:px-2.5 flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 rounded-lg text-xs font-bold text-sky-700 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white transition group shadow-xs active:scale-95 shrink-0 leading-none cursor-pointer"
           title="SQL Query (⌘E / ⌘T)"
         >
           <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
-          <span className="font-mono text-[11px] leading-none">SQL</span>
+          <span className="font-mono text-[11px] leading-none hidden sm:inline">SQL</span>
         </button>
 
         {/* Inline Filter Bar Toggle */}
         <button
           onClick={toggleFilterBar}
-          className={`no-drag h-7 w-7 flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
+          className={`no-drag h-7 w-7 hidden md:flex items-center justify-center rounded-lg border transition shrink-0 cursor-pointer ${
             isFilterBarOpen
               ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-500/50 shadow-xs'
               : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-slate-300 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -162,12 +166,12 @@ export const Titlebar = () => {
       </div>
 
       {/* Center: TablePlus Iconic LED Dot-Matrix Banner with Live Telemetry */}
-      <div className="flex items-center justify-center pointer-events-auto min-w-0 max-w-xl mx-2">
+      <div className="flex items-center justify-center pointer-events-auto min-w-0 px-2 justify-self-center max-w-full">
         <LedMatrixBanner onOpenDatabaseModal={() => setDatabaseModalOpen(true)} />
       </div>
 
       {/* Right: Clean, un-cluttered actions matching TablePlus */}
-      <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
+      <div className="flex items-center space-x-1.5 pointer-events-auto justify-end min-w-0">
         {pendingEditsCount > 0 && (
           <div className="flex items-center space-x-1.5 animate-in fade-in">
             <div className="h-7 px-2 bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-semibold flex items-center space-x-1 leading-none shrink-0">

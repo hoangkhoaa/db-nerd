@@ -203,13 +203,13 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
   const activeTabTitle = tabs.find((t) => t.id === activeTabId)?.title;
 
   return (
-    <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0 select-none">
+    <div className="flex items-center justify-center pointer-events-auto min-w-0 max-w-full select-none">
       {/* TablePlus Iconic LED Dot-Matrix Capsule */}
       <button
         onClick={handleClick}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        className={`no-drag relative h-7 px-3.5 rounded-full text-xs font-mono font-semibold transition-all active:scale-[0.98] flex items-center justify-between overflow-hidden cursor-pointer border max-w-xl group shadow-2xs dark:shadow-md ${
+        className={`no-drag relative h-7 px-2.5 sm:px-3.5 rounded-full text-xs font-mono font-semibold transition-all active:scale-[0.98] flex items-center justify-between overflow-hidden cursor-pointer border min-w-0 max-w-full w-auto group shadow-2xs dark:shadow-md ${
           isFailed
             ? 'bg-[#c53030] dark:bg-[#c53030] border-red-400 text-white hover:bg-[#b02b2b]'
             : env === 'prod'
@@ -255,14 +255,15 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
 
         {/* Monospace High-Contrast Foreground Content */}
         {isFailed ? (
-          <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-white leading-none font-mono text-[11px]">
-            <div className="flex items-center space-x-1.5 truncate">
-              <span className="font-extrabold tracking-wider">{envTag}</span>
-              <span className="opacity-60">|</span>
+          <div className="relative z-10 flex items-center justify-between w-full space-x-2 sm:space-x-3 text-white leading-none font-mono text-[11px] min-w-0">
+            <div className="flex items-center space-x-1.5 truncate min-w-0 flex-1">
+              <span className="font-extrabold tracking-wider shrink-0">{envTag}</span>
+              <span className="opacity-60 shrink-0">|</span>
               <span className="truncate">
-                Database '{activeConnection.database || activeConnection.name}' is disconnected!{' '}
+                <span className="hidden sm:inline">Database '{activeConnection.database || activeConnection.name}' is disconnected! </span>
+                <span className="sm:hidden">Offline! </span>
                 <span className="underline underline-offset-2 opacity-95">
-                  {isReconnecting ? 'Reconnecting...' : 'Tap to reconnect...'}
+                  {isReconnecting ? 'Reconnecting...' : 'Tap to reconnect'}
                 </span>
               </span>
             </div>
@@ -271,51 +272,73 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
             </span>
           </div>
         ) : executionProgress ? (
-          <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-white leading-none font-mono text-[11px]">
-            <div className="flex items-center space-x-1.5 truncate">
-              <span className="font-extrabold tracking-wider text-amber-300 dark:text-amber-400">{envTag}</span>
-              <span className="opacity-40">|</span>
-              <span className="font-bold text-white tracking-wide">
-                Executed Statements Count: {executionProgress.current}/{executionProgress.total}
+          <div className="relative z-10 flex items-center justify-between w-full space-x-2 sm:space-x-3 text-white leading-none font-mono text-[11px] min-w-0">
+            <div className="flex items-center space-x-1.5 truncate min-w-0 flex-1">
+              <span className="font-extrabold tracking-wider text-amber-300 dark:text-amber-400 shrink-0">{envTag}</span>
+              <span className="opacity-40 shrink-0">|</span>
+              <span className="font-bold text-white tracking-wide truncate">
+                <span className="hidden sm:inline">Statements: </span>
+                <span className="sm:hidden">Stmt: </span>
+                {executionProgress.current}/{executionProgress.total}
               </span>
             </div>
-            <div className="flex items-center space-x-1.5 shrink-0 pl-2">
+            <div className="flex items-center space-x-1.5 shrink-0 pl-1.5 sm:pl-2">
               <span className="text-[10px] font-mono font-bold text-white/90 bg-black/40 px-1.5 py-0.5 rounded leading-none border border-white/10 shadow-2xs">
-                0 B/s
+                {speedDisplay}
               </span>
             </div>
           </div>
         ) : (
-          <div className={`relative z-10 flex items-center justify-between w-full space-x-3 leading-none ${
+          <div className={`relative z-10 flex items-center justify-between w-full space-x-2 sm:space-x-3 leading-none min-w-0 ${
             env === 'prod' ? 'text-white [text-shadow:_0_1px_2px_rgba(0,0,0,0.6)]' : 'text-slate-800 dark:text-white dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]'
           }`}>
             {/* TablePlus Standard Formatted Connection Banner */}
-            <div className="flex items-center space-x-1.5 truncate text-[11px]">
-              <span className={`font-extrabold tracking-wider ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{envTag}</span>
-              <span className="opacity-40">|</span>
-              <span className="shrink-0">{engineLabel}</span>
-              <span className="opacity-40">:</span>
-              <span className="shrink-0">TLSv1.3</span>
-              <span className="opacity-40">:</span>
+            <div className="flex items-center space-x-1 sm:space-x-1.5 truncate text-[11px] min-w-0 flex-1">
+              {/* Env Tag: Always visible */}
+              <span className={`font-extrabold tracking-wider shrink-0 ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{envTag}</span>
+              <span className="opacity-40 shrink-0">|</span>
+
+              {/* Engine: Full version on xl, short on lg, hidden on md */}
+              <span className="hidden xl:inline shrink-0">{engineLabel}</span>
+              <span className="hidden lg:inline xl:hidden shrink-0">{activeConnection.engine === 'postgres' ? 'PostgreSQL' : activeConnection.engine === 'mysql' ? 'MySQL' : activeConnection.engine}</span>
+              <span className="opacity-40 hidden lg:inline shrink-0">:</span>
+
+              {/* TLSv1.3: only on xl */}
+              <span className="hidden xl:inline shrink-0">TLSv1.3</span>
+              <span className="opacity-40 hidden xl:inline shrink-0">:</span>
+
+              {/* SSH tag if enabled */}
               {activeConnection.useSsh && (
                 <>
-                  <span className="shrink-0 font-bold">SSH</span>
-                  <span className="opacity-40">:</span>
+                  <span className="shrink-0 font-bold hidden sm:inline">SSH</span>
+                  <span className="opacity-40 hidden sm:inline shrink-0">:</span>
                 </>
               )}
-              <span className={`truncate max-w-[130px] font-bold ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>{activeConnection.name}</span>
-              <span className="opacity-40">:</span>
-              <span className={`underline underline-offset-2 truncate max-w-[110px] ${env === 'prod' ? 'decoration-white/60 text-white' : 'decoration-slate-400/50 dark:decoration-white/50'}`}>
+
+              {/* Connection name */}
+              <span className={`truncate max-w-[80px] sm:max-w-[110px] xl:max-w-[140px] font-bold shrink-0 ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
+                {activeConnection.name}
+              </span>
+
+              {/* Database name on sm+ */}
+              <span className="opacity-40 shrink-0 hidden sm:inline">:</span>
+              <span className={`underline underline-offset-2 truncate max-w-[70px] sm:max-w-[100px] xl:max-w-[120px] hidden sm:inline ${
+                env === 'prod' ? 'decoration-white/60 text-white' : 'decoration-slate-400/50 dark:decoration-white/50'
+              }`}>
                 {activeConnection.database || 'postgres'}
               </span>
-              <span className="opacity-40">:</span>
-              <span className={`truncate max-w-[120px] ${env === 'prod' ? 'text-rose-100 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
+
+              {/* Tab/Table title on md+ */}
+              <span className="opacity-40 shrink-0 hidden md:inline">:</span>
+              <span className={`truncate max-w-[80px] md:max-w-[110px] xl:max-w-[130px] hidden md:inline ${
+                env === 'prod' ? 'text-rose-100 font-medium' : 'text-slate-600 dark:text-slate-300'
+              }`}>
                 {activeTabTitle || `public.${selectedTable}`}
               </span>
             </div>
 
             {/* Right Speed Meter */}
-            <div className="flex items-center space-x-1.5 shrink-0 pl-2">
+            <div className="flex items-center space-x-1.5 shrink-0 pl-1.5 sm:pl-2">
               <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded leading-none shadow-2xs border ${
                 env === 'prod'
                   ? 'text-white bg-black/30 border-white/20'
