@@ -8,6 +8,7 @@ import {
   Trash2,
   Check,
   ChevronRight,
+  ChevronDown,
   Server,
   Shield,
   ShieldCheck,
@@ -1172,9 +1173,9 @@ export const ConnectionModal = () => {
                 </div>
 
                 {/* Connection Name & Group Selection */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2">
-                    <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1 uppercase text-[10px] tracking-wider">
+                <div className="grid grid-cols-12 gap-3">
+                  <div className="col-span-8">
+                    <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
                       Connection Name
                     </label>
                     <input
@@ -1182,25 +1183,28 @@ export const ConnectionModal = () => {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="e.g. prod-replica-db"
-                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
+                      className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1 uppercase text-[10px] tracking-wider">
+                  <div className="col-span-4">
+                    <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
                       Target Group
                     </label>
-                    <select
-                      value={formData.groupId}
-                      onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
-                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
-                    >
-                      {connectionGroups.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.name} ({g.tag})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.groupId}
+                        onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
+                        className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg pl-3 pr-8 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs appearance-none cursor-pointer"
+                      >
+                        {connectionGroups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name} ({g.tag})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
@@ -1266,24 +1270,28 @@ export const ConnectionModal = () => {
 
             {/* Host & Port (Postgres, MySQL, Redis) */}
             {formData.engine !== 'snowflake' && (
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Host / Server Address</label>
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-9">
+                  <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                    Host / Server Address
+                  </label>
                   <input
                     type="text"
                     value={formData.host}
                     onChange={(e) => setFormData({ ...formData, host: e.target.value })}
                     placeholder="localhost or db.cloud.internal"
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
+                    className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs"
                   />
                 </div>
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Port</label>
+                <div className="col-span-3">
+                  <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                    Port
+                  </label>
                   <input
                     type="number"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value, 10) || 5432 })}
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
+                    className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs"
                   />
                 </div>
               </div>
@@ -1291,7 +1299,7 @@ export const ConnectionModal = () => {
 
             {/* Database / Keyspace Name */}
             <div>
-              <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">
+              <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
                 {formData.engine === 'redis' ? 'Database Index (0-15)' : 'Database / Schema'}
               </label>
               <input
@@ -1299,7 +1307,7 @@ export const ConnectionModal = () => {
                 value={formData.database}
                 onChange={(e) => setFormData({ ...formData, database: e.target.value })}
                 placeholder={formData.engine === 'redis' ? '0' : 'ecom_prod_db'}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
+                className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs"
               />
             </div>
 
@@ -1308,23 +1316,27 @@ export const ConnectionModal = () => {
               <div className="space-y-3 bg-sky-50/70 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-500/30 p-3 rounded-xl animate-in fade-in duration-200 shadow-2xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sky-800 dark:text-sky-300 font-semibold mb-1">Account Identifier</label>
+                    <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                      Account Identifier
+                    </label>
                     <input
                       type="text"
                       value={formData.accountIdentifier || ''}
                       onChange={(e) => setFormData({ ...formData, accountIdentifier: e.target.value })}
                       placeholder="e.g. xy12345.us-east-1"
-                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-800 dark:text-slate-200 shadow-2xs"
+                      className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-sky-800 dark:text-sky-300 font-semibold mb-1">Warehouse</label>
+                    <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                      Warehouse
+                    </label>
                     <input
                       type="text"
                       value={formData.warehouse || ''}
                       onChange={(e) => setFormData({ ...formData, warehouse: e.target.value })}
                       placeholder="e.g. COMPUTE_WH"
-                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-800 dark:text-slate-200 shadow-2xs"
+                      className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 shadow-2xs"
                     />
                   </div>
                 </div>
@@ -1334,23 +1346,27 @@ export const ConnectionModal = () => {
             {/* User & Password */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Username / Role</label>
+                <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                  Username / Role
+                </label>
                 <input
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   placeholder="app_master"
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
+                  className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs"
                 />
               </div>
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1">Password</label>
+                <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                  Password
+                </label>
                 <input
                   type="password"
                   value={formData.password || ''}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="••••••••••••"
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
+                  className="w-full h-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-xs font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-colors shadow-2xs"
                 />
               </div>
             </div>
@@ -1364,17 +1380,20 @@ export const ConnectionModal = () => {
                 </label>
                 <span className="text-[10px] text-slate-400 font-mono">TablePlus Standard</span>
               </div>
-              <select
-                value={formData.safeMode || (formData.env === 'prod' ? 'alert-2' : 'silent')}
-                onChange={(e) => setFormData({ ...formData, safeMode: e.target.value as any })}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500 shadow-2xs font-sans"
-              >
-                <option value="silent">🔓 Silent Mode — Send queries without warnings</option>
-                <option value="alert-1">🟡 Alert Mode 1 — Warn before sending queries</option>
-                <option value="alert-2">⭕ Alert Mode 2 — Warn except SELECT/EXPLAIN/SHOW</option>
-                <option value="safe-1">🔴 Safe Mode 1 — Prompt password before sending queries</option>
-                <option value="safe-2">⭕ Safe Mode 2 — Prompt password except SELECT/EXPLAIN/SHOW</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.safeMode || (formData.env === 'prod' ? 'alert-2' : 'silent')}
+                  onChange={(e) => setFormData({ ...formData, safeMode: e.target.value as any })}
+                  className="w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-3 pr-8 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 shadow-2xs font-sans appearance-none cursor-pointer"
+                >
+                  <option value="silent">🔓 Silent Mode — Send queries without warnings</option>
+                  <option value="alert-1">🟡 Alert Mode 1 — Warn before sending queries</option>
+                  <option value="alert-2">⭕ Alert Mode 2 — Warn except SELECT/EXPLAIN/SHOW</option>
+                  <option value="safe-1">🔴 Safe Mode 1 — Prompt password before sending queries</option>
+                  <option value="safe-2">⭕ Safe Mode 2 — Prompt password except SELECT/EXPLAIN/SHOW</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
             {/* TablePlus-grade SSH Bastion Tunnel (Zero-Trust Jump Host) Option */}
@@ -1400,9 +1419,9 @@ export const ConnectionModal = () => {
               {formData.useSsh && (
                 <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800 animate-in fade-in duration-150">
                   {/* Row 1: SSH Server Host & Port */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-2">
-                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-9">
+                      <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
                         Server (SSH Host)
                       </label>
                       <input
@@ -1410,11 +1429,11 @@ export const ConnectionModal = () => {
                         value={formData.sshHost || ''}
                         onChange={(e) => setFormData({ ...formData, sshHost: e.target.value })}
                         placeholder="13.212.189.147"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                        className="w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
                       />
                     </div>
-                    <div>
-                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">
+                    <div className="col-span-3">
+                      <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
                         Port
                       </label>
                       <input
@@ -1422,29 +1441,29 @@ export const ConnectionModal = () => {
                         value={formData.sshPort ?? 22}
                         onChange={(e) => setFormData({ ...formData, sshPort: parseInt(e.target.value, 10) || 22 })}
                         placeholder="22"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                        className="w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
                       />
                     </div>
                   </div>
 
                   {/* Row 2: SSH User & SSH Password */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-600 dark:text-slate-400 text-[10px] font-semibold mb-1">
-                        User
+                      <label className="block text-slate-500 dark:text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">
+                        SSH User
                       </label>
                       <input
                         type="text"
                         value={formData.sshUser || ''}
                         onChange={(e) => setFormData({ ...formData, sshUser: e.target.value })}
                         placeholder="ec2-user"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                        className="w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
                       />
                     </div>
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-slate-600 dark:text-slate-400 text-[10px] font-semibold">
-                          Password
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                          SSH Password
                         </label>
                         <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">Store in keychain</span>
                       </div>
@@ -1454,12 +1473,12 @@ export const ConnectionModal = () => {
                           value={formData.sshPassword || ''}
                           onChange={(e) => setFormData({ ...formData, sshPassword: e.target.value })}
                           placeholder="password"
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 pr-8 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                          className="w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-3 pr-8 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
                         />
                         <button
                           type="button"
                           onClick={() => setShowSshPassword(!showSshPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
                         >
                           {showSshPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
@@ -1521,13 +1540,13 @@ export const ConnectionModal = () => {
                             value={formData.sshKeyPath || ''}
                             onChange={(e) => setFormData({ ...formData, sshKeyPath: e.target.value })}
                             placeholder="id_rsa"
-                            className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                            className="flex-1 h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
                           />
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             title="Browse private key file"
-                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-700 transition-colors shrink-0 flex items-center space-x-1"
+                            className="h-9 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-700 transition-colors shrink-0 flex items-center space-x-1 cursor-pointer"
                           >
                             <FileKey className="w-3.5 h-3.5 text-slate-500" />
                             <span>Browse…</span>
@@ -1541,7 +1560,7 @@ export const ConnectionModal = () => {
                             value={formData.sshPassphrase || ''}
                             onChange={(e) => setFormData({ ...formData, sshPassphrase: e.target.value })}
                             placeholder="Passphrase (optional)"
-                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500"
+                            className="w-full h-9 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 text-slate-800 dark:text-slate-200 font-mono text-xs shadow-2xs focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20"
                           />
                         </div>
 
