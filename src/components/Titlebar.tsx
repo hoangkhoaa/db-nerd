@@ -108,9 +108,9 @@ export const Titlebar = () => {
           title="Connections (⌘K)"
         >
           <HeartbeatDot 
-            color={activeConnection.env === 'prod' ? 'red' : activeConnection.env === 'staging' ? 'amber' : 'green'} 
+            color={activeConnection.connectionStatus === 'failed' ? 'red' : activeConnection.env === 'prod' ? 'red' : activeConnection.env === 'staging' ? 'amber' : 'green'} 
             size="xs" 
-            showWave={false} 
+            showWave={activeConnection.connectionStatus !== 'failed'} 
           />
           <Database className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
           <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none text-slate-800 dark:text-slate-200">{activeConnection.name}</span>

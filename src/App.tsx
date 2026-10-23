@@ -19,6 +19,9 @@ import { AllFunctionsView } from './components/AllFunctionsView';
 import { RightInspector } from './components/RightInspector';
 import { BottomPanel } from './components/BottomPanel';
 import { HeartbeatDot } from './components/HeartbeatDot';
+import { DisconnectedBanner } from './components/DisconnectedBanner';
+import { DisconnectedModal } from './components/DisconnectedModal';
+import { heartbeatService } from './services/heartbeatService';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy, Code } from 'lucide-react';
 import {
   ContextMenuContainer,
@@ -94,8 +97,15 @@ export function App() {
         e.preventDefault();
         useAppStore.getState().toggleBottomPanel();
       }
+      // ⌘⇧R: Reconnect Workspace (TablePlus shortcut)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
+        e.preventDefault();
+        e.stopPropagation();
+        useAppStore.getState().reconnectActiveConnection();
+        return;
+      }
       // ⌘R: Reload Data (Table or Query)
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'r' || e.key === 'R')) {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
         reloadData();
       }
@@ -166,6 +176,14 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
+  // Adaptive zero-burn Heartbeat Monitor Lifecycle
+  useEffect(() => {
+    heartbeatService.start();
+    return () => {
+      heartbeatService.stop();
+    };
+  }, []);
+
   // Synchronize Theme Mode & Custom Themes (Monokai, Dracula, One Dark, Material, etc.)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -233,6 +251,13 @@ export function App() {
     const urlModal = urlParams.get('modal');
     if (urlModal === 'connection' || urlModal === 'conn') {
       useAppStore.getState().setConnectionModalOpen(true);
+    } else if (urlModal === 'disconnected') {
+      useAppStore.getState().setReconnectModalOpen(true);
+    }
+
+    const urlStatus = urlParams.get('status');
+    if (urlStatus === 'disconnected' || urlStatus === 'failed') {
+      useAppStore.getState().updateHeartbeat(0, false, "Connection to database failed: Connection refused (os error 61)");
     }
 
     const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
@@ -354,6 +379,9 @@ export function App() {
       
       {/* Native macOS Titlebar */}
       <Titlebar />
+
+      {/* TablePlus Disconnected Banner */}
+      <DisconnectedBanner />
 
       {/* Transaction Alert Banner with Smooth Expand/Collapse & Heartbeat LED */}
       <div
@@ -741,6 +769,7 @@ export function App() {
       <RunningQueriesModal />
       <SqlDiffModal />
       <SettingsModal />
+      <DisconnectedModal />
 
     </div>
   );

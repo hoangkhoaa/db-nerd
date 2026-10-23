@@ -107,6 +107,7 @@ export const SqlEditor: React.FC = () => {
     runSqlQuery,
     selectedTable,
     activeConnection,
+    setReconnectModalOpen,
     sqlEditorSplitHeight,
     setSqlEditorSplitHeight,
     isSqlResultsCollapsed,
@@ -168,7 +169,7 @@ export const SqlEditor: React.FC = () => {
 
   const handleRun = () => {
     if (activeConnection?.connectionStatus === 'failed') {
-      showToast('⚠️ Cannot run query: Database connection failed (Press ⌘K to fix)');
+      setReconnectModalOpen(true);
       return;
     }
     if (!viewRef.current) return;

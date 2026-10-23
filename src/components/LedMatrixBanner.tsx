@@ -12,6 +12,8 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     activeConnection,
     selectedTable,
     isConnecting,
+    isReconnecting,
+    reconnectActiveConnection,
     networkSpeed,
     resolvedTheme,
   } = useAppStore();
@@ -182,21 +184,33 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     };
   }, [env, isConnecting, resolvedTheme]);
 
+  const isFailed = activeConnection.connectionStatus === 'failed';
+
+  const handleClick = () => {
+    if (isFailed) {
+      reconnectActiveConnection();
+    } else {
+      onOpenDatabaseModal();
+    }
+  };
+
   return (
     <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0 select-none">
       {/* TablePlus Iconic LED Dot-Matrix Capsule */}
       <button
-        onClick={onOpenDatabaseModal}
+        onClick={handleClick}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         className={`no-drag relative h-7 px-3.5 rounded-full text-xs font-mono font-semibold transition-all active:scale-[0.98] flex items-center justify-between overflow-hidden cursor-pointer border max-w-xl group shadow-2xs dark:shadow-md ${
-          env === 'prod'
+          isFailed
+            ? 'bg-[#c53030] dark:bg-[#c53030] border-red-400 text-white hover:bg-[#b02b2b]'
+            : env === 'prod'
             ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-500/60 hover:border-rose-300 dark:hover:border-rose-400'
             : env === 'staging'
             ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-500/60 hover:border-amber-300 dark:hover:border-amber-400'
             : 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/60 hover:border-emerald-300 dark:hover:border-emerald-400'
         }`}
-        title="Click to Switch Database or Change Schema (⌘O)"
+        title={isFailed ? "Database is disconnected! Tap to reconnect (⌘⇧R)" : "Click to Switch Database or Change Schema (⌘O)"}
       >
         {/* Apple-grade Border Chase Highlight Runner */}
         {isConnecting && (
@@ -204,21 +218,25 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
         )}
 
         {/* HTML5 Canvas LED Dot Matrix Layer */}
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
-        />
+        {!isFailed && (
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
+          />
+        )}
 
         {/* Ambient Gradient Overlay for text legibility */}
-        <div
-          className={`absolute inset-0 pointer-events-none ${
-            env === 'prod'
-              ? 'bg-gradient-to-r from-rose-50/90 via-rose-100/40 to-rose-50/90 dark:from-red-950/80 dark:via-rose-950/40 dark:to-red-950/80'
-              : env === 'staging'
-              ? 'bg-gradient-to-r from-amber-50/90 via-amber-100/40 to-amber-50/90 dark:from-amber-950/80 dark:via-yellow-950/40 dark:to-amber-950/80'
-              : 'bg-gradient-to-r from-emerald-50/90 via-emerald-100/40 to-emerald-50/90 dark:from-emerald-950/80 dark:via-teal-950/40 dark:to-emerald-950/80'
-          }`}
-        />
+        {!isFailed && (
+          <div
+            className={`absolute inset-0 pointer-events-none ${
+              env === 'prod'
+                ? 'bg-gradient-to-r from-rose-50/90 via-rose-100/40 to-rose-50/90 dark:from-red-950/80 dark:via-rose-950/40 dark:to-red-950/80'
+                : env === 'staging'
+                ? 'bg-gradient-to-r from-amber-50/90 via-amber-100/40 to-amber-50/90 dark:from-amber-950/80 dark:via-yellow-950/40 dark:to-amber-950/80'
+                : 'bg-gradient-to-r from-emerald-50/90 via-emerald-100/40 to-emerald-50/90 dark:from-emerald-950/80 dark:via-teal-950/40 dark:to-emerald-950/80'
+            }`}
+          />
+        )}
 
         {/* Connecting High-Energy Scan Beam */}
         {isConnecting && (
@@ -228,7 +246,24 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
         )}
 
         {/* Monospace High-Contrast Foreground Content */}
-        <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-slate-800 dark:text-white leading-none dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
+        {isFailed ? (
+          <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-white leading-none font-mono text-[11px]">
+            <div className="flex items-center space-x-1.5 truncate">
+              <span className="font-extrabold tracking-wider">{envTag}</span>
+              <span className="opacity-60">|</span>
+              <span className="truncate">
+                Database '{activeConnection.database || activeConnection.name}' is disconnected!{' '}
+                <span className="underline underline-offset-2 opacity-95">
+                  {isReconnecting ? 'Reconnecting...' : 'Tap to reconnect...'}
+                </span>
+              </span>
+            </div>
+            <span className="text-[10px] bg-black/30 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">
+              {isReconnecting ? 'Reconnecting' : 'Offline'}
+            </span>
+          </div>
+        ) : (
+          <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-slate-800 dark:text-white leading-none dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
             {/* TablePlus Standard Formatted Connection Banner */}
             <div className="flex items-center space-x-1.5 truncate text-[11px]">
               <span className="font-extrabold tracking-wider text-slate-900 dark:text-white">{envTag}</span>
@@ -246,13 +281,14 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
               <span className="truncate max-w-[120px] text-slate-600 dark:text-slate-300">public.{selectedTable}</span>
             </div>
 
-          {/* Right Speed Meter */}
-          <div className="flex items-center space-x-1.5 shrink-0 pl-2">
-            <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-white/90 bg-white/80 dark:bg-black/35 px-1.5 py-0.5 rounded leading-none border border-slate-200 dark:border-white/10 shadow-2xs">
-              {speedDisplay}
-            </span>
+            {/* Right Speed Meter */}
+            <div className="flex items-center space-x-1.5 shrink-0 pl-2">
+              <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-white/90 bg-white/80 dark:bg-black/35 px-1.5 py-0.5 rounded leading-none border border-slate-200 dark:border-white/10 shadow-2xs">
+                {speedDisplay}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </button>
 
       {/* Hover Telemetry Quick Popover */}

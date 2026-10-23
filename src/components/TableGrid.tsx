@@ -57,7 +57,7 @@ export const TableGrid: React.FC = () => {
     isReloading,
     activeConnection,
     setConnectionModalOpen,
-    triggerConnectingAnimation,
+    reconnectActiveConnection,
     showToast,
   } = useAppStore();
 
@@ -192,11 +192,11 @@ export const TableGrid: React.FC = () => {
                 Edit Connection (⌘K)
               </button>
               <button
-                onClick={() => triggerConnectingAnimation(activeConnection.id)}
+                onClick={() => reconnectActiveConnection()}
                 className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center space-x-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry Connection</span>
+                <span>Reconnect Workspace (⌘⇧R)</span>
               </button>
             </div>
           </div>

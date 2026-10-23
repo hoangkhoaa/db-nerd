@@ -5,7 +5,7 @@ import { HeartbeatDot } from './HeartbeatDot';
 import { BorderChase } from './BorderChase';
 
 export const Observability: React.FC = () => {
-  const { processes, killProcess, showToast } = useAppStore();
+  const { processes, killProcess, showToast, heartbeatMetrics, activeConnection } = useAppStore();
 
   const handleKill = (pid: number) => {
     if (confirm(`⚠️ Terminate query process PID ${pid} via pg_cancel_backend()?`)) {
@@ -92,7 +92,14 @@ export const Observability: React.FC = () => {
               <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span>Throughput (TPS)</span>
             </span>
-            <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">1.8ms ping</span>
+            <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] flex items-center space-x-1.5">
+              <HeartbeatDot 
+                color={heartbeatMetrics.isHealthy ? 'green' : 'red'} 
+                size="xs" 
+                showWave={heartbeatMetrics.isHealthy} 
+              />
+              <span>{heartbeatMetrics.isHealthy ? `${heartbeatMetrics.lastLatencyMs || activeConnection.latencyMs || 0.8}ms ping` : 'Disconnected'}</span>
+            </span>
           </div>
           <div className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100">
             1,420 <span className="text-xs font-normal text-slate-500">tps</span>

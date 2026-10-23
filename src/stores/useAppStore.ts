@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, AppThemeId, UserSettings, FunctionItem } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, ConnectionSession, ThemeMode, AppThemeId, UserSettings, FunctionItem, HeartbeatMetrics } from '../types';
 import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS, getTablesForConnection } from '../data/schemas';
-import { executeRealQuery, getRealTables, getRealFunctions } from '../services/dbService';
+import { executeRealQuery, getRealTables, getRealFunctions, testRealConnection } from '../services/dbService';
+import { heartbeatService } from '../services/heartbeatService';
 import { getThemeDefinition } from '../themes/themeRegistry';
 
 interface AppState {
@@ -80,6 +81,14 @@ interface AppState {
 
   isConnectionModalOpen: boolean;
   setConnectionModalOpen: (open: boolean) => void;
+
+  reconnectModalOpen: boolean;
+  setReconnectModalOpen: (open: boolean) => void;
+  isReconnecting: boolean;
+  reconnectActiveConnection: () => Promise<boolean>;
+
+  heartbeatMetrics: HeartbeatMetrics;
+  updateHeartbeat: (latencyMs: number, isHealthy: boolean, error?: string) => void;
 
   isHistoryModalOpen: boolean;
   setHistoryModalOpen: (open: boolean) => void;
@@ -979,6 +988,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       if (isSuccess) {
+        heartbeatService.recordActivity();
+        get().updateHeartbeat(duration, true);
         if (meta?.isSelection) {
           get().showToast(`⚡ Executed selection in ${duration}ms (${results.length} rows)`);
         } else if (meta?.totalStatements && meta.totalStatements > 1 && meta.statementIndex !== undefined) {
@@ -1605,6 +1616,77 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   isConnectionModalOpen: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('modal') === 'connection',
   setConnectionModalOpen: (open) => set({ isConnectionModalOpen: open }),
+
+  reconnectModalOpen: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('modal') === 'disconnected',
+  setReconnectModalOpen: (open) => set({ reconnectModalOpen: open }),
+
+  isReconnecting: false,
+  reconnectActiveConnection: async () => {
+    const conn = get().activeConnection;
+    if (!conn) return false;
+    set({ isReconnecting: true });
+    get().showToast(`🔄 Reconnecting to '${conn.database || conn.name}'...`);
+    try {
+      const res = await testRealConnection(conn);
+      const latency = res.latency_ms > 0 ? res.latency_ms : 1.2;
+      if (res.success) {
+        get().updateHeartbeat(latency, true);
+        set({
+          isReconnecting: false,
+          reconnectModalOpen: false,
+        });
+        get().showToast(`🟢 Reconnected to '${conn.database || conn.name}' (${latency}ms)`);
+        get().fetchLiveTables(conn);
+        get().reloadData();
+        return true;
+      } else {
+        get().updateHeartbeat(0, false, res.message);
+        set({ isReconnecting: false });
+        get().showToast(`❌ Reconnection failed: ${res.message || 'Cannot reach host'}`);
+        return false;
+      }
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      get().updateHeartbeat(0, false, msg);
+      set({ isReconnecting: false });
+      get().showToast(`❌ Reconnection failed: ${msg}`);
+      return false;
+    }
+  },
+
+  heartbeatMetrics: {
+    lastLatencyMs: 0.8,
+    isHealthy: true,
+    lastCheckedAt: Date.now(),
+    consecutiveFailures: 0,
+  },
+
+  updateHeartbeat: (latencyMs, isHealthy, error) => {
+    set((state) => {
+      const nextStatus = isHealthy ? 'connected' : 'failed';
+      const nextConn = {
+        ...state.activeConnection,
+        latencyMs: isHealthy ? latencyMs : state.activeConnection.latencyMs,
+        connectionStatus: nextStatus as 'connected' | 'failed',
+        lastError: isHealthy ? undefined : error,
+      };
+      return {
+        heartbeatMetrics: {
+          lastLatencyMs: latencyMs,
+          isHealthy,
+          lastCheckedAt: Date.now(),
+          consecutiveFailures: isHealthy ? 0 : state.heartbeatMetrics.consecutiveFailures + 1,
+          lastError: error,
+        },
+        activeConnection: nextConn,
+        connections: state.connections.map((c) =>
+          c.id === nextConn.id
+            ? { ...c, latencyMs: nextConn.latencyMs, connectionStatus: nextConn.connectionStatus, lastError: nextConn.lastError }
+            : c
+        ),
+      };
+    });
+  },
 
   isHistoryModalOpen: false,
   setHistoryModalOpen: (open) => set({ isHistoryModalOpen: open }),

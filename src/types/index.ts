@@ -82,6 +82,14 @@ export interface ConnectionProfile {
   lastError?: string;
 }
 
+export interface HeartbeatMetrics {
+  lastLatencyMs: number;
+  isHealthy: boolean;
+  lastCheckedAt: number | null;
+  consecutiveFailures: number;
+  lastError?: string;
+}
+
 export interface FunctionItem {
   name: string;
   schema: string;
