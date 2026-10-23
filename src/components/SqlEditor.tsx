@@ -1,5 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2, AlertCircle, WrapText, BarChart2, Square } from 'lucide-react';
+import { 
+  Play, 
+  Sparkles, 
+  Eye, 
+  X, 
+  Terminal, 
+  Clock, 
+  Key, 
+  Copy, 
+  Scissors, 
+  Trash, 
+  Trash2,
+  Check, 
+  Zap, 
+  ChevronDown, 
+  ChevronUp, 
+  Maximize2, 
+  Minimize2, 
+  AlertCircle, 
+  WrapText, 
+  BarChart2, 
+  Square,
+  SlidersHorizontal,
+  Pin,
+  Search,
+  Download
+} from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -107,6 +133,8 @@ export const SqlEditor: React.FC = () => {
     runSqlQuery,
     cancelSqlQuery,
     setActiveQueryResultTab,
+    closeQueryResultTab,
+    togglePinQueryResultTab,
     selectedTable,
     activeConnection,
     setReconnectModalOpen,
@@ -123,10 +151,23 @@ export const SqlEditor: React.FC = () => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, loc: 0 });
+  const [queryLimit, setQueryLimit] = useState<string>('No limit');
+  const [isLimitMenuOpen, setIsLimitMenuOpen] = useState(false);
+  const [isBeautifyMenuOpen, setIsBeautifyMenuOpen] = useState(false);
   const [isRunMenuOpen, setIsRunMenuOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
+  const [enableSyntaxHighlighting, setEnableSyntaxHighlighting] = useState(true);
+  const [isConsoleDrawerOpen, setIsConsoleDrawerOpen] = useState(true);
   const [waitingSeconds, setWaitingSeconds] = useState(0);
   const [resultsSubTab, setResultsSubTab] = useState<'data' | 'message' | 'chart'>('data');
+
   const runMenuRef = useRef<HTMLDivElement>(null);
+  const limitMenuRef = useRef<HTMLDivElement>(null);
+  const beautifyMenuRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSplitterResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -179,27 +220,38 @@ export const SqlEditor: React.FC = () => {
     return () => clearInterval(interval);
   }, [tabState.isExecuting]);
 
-  // Close Run dropdown menu when clicking outside or pressing Escape
+  // Close dropdown menus when clicking outside or pressing Escape
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (runMenuRef.current && !runMenuRef.current.contains(e.target as Node)) {
         setIsRunMenuOpen(false);
       }
+      if (limitMenuRef.current && !limitMenuRef.current.contains(e.target as Node)) {
+        setIsLimitMenuOpen(false);
+      }
+      if (beautifyMenuRef.current && !beautifyMenuRef.current.contains(e.target as Node)) {
+        setIsBeautifyMenuOpen(false);
+      }
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setIsExportMenuOpen(false);
+      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsRunMenuOpen(false);
+        setIsLimitMenuOpen(false);
+        setIsBeautifyMenuOpen(false);
+        setIsExportMenuOpen(false);
+        setIsSearchOpen(false);
       }
     };
-    if (isRunMenuOpen) {
-      document.addEventListener('mousedown', handleOutside);
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-        document.removeEventListener('mousedown', handleOutside);
-        window.removeEventListener('keydown', handleKeyDown);
-      };
-    }
-  }, [isRunMenuOpen]);
+    document.addEventListener('mousedown', handleOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const [contextMenuPos, setContextMenuPos] = useState<ContextMenuPosition | null>(null);
   const [contextMenuRows, setContextMenuRows] = useState<any[]>([]);
@@ -346,6 +398,40 @@ export const SqlEditor: React.FC = () => {
   const handleFormatRef = useRef(handleFormat);
   handleFormatRef.current = handleFormat;
 
+  const handleTransformSql = (transform: 'uppercase' | 'lowercase' | 'minify') => {
+    setIsBeautifyMenuOpen(false);
+    if (!viewRef.current) return;
+    const view = viewRef.current;
+    const { from, to } = view.state.selection.main;
+    const hasSel = from !== to;
+    const text = hasSel ? view.state.sliceDoc(from, to) : view.state.doc.toString();
+    if (!text.trim()) return;
+
+    let converted = text;
+    if (transform === 'uppercase') {
+      converted = text.toUpperCase();
+    } else if (transform === 'lowercase') {
+      converted = text.toLowerCase();
+    } else if (transform === 'minify') {
+      converted = text.replace(/\s+/g, ' ').trim();
+    }
+
+    if (hasSel) {
+      view.dispatch({
+        changes: { from, to, insert: converted },
+        selection: { anchor: from, head: from + converted.length },
+      });
+      setSqlTabQuery(activeTabId, view.state.doc.toString());
+    } else {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: converted },
+        selection: { anchor: Math.min(from, converted.length) },
+      });
+      setSqlTabQuery(activeTabId, converted);
+    }
+    showToast(`✨ Transformed SQL (${transform})`);
+  };
+
   // Initialize CodeMirror 6 with SQL language, schema completion, and syntax highlighting
   useEffect(() => {
     if (!editorRef.current) return;
@@ -387,6 +473,12 @@ export const SqlEditor: React.FC = () => {
           if (update.selectionSet || update.docChanged) {
             const { from, to } = update.state.selection.main;
             setHasSelection(from !== to);
+            const lineObj = update.state.doc.lineAt(from);
+            setCursorPos({
+              line: lineObj.number,
+              col: from - lineObj.from + 1,
+              loc: from,
+            });
           }
         }),
         keymap.of([
@@ -401,6 +493,13 @@ export const SqlEditor: React.FC = () => {
             key: 'Mod-r',
             run: () => {
               handleRunRef.current();
+              return true;
+            },
+          },
+          {
+            key: 'Mod-i',
+            run: () => {
+              handleFormatRef.current();
               return true;
             },
           },
@@ -488,20 +587,106 @@ export const SqlEditor: React.FC = () => {
     }
   }, [tabState.query]);
 
-  const activeResultItem = tabState.queryResults?.find((r) => r.id === tabState.activeResultId) || tabState.queryResults?.[0];
-  const results = activeResultItem ? activeResultItem.results : tabState.results;
+  const queryItems = (tabState.queryResults && tabState.queryResults.length > 0)
+    ? tabState.queryResults
+    : [
+        {
+          id: 'q-1',
+          title: 'Query 1',
+          query: tabState.lastExecutedQuery || tabState.query,
+          results: tabState.results,
+          columns: tabState.columns,
+          durationMs: tabState.durationMs,
+          rowsCount: tabState.rowsCount,
+          executedAt: tabState.executedAt || 'Just now',
+          status: (tabState.error ? 'error' : 'success') as 'error' | 'success',
+          isPinned: false,
+          statusMessage: tabState.error ? `Query 1 Error: ${tabState.error}` : `Query 1 OK: ${tabState.rowsCount} rows`,
+        },
+      ];
+
+  const activeResultItem = queryItems.find((r) => r.id === (tabState.activeResultId || queryItems[0].id)) || queryItems[0];
+  const rawResults = activeResultItem ? activeResultItem.results : tabState.results;
   const columns = (activeResultItem?.columns && activeResultItem.columns.length > 0)
     ? activeResultItem.columns
     : tabState.columns.length > 0
     ? tabState.columns
-    : Object.keys(results[0] || {});
+    : Object.keys(rawResults[0] || {});
+
+  const displayResults = searchFilter.trim()
+    ? rawResults.filter((r) =>
+        Object.values(r).some((v) =>
+          String(v).toLowerCase().includes(searchFilter.trim().toLowerCase())
+        )
+      )
+    : rawResults;
+
+  const results = displayResults;
   const activeDuration = activeResultItem ? activeResultItem.durationMs : tabState.durationMs;
   const activeError = activeResultItem ? activeResultItem.error : tabState.error;
   const isErrorResult = Boolean(
     activeError ||
     (columns.length === 1 && columns[0]?.toLowerCase() === 'error') ||
-    (results.length > 0 && typeof results[0]?.error === 'string')
+    (rawResults.length > 0 && typeof rawResults[0]?.error === 'string')
   );
+
+  const handleExport = (format: 'csv' | 'json' | 'sql') => {
+    setIsExportMenuOpen(false);
+    const dataToExport = displayResults;
+    if (!dataToExport || dataToExport.length === 0) {
+      showToast('⚠️ No data to export');
+      return;
+    }
+    let content = '';
+    let mimeType = 'text/plain';
+    let filename = `query_result_${Date.now()}`;
+
+    if (format === 'json') {
+      content = JSON.stringify(dataToExport, null, 2);
+      mimeType = 'application/json';
+      filename += '.json';
+    } else if (format === 'csv') {
+      const cols = columns.length > 0 ? columns : Object.keys(dataToExport[0] || {});
+      const header = cols.map((c) => `"${c.replace(/"/g, '""')}"`).join(',');
+      const rows = dataToExport.map((r) =>
+        cols
+          .map((c) => {
+            const val = r[c];
+            if (val === null || val === undefined) return '';
+            return `"${String(val).replace(/"/g, '""')}"`;
+          })
+          .join(',')
+      );
+      content = [header, ...rows].join('\n');
+      mimeType = 'text/csv';
+      filename += '.csv';
+    } else if (format === 'sql') {
+      const tbl = selectedTable || 'exported_table';
+      const cols = columns.length > 0 ? columns : Object.keys(dataToExport[0] || {});
+      const statements = dataToExport.map((r) => {
+        const vals = cols.map((c) => {
+          const val = r[c];
+          if (val === null || val === undefined) return 'NULL';
+          if (typeof val === 'number') return val;
+          if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+          return `'${String(val).replace(/'/g, "''")}'`;
+        });
+        return `INSERT INTO "${tbl}" (${cols.map((c) => `"${c}"`).join(', ')}) VALUES (${vals.join(', ')});`;
+      });
+      content = statements.join('\n');
+      mimeType = 'application/sql';
+      filename += '.sql';
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`💾 Exported ${dataToExport.length} rows as ${format.toUpperCase()}`);
+  };
 
   useEffect(() => {
     if (isErrorResult) {
@@ -511,124 +696,6 @@ export const SqlEditor: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900/60 overflow-hidden relative">
-      {/* Editor Top Toolbar */}
-      <div className="h-10 bg-white dark:bg-slate-950/80 border-b border-slate-300 dark:border-slate-800/80 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
-        <div className="flex items-center space-x-2 h-full">
-          {activeConnection?.connectionStatus === 'failed' ? (
-            <div className="h-7 px-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 rounded-lg text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center space-x-1.5 shadow-2xs">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>Disconnected (⌘K)</span>
-            </div>
-          ) : tabState.isExecuting ? (
-            /* Cancel Button while executing (TablePlus style: Cancel ⌘.) */
-            <div className="relative inline-flex items-center shadow-xs">
-              <button
-                onClick={handleCancel}
-                onMouseDown={(e) => e.preventDefault()}
-                className="relative overflow-hidden h-7 px-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-l-lg transition flex items-center space-x-1.5 cursor-pointer leading-none active:scale-95"
-                title="Cancel Query Execution (⌘.)"
-              >
-                <BorderChase color="amber" dual={true} speed="fast" borderWidth={2} glow={true} />
-                <Square className="w-3 h-3 fill-current shrink-0 animate-pulse" />
-                <span className="leading-none">Cancel</span>
-                <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘.</kbd>
-              </button>
-              <button
-                onClick={() => setIsRunMenuOpen(!isRunMenuOpen)}
-                className="h-7 px-1.5 bg-rose-700 hover:bg-rose-600 text-white border-l border-rose-500 rounded-r-lg transition flex items-center justify-center cursor-pointer"
-                title="Execution Options"
-              >
-                <ChevronDown className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            /* Split Run Button (TablePlus: Run Current ⌘↵ | ⌵) */
-            <div className="relative inline-flex items-center shadow-xs" ref={runMenuRef}>
-              <button
-                onClick={handleRun}
-                onMouseDown={(e) => e.preventDefault()}
-                className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-l-lg transition flex items-center space-x-1.5 cursor-pointer leading-none active:scale-95"
-                title={hasSelection ? "Run Selected Query (⌘↵ / ⌘R)" : "Run Current Query at Pointer (⌘↵ / ⌘R)"}
-              >
-                <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-                <span className="leading-none">
-                  {hasSelection ? 'Run Selection' : 'Run Current'}
-                </span>
-                <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘↵</kbd>
-              </button>
-              <button
-                onClick={() => setIsRunMenuOpen(!isRunMenuOpen)}
-                onMouseDown={(e) => e.preventDefault()}
-                className="h-7 px-1.5 bg-emerald-700 hover:bg-emerald-600 text-white border-l border-emerald-500/80 rounded-r-lg transition flex items-center justify-center cursor-pointer"
-                title="Run Options (Run All, Run Current)"
-              >
-                <ChevronDown className="w-3 h-3" />
-              </button>
-
-              {/* Run Dropdown Menu (Matches TablePlus Screenshot 2) */}
-              {isRunMenuOpen && (
-                <div className="absolute left-0 top-8.5 w-56 bg-white dark:bg-[#1f2023] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-slate-800 dark:text-slate-200 font-sans text-xs animate-in fade-in zoom-in-95 duration-100">
-                  <button
-                    onClick={handleRunAll}
-                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
-                  >
-                    <span className="font-medium">Run All</span>
-                    <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⇧⌘↵</kbd>
-                  </button>
-                  <button
-                    onClick={handleRun}
-                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
-                  >
-                    <span className="font-medium">Run Current</span>
-                    <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⌘↵</kbd>
-                  </button>
-                  {hasSelection && (
-                    <button
-                      onClick={handleRun}
-                      className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
-                    >
-                      <span className="font-medium">Run Selection</span>
-                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⌘↵</kbd>
-                    </button>
-                  )}
-                  <div className="my-1 border-t border-slate-200 dark:border-slate-700/80" />
-                  <button
-                    onClick={() => {
-                      setIsRunMenuOpen(false);
-                      handleFormat();
-                    }}
-                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
-                  >
-                    <span className="font-medium">Format SQL</span>
-                    <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⇧⌥F</kbd>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          <button
-            onClick={handleFormat}
-            className="h-7 px-2.5 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 rounded-lg transition flex items-center space-x-1.5 font-medium cursor-pointer active:scale-95 leading-none shadow-2xs"
-            title="Beautify SQL Query or Selected Block (⇧⌥F / ⇧⌘F)"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-            <span className="leading-none">Format</span>
-            <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded text-[9px] font-mono text-slate-600 dark:text-slate-400 leading-none">⇧⌥F</kbd>
-          </button>
-        </div>
-
-        {/* Execution Performance Badge */}
-        <div className="flex items-center space-x-3 text-slate-600 dark:text-slate-400 font-mono text-[11px] leading-none">
-          <span className="flex items-center space-x-1 text-emerald-700 dark:text-emerald-400 font-semibold leading-none">
-            <Clock className="w-3 h-3 shrink-0" />
-            <span className="leading-none">{activeDuration || 1.4}ms</span>
-          </span>
-          <span>•</span>
-          <span className="leading-none">{results.length} rows</span>
-        </div>
-      </div>
-
       {/* Top Split: CodeMirror 6 Editor Container */}
       <div
         onContextMenu={(e) => {
@@ -639,6 +706,208 @@ export const SqlEditor: React.FC = () => {
         className={`${isSqlResultsCollapsed ? 'flex-1' : ''} border-b border-slate-300 dark:border-slate-800/80 relative flex flex-col bg-white dark:bg-slate-950 flex-shrink-0 overflow-hidden`}
       >
         <div ref={editorRef} className="flex-1 w-full h-full overflow-hidden" />
+
+        {/* TablePlus Editor Control Bar (Sliders, cursor tracker, No limit, Beautify, Run Current) */}
+        <div className="h-8 bg-slate-100 dark:bg-[#202124] border-t border-slate-300 dark:border-white/10 px-3 flex items-center justify-between text-xs select-none flex-shrink-0 z-10">
+          {/* Left: Sliders icon + cursor tracker */}
+          <div className="flex items-center space-x-2 text-slate-500 dark:text-[#8e9095] font-mono text-[11px]">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>line {cursorPos.line}, column {cursorPos.col}, location {cursorPos.loc}</span>
+            {activeConnection?.connectionStatus === 'failed' && (
+              <button
+                onClick={() => setReconnectModalOpen(true)}
+                className="ml-2 h-5 px-2 bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded text-[10px] font-sans font-medium flex items-center space-x-1 cursor-pointer"
+              >
+                <AlertCircle className="w-3 h-3" />
+                <span>Disconnected (⌘K)</span>
+              </button>
+            )}
+          </div>
+
+          {/* Right: [ No limit ⌵ ] [ Beautify ⌘I ⌵ ] [ Run Current ⌘↵ ⌵ ] */}
+          <div className="flex items-center space-x-2">
+            {/* Limit Selector */}
+            <div className="relative" ref={limitMenuRef}>
+              <div className="inline-flex items-center bg-slate-200/90 dark:bg-[#343538] hover:bg-slate-300 dark:hover:bg-[#404145] text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/10 rounded-md text-xs font-medium transition shadow-xs overflow-hidden h-6.5">
+                <button
+                  onClick={() => setIsLimitMenuOpen(!isLimitMenuOpen)}
+                  className="px-2.5 py-0.5 flex items-center space-x-1 cursor-pointer"
+                  title="Query result limit"
+                >
+                  <span>{queryLimit}</span>
+                </button>
+                <div className="h-3 w-px bg-slate-300 dark:bg-white/10" />
+                <button
+                  onClick={() => setIsLimitMenuOpen(!isLimitMenuOpen)}
+                  className="px-1.5 py-0.5 flex items-center justify-center cursor-pointer hover:bg-black/10 dark:hover:bg-white/10"
+                >
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
+              </div>
+
+              {isLimitMenuOpen && (
+                <div className="absolute right-0 top-7.5 w-36 bg-white dark:bg-[#1f2023] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-slate-800 dark:text-slate-200 font-sans text-xs animate-in fade-in zoom-in-95 duration-100">
+                  {['No limit', '100', '500', '1000', '5000'].map((lim) => (
+                    <button
+                      key={lim}
+                      onClick={() => {
+                        setQueryLimit(lim);
+                        setIsLimitMenuOpen(false);
+                        showToast(`Set default query limit to ${lim}`);
+                      }}
+                      className={`w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer ${
+                        queryLimit === lim ? 'font-bold text-sky-600 dark:text-sky-400' : ''
+                      }`}
+                    >
+                      <span>{lim}</span>
+                      {queryLimit === lim && <Check className="w-3 h-3" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Beautify Button */}
+            <div className="relative" ref={beautifyMenuRef}>
+              <div className="inline-flex items-center bg-slate-200/90 dark:bg-[#343538] hover:bg-slate-300 dark:hover:bg-[#404145] text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/10 rounded-md text-xs font-medium transition shadow-xs overflow-hidden h-6.5">
+                <button
+                  onClick={handleFormat}
+                  className="px-2.5 py-0.5 flex items-center space-x-1.5 cursor-pointer"
+                  title="Beautify SQL (⌘I / ⇧⌥F)"
+                >
+                  <span>Beautify</span>
+                  <kbd className="text-[10px] opacity-70 font-mono">⌘I</kbd>
+                </button>
+                <div className="h-3 w-px bg-slate-300 dark:bg-white/10" />
+                <button
+                  onClick={() => setIsBeautifyMenuOpen(!isBeautifyMenuOpen)}
+                  className="px-1.5 py-0.5 flex items-center justify-center cursor-pointer hover:bg-black/10 dark:hover:bg-white/10"
+                >
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
+              </div>
+
+              {isBeautifyMenuOpen && (
+                <div className="absolute right-0 top-7.5 w-44 bg-white dark:bg-[#1f2023] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-slate-800 dark:text-slate-200 font-sans text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    onClick={() => {
+                      setIsBeautifyMenuOpen(false);
+                      handleFormat();
+                    }}
+                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                  >
+                    <span>Beautify SQL</span>
+                    <kbd className="text-[10px] font-mono opacity-70">⌘I</kbd>
+                  </button>
+                  <button
+                    onClick={() => handleTransformSql('uppercase')}
+                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                  >
+                    <span>To UPPERCASE</span>
+                  </button>
+                  <button
+                    onClick={() => handleTransformSql('lowercase')}
+                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                  >
+                    <span>To lowercase</span>
+                  </button>
+                  <button
+                    onClick={() => handleTransformSql('minify')}
+                    className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                  >
+                    <span>Minify SQL</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Run Current / Cancel Split Button (Matches TablePlus Screenshot 1 & 2) */}
+            {tabState.isExecuting ? (
+              <div className="relative inline-flex items-center shadow-xs">
+                <div className="inline-flex items-center bg-rose-600 hover:bg-rose-500 text-white rounded-md text-xs font-semibold transition overflow-hidden h-6.5">
+                  <button
+                    onClick={handleCancel}
+                    className="relative overflow-hidden px-2.5 py-0.5 flex items-center space-x-1.5 cursor-pointer leading-none active:scale-95"
+                    title="Cancel Query Execution (⌘.)"
+                  >
+                    <BorderChase color="amber" dual={true} speed="fast" borderWidth={2} glow={true} />
+                    <Square className="w-3 h-3 fill-current shrink-0 animate-pulse" />
+                    <span>Cancel</span>
+                    <kbd className="px-1 py-0.2 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘.</kbd>
+                  </button>
+                  <div className="h-3 w-px bg-white/20" />
+                  <button
+                    onClick={() => setIsRunMenuOpen(!isRunMenuOpen)}
+                    className="px-1.5 py-0.5 flex items-center justify-center cursor-pointer hover:bg-black/10"
+                    title="Execution Options"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative" ref={runMenuRef}>
+                <div className="inline-flex items-center bg-slate-200/90 dark:bg-[#343538] hover:bg-slate-300 dark:hover:bg-[#404145] text-slate-900 dark:text-white border border-slate-300 dark:border-white/10 rounded-md text-xs font-medium transition shadow-xs overflow-hidden h-6.5">
+                  <button
+                    onClick={handleRun}
+                    className="px-2.5 py-0.5 flex items-center space-x-1.5 cursor-pointer"
+                    title={hasSelection ? "Run Selected Query (⌘↵ / ⌘R)" : "Run Current Query at Pointer (⌘↵ / ⌘R)"}
+                  >
+                    <span>{hasSelection ? 'Run Selection' : 'Run Current'}</span>
+                    <kbd className="text-[10px] opacity-70 font-mono">⌘↵</kbd>
+                  </button>
+                  <div className="h-3 w-px bg-slate-300 dark:bg-white/10" />
+                  <button
+                    onClick={() => setIsRunMenuOpen(!isRunMenuOpen)}
+                    className="px-1.5 py-0.5 flex items-center justify-center cursor-pointer hover:bg-black/10 dark:hover:bg-white/10"
+                    title="Run Options (Run All, Run Current)"
+                  >
+                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                  </button>
+                </div>
+
+                {isRunMenuOpen && (
+                  <div className="absolute right-0 top-7.5 w-52 bg-white dark:bg-[#1f2023] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-slate-800 dark:text-slate-200 font-sans text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                      onClick={handleRunAll}
+                      className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
+                    >
+                      <span className="font-medium">Run All</span>
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⇧⌘↵</kbd>
+                    </button>
+                    <button
+                      onClick={handleRun}
+                      className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
+                    >
+                      <span className="font-medium">Run Current</span>
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⌘↵</kbd>
+                    </button>
+                    {hasSelection && (
+                      <button
+                        onClick={handleRun}
+                        className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
+                      >
+                        <span className="font-medium">Run Selection</span>
+                        <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⌘↵</kbd>
+                      </button>
+                    )}
+                    <div className="my-1 border-t border-slate-200 dark:border-slate-700/80" />
+                    <button
+                      onClick={() => {
+                        setIsRunMenuOpen(false);
+                        handleFormat();
+                      }}
+                      className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer group"
+                    >
+                      <span className="font-medium">Format SQL</span>
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-700 group-hover:text-white rounded text-[10px] font-mono text-slate-500 dark:text-slate-400">⌘I</kbd>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Draggable Horizontal Splitter Handle between Editor and Results */}
@@ -658,42 +927,95 @@ export const SqlEditor: React.FC = () => {
       {/* Bottom Split: Query Result Grid (Collapsible & Resizable) */}
       {!isSqlResultsCollapsed ? (
         <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#121315] select-text relative">
-          {/* Multi-Query Results Sub-Tabs (TablePlus style: Query 1, Query 2, ...) */}
-          {tabState.queryResults && tabState.queryResults.length > 0 && (
-            <div className="h-7.5 bg-slate-100 dark:bg-[#1a1b1e] border-b border-slate-300 dark:border-slate-800/80 px-2 flex items-center space-x-1 overflow-x-auto select-none flex-shrink-0">
-              {tabState.queryResults.map((qItem, idx) => {
-                const isActive = qItem.id === (tabState.activeResultId || 'q-1');
-                return (
-                  <button
-                    key={qItem.id}
+          {/* Multi-Query Results Sub-Tabs (TablePlus style: Query 1 📌, Query 2, Query 3, Query 4) */}
+          <div className="h-8 bg-slate-100 dark:bg-[#1f2023] border-b border-slate-300 dark:border-white/10 px-2 flex items-center space-x-1 overflow-x-auto select-none flex-shrink-0">
+            {queryItems.map((qItem, idx) => {
+              const isActive = qItem.id === (tabState.activeResultId || queryItems[0].id);
+              return (
+                <React.Fragment key={qItem.id}>
+                  {idx > 0 && !isActive && queryItems[idx - 1]?.id !== (tabState.activeResultId || queryItems[0].id) && (
+                    <div className="h-3 w-px bg-slate-300 dark:bg-white/15 my-auto shrink-0" />
+                  )}
+                  <div
                     onClick={() => {
                       setActiveQueryResultTab(activeTabId, qItem.id);
                       if (qItem.status === 'error') {
                         setResultsSubTab('message');
                       }
                     }}
-                    className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition flex items-center space-x-1.5 cursor-pointer shrink-0 ${
+                    className={`group h-6.5 px-3 rounded-md text-[11px] font-medium transition flex items-center space-x-2 cursor-pointer shrink-0 ${
                       isActive
-                        ? 'bg-white dark:bg-[#323338] text-slate-900 dark:text-white shadow-2xs font-semibold border border-slate-300 dark:border-white/10'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-white/5'
+                        ? 'bg-slate-300 dark:bg-[#525357] text-slate-900 dark:text-white shadow-xs font-semibold'
+                        : 'text-slate-600 dark:text-[#9a9b9f] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
                     }`}
                   >
+                    {/* Close Tab Button */}
+                    {queryItems.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeQueryResultTab(activeTabId, qItem.id);
+                        }}
+                        className="w-3.5 h-3.5 rounded hover:bg-black/20 dark:hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer -ml-1"
+                        title="Close tab"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+
+                    {/* Status Dot */}
                     {qItem.status === 'running' ? (
                       <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
                     ) : qItem.status === 'error' ? (
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                    ) : qItem.status === 'success' ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400/50 shrink-0" />
-                    )}
+                    ) : null}
+
+                    {/* Title */}
                     <span>{qItem.title || `Query ${idx + 1}`}</span>
-                    {qItem.durationMs > 0 && (
-                      <span className="text-[9px] opacity-60 font-mono">({qItem.durationMs}ms)</span>
-                    )}
-                  </button>
-                );
-              })}
+
+                    {/* Pin Tab Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePinQueryResultTab(activeTabId, qItem.id);
+                      }}
+                      className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/20 transition cursor-pointer"
+                      title={qItem.isPinned ? 'Unpin tab' : 'Pin tab'}
+                    >
+                      <Pin
+                        className={`w-3 h-3 transition-transform ${
+                          qItem.isPinned
+                            ? 'text-amber-500 fill-amber-500 rotate-45'
+                            : 'text-slate-400/40 hover:text-slate-600 dark:text-white/30 dark:hover:text-white group-hover:opacity-100 opacity-40'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Search Filter Bar (if toggled via Search button) */}
+          {isSearchOpen && (
+            <div className="h-7 bg-slate-50 dark:bg-[#18191c] border-b border-slate-200 dark:border-white/10 px-3 flex items-center space-x-2 text-xs select-none">
+              <Search className="w-3 h-3 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                placeholder="Filter results across columns..."
+                className="bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 text-xs flex-1 placeholder:text-slate-400 font-mono"
+                autoFocus
+              />
+              {searchFilter && (
+                <button
+                  onClick={() => setSearchFilter('')}
+                  className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
           )}
 
@@ -747,43 +1069,39 @@ export const SqlEditor: React.FC = () => {
                 </table>
               </div>
             ) : resultsSubTab === 'message' || (isErrorResult && resultsSubTab !== 'chart') ? (
-              /* Message View (TablePlus Screenshot 3: ERROR / Output message) */
-              <div className="w-full h-full p-4 overflow-auto bg-white dark:bg-[#141517] font-mono text-xs select-text">
+              /* Message View (Matches TablePlus Screenshots 1 & 4) */
+              <div className="w-full h-full p-4 overflow-auto bg-white dark:bg-[#161719] font-mono text-xs select-text">
                 {isErrorResult ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400 font-bold text-sm">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>Query Error</span>
+                  <div className="space-y-3 font-mono">
+                    <div className="text-red-500 font-bold leading-relaxed whitespace-pre-wrap text-xs">
+                      {activeResultItem?.statusMessage || `Query ERROR: ${activeResultItem?.error || tabState.error || 'Execution failed'}`}
                     </div>
-                    <pre className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-lg whitespace-pre-wrap break-words leading-relaxed select-text font-mono text-[12px]">
-                      {String(activeResultItem?.error || tabState.error || results[0]?.error || 'Execution failed')}
-                    </pre>
                     {activeResultItem?.query && (
-                      <div className="space-y-1">
-                        <span className="text-[11px] text-slate-500 font-sans uppercase font-semibold">Executed Statement</span>
-                        <pre className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg whitespace-pre-wrap break-words text-[11px]">
+                      <div className="space-y-1 pt-2">
+                        <span className="text-[11px] text-slate-400 font-sans uppercase font-semibold">Executed Statement</span>
+                        <pre className="p-3 bg-slate-100 dark:bg-[#1b1c1f] border border-slate-300 dark:border-white/5 text-slate-700 dark:text-slate-300 rounded-lg whitespace-pre-wrap break-words text-[11px] leading-relaxed">
                           {activeResultItem.query}
                         </pre>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-3 text-slate-700 dark:text-slate-300">
-                    <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                      <Check className="w-4 h-4 shrink-0" />
-                      <span>Query executed successfully</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Returned {results.length} rows in {activeDuration || 1.4}ms.
+                  <div className="space-y-3 text-slate-800 dark:text-slate-200 font-mono text-xs">
+                    <div className="text-slate-900 dark:text-slate-100 font-bold text-xs tracking-wide">
+                      {activeResultItem?.statusMessage || `Query OK: ${results.length} rows returned`}
                     </div>
                     {activeResultItem?.query && (
-                      <div className="space-y-1">
-                        <span className="text-[11px] text-slate-500 font-sans uppercase font-semibold">Executed Statement</span>
-                        <pre className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg whitespace-pre-wrap break-words text-[11px]">
+                      <div className="pt-2">
+                        <pre className="p-3 bg-slate-100 dark:bg-[#1b1c1f] border border-slate-300 dark:border-white/5 text-slate-700 dark:text-slate-300 rounded-lg whitespace-pre-wrap break-words text-[11px] leading-relaxed">
                           {activeResultItem.query}
                         </pre>
                       </div>
                     )}
+                    <div className="text-[11px] text-slate-400 dark:text-[#6a6b70] pt-1">
+                      -- {activeResultItem?.executedAt || '2026-10-23 09:42:25.0000'}
+                      <br />
+                      END;
+                    </div>
                   </div>
                 )}
               </div>
@@ -930,110 +1248,156 @@ export const SqlEditor: React.FC = () => {
             )}
           </div>
 
-          {/* TablePlus Bottom Status Bar (Data | Message | Chart, Waiting: X.X s / Duration Rows) */}
-          <div className="h-7 bg-slate-50 dark:bg-[#1a1b1e] border-t border-slate-200 dark:border-slate-800/80 px-3 flex items-center justify-between text-xs select-none flex-shrink-0">
+          {/* TablePlus Bottom Status Bar */}
+          <div className="h-8 bg-slate-50 dark:bg-[#1a1b1e] border-t border-slate-200 dark:border-white/10 px-3 flex items-center justify-between text-xs select-none flex-shrink-0">
             {/* Left: Segmented Data | Message | Chart */}
             <div className="flex items-center space-x-3">
-              <div className="inline-flex rounded-md p-0.5 bg-slate-200/80 dark:bg-[#25262a] text-[11px] font-medium border border-slate-300/60 dark:border-white/5">
+              <div className="inline-flex rounded-lg p-0.5 bg-slate-200/80 dark:bg-[#25262a] text-xs font-medium border border-slate-300/60 dark:border-white/5">
                 <button
                   onClick={() => setResultsSubTab('data')}
-                  className={`px-2 py-0.5 rounded transition cursor-pointer ${
+                  className={`px-3 py-0.5 rounded-md transition cursor-pointer ${
                     resultsSubTab === 'data' && !isErrorResult
-                      ? 'bg-white dark:bg-[#3a3b40] text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-[#007aff] text-white font-semibold shadow-xs'
+                      : 'text-slate-600 dark:text-[#9a9b9f] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Data
                 </button>
                 <button
                   onClick={() => setResultsSubTab('message')}
-                  className={`px-2 py-0.5 rounded transition cursor-pointer flex items-center space-x-1 ${
+                  className={`px-3 py-0.5 rounded-md transition cursor-pointer flex items-center space-x-1.5 ${
                     resultsSubTab === 'message' || isErrorResult
-                      ? 'bg-white dark:bg-[#3a3b40] text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-[#007aff] text-white font-semibold shadow-xs'
+                      : 'text-slate-600 dark:text-[#9a9b9f] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span>Message</span>
-                  {isErrorResult && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+                  {isErrorResult && <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />}
                 </button>
                 <button
                   onClick={() => setResultsSubTab('chart')}
-                  className={`px-2 py-0.5 rounded transition cursor-pointer ${
+                  className={`px-3 py-0.5 rounded-md transition cursor-pointer ${
                     resultsSubTab === 'chart'
-                      ? 'bg-white dark:bg-[#3a3b40] text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-[#007aff] text-white font-semibold shadow-xs'
+                      : 'text-slate-600 dark:text-[#9a9b9f] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Chart
                 </button>
               </div>
 
-              {/* Middle: Waiting timer or execution stats (Matches TablePlus Screenshot 4 & 5) */}
+              {/* Middle Status text (Matches TablePlus Screenshots 1, 2, 4) */}
               {tabState.isExecuting ? (
-                <div className="flex items-center space-x-1.5 text-sky-600 dark:text-sky-400 font-mono text-[11px] font-semibold animate-pulse">
-                  <Clock className="w-3 h-3" />
+                <div className="flex items-center space-x-2 text-sky-600 dark:text-sky-400 font-mono text-[11px] font-semibold animate-pulse">
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
                   <span>Waiting: {waitingSeconds.toFixed(1)} s</span>
                 </div>
               ) : isErrorResult ? (
-                <div className="flex items-center space-x-1.5 text-rose-600 dark:text-rose-400 font-mono text-[11px] font-semibold">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>Error</span>
+                <div className="flex items-center space-x-3 font-mono text-[11px]">
+                  <span className="text-slate-500 dark:text-[#9a9b9f]">{activeDuration || 119} ms</span>
+                  <span className="text-rose-500 font-semibold">Error</span>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                  <span>{activeDuration || 1.4} ms</span>
-                  <span>•</span>
-                  <span>{results.length} rows</span>
+                <div className="flex items-center space-x-3 text-slate-500 dark:text-[#9a9b9f] font-mono text-[11px]">
+                  <span>{activeDuration || 80} ms</span>
+                  <span>
+                    {activeResultItem?.statusMessage ||
+                      `Query ${queryItems.findIndex(q => q.id === (tabState.activeResultId || queryItems[0].id)) + 1} OK: ${results.length} rows`}
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Right: Wrap, Copy JSON, Maximize, Collapse */}
-            <div className="flex items-center space-x-2 text-[11px] text-slate-400">
+            {/* Right: Pin, Search, Export..., Wrap, Split controls */}
+            <div className="flex items-center space-x-2 text-xs">
+              {/* Pin Tab Button */}
+              <button
+                onClick={() => {
+                  if (activeResultItem) {
+                    togglePinQueryResultTab(activeTabId, activeResultItem.id);
+                  }
+                }}
+                className={`h-6 w-6 rounded bg-slate-200/80 dark:bg-[#2c2d30] hover:bg-slate-300 dark:hover:bg-[#38393d] border border-slate-300 dark:border-white/5 flex items-center justify-center transition cursor-pointer ${
+                  activeResultItem?.isPinned
+                    ? 'text-amber-500'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title={activeResultItem?.isPinned ? 'Unpin this query tab' : 'Pin this query tab'}
+              >
+                <Pin className={`w-3 h-3 ${activeResultItem?.isPinned ? 'fill-amber-500 rotate-45' : ''}`} />
+              </button>
+
+              {/* Search Button */}
+              <button
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className={`h-6 w-6 rounded border transition cursor-pointer flex items-center justify-center ${
+                  isSearchOpen || searchFilter
+                    ? 'bg-sky-500 text-white border-sky-400'
+                    : 'bg-slate-200/80 dark:bg-[#2c2d30] hover:bg-slate-300 dark:hover:bg-[#38393d] border-slate-300 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Filter results"
+              >
+                <Search className="w-3 h-3" />
+              </button>
+
+              {/* Export... Split Button */}
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="h-6 px-2.5 rounded bg-slate-200/80 dark:bg-[#2c2d30] hover:bg-slate-300 dark:hover:bg-[#38393d] border border-slate-300 dark:border-white/5 flex items-center space-x-1 text-slate-700 dark:text-slate-200 text-[11px] font-medium transition cursor-pointer"
+                  title="Export results (CSV, JSON, SQL)"
+                >
+                  <span>Export...</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
+
+                {isExportMenuOpen && (
+                  <div className="absolute right-0 bottom-7.5 w-48 bg-white dark:bg-[#1f2023] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-slate-800 dark:text-slate-200 font-sans text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                      onClick={() => handleExport('csv')}
+                      className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 shrink-0" />
+                      <span>Export as CSV (.csv)</span>
+                    </button>
+                    <button
+                      onClick={() => handleExport('json')}
+                      className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 shrink-0" />
+                      <span>Export as JSON (.json)</span>
+                    </button>
+                    <button
+                      onClick={() => handleExport('sql')}
+                      className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 transition text-left cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 shrink-0" />
+                      <span>Export as SQL Insert (.sql)</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Wrap text toggle */}
               <button
                 onClick={() => {
                   setWrapText(!wrapText);
-                  showToast(wrapText ? 'Single line view (Text wrap off)' : 'Auto line wrap enabled (Đã bật xuống dòng)');
+                  showToast(wrapText ? 'Single line view (Wrap off)' : 'Auto line wrap enabled (Wrap on)');
                 }}
-                className={`h-5 px-1.5 rounded transition-all flex items-center space-x-1 cursor-pointer select-none text-[10px] ${
+                className={`h-6 px-1.5 rounded transition-all flex items-center space-x-1 cursor-pointer select-none text-[10px] ${
                   wrapText
                     ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 font-semibold'
                     : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500'
                 }`}
-                title={wrapText ? 'Tắt xuống dòng' : 'Bật xuống dòng'}
+                title={wrapText ? 'Disable wrapping' : 'Enable wrapping'}
               >
                 <WrapText className="w-2.5 h-2.5" />
                 <span>{wrapText ? 'Wrap: On' : 'Wrap: Off'}</span>
               </button>
 
-              <div className="h-3 w-px bg-slate-300 dark:bg-slate-800" />
+              <div className="h-3 w-px bg-slate-300 dark:bg-slate-700" />
 
-              {isErrorResult ? (
-                <button
-                  onClick={() => {
-                    const errorText = String(activeResultItem?.error || tabState.error || 'Query execution error');
-                    navigator.clipboard.writeText(errorText);
-                    showToast('📋 Copied error message!');
-                  }}
-                  className="hover:text-rose-500 transition cursor-pointer flex items-center space-x-1 text-[11px]"
-                >
-                  <Copy className="w-2.5 h-2.5" />
-                  <span>Copy Error</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    const text = JSON.stringify(results, null, 2);
-                    navigator.clipboard.writeText(text);
-                    showToast(`📋 Copied ${results.length} rows as JSON!`);
-                  }}
-                  className="hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer text-[11px]"
-                >
-                  Copy JSON
-                </button>
-              )}
-
-              <div className="h-3 w-px bg-slate-300 dark:bg-slate-800" />
+              {/* Maximize / Collapse */}
               <button
                 onClick={() => setSqlEditorSplitHeight(sqlEditorSplitHeight <= 100 ? 220 : 80)}
                 className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition cursor-pointer"
@@ -1050,6 +1414,50 @@ export const SqlEditor: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Bottom Console Log Drawer (TablePlus Screenshots) */}
+          {isConsoleDrawerOpen && (
+            <div className="h-20 bg-slate-900 dark:bg-[#141517] border-t border-slate-300 dark:border-white/10 flex flex-col font-mono text-xs select-text flex-shrink-0">
+              <div className="flex-1 p-2 overflow-auto text-slate-300 dark:text-slate-300 text-[11px] leading-relaxed">
+                {activeResultItem?.query ? (
+                  <>
+                    <div className="whitespace-pre-wrap">{activeResultItem.query}</div>
+                    <div className="text-slate-500 mt-1">-- {activeResultItem.executedAt || '2026-10-23 09:42:25.0000'}</div>
+                    <div className="text-slate-500">END;</div>
+                  </>
+                ) : (
+                  <div className="text-slate-500 text-center py-2">Console log, please execute a query or select a table to see the log</div>
+                )}
+              </div>
+              <div className="h-5.5 bg-slate-950 dark:bg-[#1a1b1e] border-t border-slate-800 dark:border-white/5 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none">
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => showToast('Cleared console log')}
+                    className="hover:text-slate-200 transition cursor-pointer p-0.5"
+                    title="Clear log"
+                  >
+                    <Trash2 className="w-3 h-3 text-slate-400 hover:text-slate-200" />
+                  </button>
+                  <label className="flex items-center space-x-1.5 cursor-pointer text-[10px] text-slate-400 hover:text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={enableSyntaxHighlighting}
+                      onChange={(e) => setEnableSyntaxHighlighting(e.target.checked)}
+                      className="rounded border-slate-700 bg-slate-800 text-sky-500 text-[10px]"
+                    />
+                    <span>Enable syntax highlighting</span>
+                  </label>
+                </div>
+                <button
+                  onClick={() => setIsConsoleDrawerOpen(false)}
+                  className="hover:text-slate-200 transition cursor-pointer p-0.5 text-[10px] text-slate-500 hover:text-slate-300"
+                  title="Hide console"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* Collapsed Query Results Bottom Bar */

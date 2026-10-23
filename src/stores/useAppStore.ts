@@ -27,6 +27,8 @@ interface AppState {
   runSqlQuery: (tabId: string, customQuery?: string, meta?: { mode?: 'current' | 'all' | 'selection'; isSelection?: boolean; statementIndex?: number; totalStatements?: number }) => Promise<void>;
   cancelSqlQuery: (tabId: string) => void;
   setActiveQueryResultTab: (tabId: string, resultId: string) => void;
+  closeQueryResultTab: (tabId: string, resultId: string) => void;
+  togglePinQueryResultTab: (tabId: string, resultId: string) => void;
 
   liveTables: Record<string, { name: string; count: string }[]>;
   fetchLiveTables: (conn?: ConnectionProfile) => Promise<void>;
@@ -968,6 +970,71 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  closeQueryResultTab: (tabId, resultId) => {
+    set((state) => {
+      const tabState = state.sqlTabStates[tabId];
+      if (!tabState || !tabState.queryResults) return state;
+      const nextResults = tabState.queryResults.filter((r) => r.id !== resultId);
+      if (nextResults.length === 0) {
+        return {
+          sqlTabStates: {
+            ...state.sqlTabStates,
+            [tabId]: {
+              ...tabState,
+              queryResults: [],
+              activeResultId: undefined,
+              results: [],
+              columns: [],
+              rowsCount: 0,
+            },
+          },
+        };
+      }
+      let nextActiveId = tabState.activeResultId;
+      if (tabState.activeResultId === resultId) {
+        nextActiveId = nextResults[nextResults.length - 1].id;
+      }
+      const activeItem = nextResults.find((r) => r.id === nextActiveId) || nextResults[0];
+      return {
+        sqlTabStates: {
+          ...state.sqlTabStates,
+          [tabId]: {
+            ...tabState,
+            queryResults: nextResults,
+            activeResultId: activeItem.id,
+            lastExecutedQuery: activeItem.query,
+            results: activeItem.results,
+            columns: activeItem.columns,
+            durationMs: activeItem.durationMs,
+            rowsCount: activeItem.rowsCount,
+            error: activeItem.error,
+          },
+        },
+      };
+    });
+  },
+
+  togglePinQueryResultTab: (tabId, resultId) => {
+    set((state) => {
+      const tabState = state.sqlTabStates[tabId];
+      if (!tabState || !tabState.queryResults) return state;
+      const updated = tabState.queryResults.map((r) =>
+        r.id === resultId ? { ...r, isPinned: !r.isPinned } : r
+      );
+      const isNowPinned = updated.find((r) => r.id === resultId)?.isPinned;
+      get().showToast(isNowPinned ? `📌 Pinned query tab` : `Unpinned query tab`);
+      return {
+        sqlTabStates: {
+          ...state.sqlTabStates,
+          [tabId]: {
+            ...tabState,
+            queryResults: updated,
+          },
+        },
+      };
+    });
+  },
+
   cancelSqlQuery: (tabId) => {
     activeCancelledTabs.add(tabId);
     set((state) => {
@@ -1134,6 +1201,22 @@ export const useAppStore = create<AppState>((set, get) => ({
           ? res.columns
           : ['result'];
 
+        const upperStmt = currentStmt.trimmedText.trim().toUpperCase();
+        let statusMsg = `Query ${i + 1} OK`;
+        if (!isSuccess) {
+          statusMsg = `Query ${i + 1} Error: ${errorMsg || 'Failed'}`;
+        } else if (upperStmt.startsWith('COMMIT')) {
+          statusMsg = `Query ${i + 1} OK: COMMIT`;
+        } else if (upperStmt.startsWith('ROLLBACK')) {
+          statusMsg = `Query ${i + 1} OK: ROLLBACK`;
+        } else if (upperStmt.startsWith('SELECT')) {
+          statusMsg = `Query ${i + 1} OK: ${rows.length} rows`;
+        } else if (upperStmt.startsWith('INSERT') || upperStmt.startsWith('UPDATE') || upperStmt.startsWith('DELETE')) {
+          statusMsg = `Query ${i + 1} OK: ${res.rows_affected || rows.length || 1} rows affected`;
+        } else {
+          statusMsg = `Query ${i + 1} OK: ${currentStmt.trimmedText.split('\n')[0].slice(0, 25)}`;
+        }
+
         finalQueryResults[i] = {
           ...finalQueryResults[i],
           status: isSuccess ? 'success' : 'error',
@@ -1143,6 +1226,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           rowsCount: isSuccess ? rows.length : 0,
           executedAt: new Date().toLocaleTimeString(),
           error: errorMsg,
+          statusMessage: statusMsg,
         };
 
         if (isSuccess) {
@@ -1181,6 +1265,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           rowsCount: 0,
           executedAt: new Date().toLocaleTimeString(),
           error: errMsg,
+          statusMessage: `Query ${i + 1} Error: ${errMsg}`,
         };
         if (!firstErrorResultId) firstErrorResultId = `q-${i + 1}`;
       }
@@ -1189,8 +1274,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const wasCancelled = activeCancelledTabs.has(tabId);
     activeCancelledTabs.delete(tabId);
 
-    const targetResultId = firstErrorResultId || (finalQueryResults.length > 0 ? finalQueryResults[finalQueryResults.length - 1].id : 'q-1');
-    const activeRes = finalQueryResults.find((r) => r.id === targetResultId) || finalQueryResults[0];
+    const pinnedResults = (currentState?.queryResults || []).filter((r) => r.isPinned);
+    const mergedResults = [...pinnedResults, ...finalQueryResults];
+
+    const targetResultId = firstErrorResultId || (mergedResults.length > 0 ? mergedResults[mergedResults.length - 1].id : 'q-1');
+    const activeRes = mergedResults.find((r) => r.id === targetResultId) || mergedResults[0];
 
     set((state) => ({
       sqlTabStates: {
@@ -1199,7 +1287,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           ...state.sqlTabStates[tabId],
           isExecuting: false,
           executionProgress: undefined,
-          queryResults: finalQueryResults,
+          queryResults: mergedResults,
           activeResultId: activeRes?.id || 'q-1',
           lastExecutedQuery: activeRes?.query,
           results: activeRes?.results || [],
@@ -2522,4 +2610,5 @@ export const useAppStore = create<AppState>((set, get) => ({
 
 if (typeof window !== 'undefined') {
   (window as any).useAppStore = useAppStore;
+  (window as any).__APP_STORE__ = useAppStore;
 }

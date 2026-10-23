@@ -124,6 +124,8 @@ export interface SqlQueryResultItem {
   executedAt: string;
   error?: string;
   status: 'pending' | 'running' | 'success' | 'error';
+  isPinned?: boolean;
+  statusMessage?: string; // e.g. "Query 4 OK: COMMIT" or "Query 1: 3 rows"
 }
 
 export interface SqlTabState {
