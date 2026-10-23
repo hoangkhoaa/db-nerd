@@ -18,6 +18,7 @@ import {
   Columns,
   AlertCircle,
   RefreshCw,
+  WrapText,
 } from 'lucide-react';
 import { GridRow } from '../types';
 import { TableContextMenu } from './TableContextMenu';
@@ -74,6 +75,7 @@ export const TableGrid: React.FC = () => {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(schemaInfo.columns.map((c) => c.name))
   );
+  const [wrapText, setWrapText] = useState(false);
 
   // Sync visible columns when selectedTable changes
   React.useEffect(() => {
@@ -337,8 +339,12 @@ export const TableGrid: React.FC = () => {
                           key={col.name}
                           onDoubleClick={() => startEditing(row.id, col.name)}
                           className={`px-3 py-1.5 border-r border-slate-200 dark:border-slate-800/60 relative ${
-                            isEditing ? 'overflow-visible' : 'truncate'
-                          } max-w-xs ${isDirty ? 'bg-amber-500/15' : ''}`}
+                            isEditing
+                              ? 'overflow-visible'
+                              : wrapText
+                              ? 'whitespace-pre-wrap break-words min-w-[120px] max-w-lg align-top'
+                              : 'truncate max-w-xs'
+                          } ${isDirty ? 'bg-amber-500/15' : ''}`}
                         >
                           {/* Dirty indicator dot */}
                           {isDirty && (
@@ -357,11 +363,13 @@ export const TableGrid: React.FC = () => {
                           ) : typeof val === 'boolean' ? (
                             <span className="text-slate-700 dark:text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
                           ) : typeof val === 'object' ? (
-                            <span className="truncate block font-mono text-slate-700 dark:text-slate-300">
+                            <span className={`font-mono text-slate-700 dark:text-slate-300 ${wrapText ? 'whitespace-pre-wrap break-words leading-relaxed select-text' : 'truncate block'}`}>
                               {JSON.stringify(val)}
                             </span>
                           ) : (
-                            <span className="truncate block text-slate-800 dark:text-slate-200">{String(val)}</span>
+                            <span className={`text-slate-800 dark:text-slate-200 ${wrapText ? 'whitespace-pre-wrap break-words leading-relaxed select-text' : 'truncate block'}`}>
+                              {String(val)}
+                            </span>
                           )}
                         </td>
                       );
@@ -500,6 +508,19 @@ export const TableGrid: React.FC = () => {
               >
                 <ColumnsIcon className="w-3 h-3 shrink-0" />
                 <span>Columns</span>
+              </button>
+
+              <button
+                onClick={() => setWrapText(!wrapText)}
+                className={`h-6 px-2 rounded-md text-[11px] font-semibold border transition flex items-center space-x-1 active:scale-95 leading-none cursor-pointer ${
+                  wrapText
+                    ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-500/40'
+                    : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shadow-2xs'
+                }`}
+                title="Toggle text wrapping across multiple lines"
+              >
+                <WrapText className="w-3 h-3 shrink-0" />
+                <span>{wrapText ? 'Wrap: On' : 'Wrap'}</span>
               </button>
 
               <div className="flex items-center space-x-0.5 pl-1 h-6">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2, AlertCircle } from 'lucide-react';
+import { Play, Sparkles, Eye, X, Terminal, Clock, Key, Copy, Scissors, Trash, Check, Zap, ChevronDown, ChevronUp, Maximize2, Minimize2, AlertCircle, WrapText } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap, highlightActiveLineGutter, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -162,6 +162,7 @@ export const SqlEditor: React.FC = () => {
   const [editorContextPos, setEditorContextPos] = useState<ContextMenuPosition | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
   const [inspectingRow, setInspectingRow] = useState<any | null>(null);
+  const [wrapText, setWrapText] = useState<boolean>(true);
 
   const handleRun = () => {
     if (activeConnection?.connectionStatus === 'failed') {
@@ -373,6 +374,11 @@ export const SqlEditor: React.FC = () => {
     ? tabState.columns
     : Object.keys(tabState.results[0] || {});
   const results = tabState.results;
+  const isErrorResult = Boolean(
+    tabState.error ||
+    (columns.length === 1 && columns[0]?.toLowerCase() === 'error') ||
+    (results.length > 0 && typeof results[0]?.error === 'string')
+  );
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900/60 overflow-hidden relative">
@@ -476,39 +482,84 @@ export const SqlEditor: React.FC = () => {
         {/* Results Sub-header */}
         <div className="h-8 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-xs select-none flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            <span className="font-bold text-slate-800 dark:text-slate-200">Query Results</span>
-            <span className="text-[10px] text-slate-500 font-mono">({results.length} records)</span>
+            {isErrorResult ? (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span className="font-bold text-rose-600 dark:text-rose-400">Query Error</span>
+                <span className="text-[10px] px-1.5 py-0.2 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono rounded">Execution Failed</span>
+              </>
+            ) : (
+              <>
+                <Terminal className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                <span className="font-bold text-slate-800 dark:text-slate-200">Query Results</span>
+                <span className="text-[10px] text-slate-500 font-mono">({results.length} records)</span>
+              </>
+            )}
           </div>
           <div className="flex items-center space-x-2 text-[11px] text-slate-400">
+            {/* Wrap Text Toggle */}
             <button
               onClick={() => {
-                const text =
-                  results.length === 1
-                    ? JSON.stringify(results[0], null, 2)
-                    : JSON.stringify(results, null, 2);
-                navigator.clipboard.writeText(text);
-                showToast(
-                  results.length === 1
-                    ? '📋 Copied result row as JSON Object!'
-                    : `📋 Copied ${results.length} rows as JSON Array!`
-                );
+                setWrapText(!wrapText);
+                showToast(wrapText ? 'Single line view (Text wrap off)' : 'Auto line wrap enabled (Đã bật xuống dòng)');
               }}
-              className="hover:text-slate-200 transition cursor-pointer"
+              className={`h-6 px-2 rounded-md transition-all flex items-center space-x-1 cursor-pointer select-none ${
+                wrapText
+                  ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 font-semibold border border-sky-300 dark:border-sky-500/40'
+                  : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+              title={wrapText ? 'Tắt xuống dòng (Single line truncate)' : 'Bật xuống dòng tự động (Wrap long text lines)'}
             >
-              Copy JSON
+              <WrapText className="w-3 h-3" />
+              <span>{wrapText ? 'Wrap: On' : 'Wrap: Off'}</span>
             </button>
-            <div className="h-3.5 w-px bg-slate-800" />
+
+            <div className="h-3.5 w-px bg-slate-300 dark:bg-slate-800" />
+
+            {isErrorResult ? (
+              <button
+                onClick={() => {
+                  const errorText = String(results[0]?.error || tabState.error || 'Query execution error');
+                  navigator.clipboard.writeText(errorText);
+                  showToast('📋 Copied full error message!');
+                }}
+                className="hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer flex items-center space-x-1"
+                title="Copy entire error text"
+              >
+                <Copy className="w-3 h-3" />
+                <span>Copy Error</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  const text =
+                    results.length === 1
+                      ? JSON.stringify(results[0], null, 2)
+                      : JSON.stringify(results, null, 2);
+                  navigator.clipboard.writeText(text);
+                  showToast(
+                    results.length === 1
+                      ? '📋 Copied result row as JSON Object!'
+                      : `📋 Copied ${results.length} rows as JSON Array!`
+                  );
+                }}
+                className="hover:text-slate-900 dark:hover:text-slate-200 transition cursor-pointer"
+              >
+                Copy JSON
+              </button>
+            )}
+
+            <div className="h-3.5 w-px bg-slate-300 dark:bg-slate-800" />
             <button
               onClick={() => setSqlEditorSplitHeight(sqlEditorSplitHeight <= 100 ? 220 : 80)}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition cursor-pointer"
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded transition cursor-pointer"
               title={sqlEditorSplitHeight <= 100 ? 'Restore Split' : 'Maximize Results'}
             >
               {sqlEditorSplitHeight <= 100 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={toggleSqlResultsCollapsed}
-              className="p-1 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded transition cursor-pointer"
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-rose-400 rounded transition cursor-pointer"
               title="Collapse Results Panel"
             >
               <ChevronDown className="w-3.5 h-3.5" />
@@ -523,6 +574,7 @@ export const SqlEditor: React.FC = () => {
               <tr>
                 <th className="w-12 p-2 border-r border-slate-300 dark:border-slate-800/80 text-center text-slate-500 dark:text-slate-600 font-bold">#</th>
                 {columns.map((col) => {
+                  const isErrorCol = col.toLowerCase() === 'error';
                   const firstRowWithVal = results.find((r) => r[col] !== null && r[col] !== undefined);
                   const sampleVal = firstRowWithVal ? firstRowWithVal[col] : undefined;
 
@@ -538,10 +590,16 @@ export const SqlEditor: React.FC = () => {
                   }
 
                   return (
-                    <th key={col} className="p-2 border-r border-slate-300 dark:border-slate-800/80 text-slate-800 dark:text-slate-200 font-semibold min-w-[120px]">
+                    <th key={col} className={`p-2 border-r border-slate-300 dark:border-slate-800/80 font-semibold min-w-[120px] ${
+                      isErrorCol ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'
+                    }`}>
                       <div className="flex items-center space-x-1.5 truncate">
-                        <ColumnTypeIcon type={foundType} sampleValue={sampleVal} />
-                        <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{col}</span>
+                        {isErrorCol ? (
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        ) : (
+                          <ColumnTypeIcon type={foundType} sampleValue={sampleVal} />
+                        )}
+                        <span className={`font-semibold truncate ${isErrorCol ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>{col}</span>
                         {isPk && (
                           <span title="Primary Key" className="inline-flex items-center ml-0.5">
                             <Key className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400/90 flex-shrink-0" />
@@ -593,21 +651,43 @@ export const SqlEditor: React.FC = () => {
                           : 'bg-white dark:bg-slate-950/60 hover:bg-[#f0f7ff] dark:hover:bg-slate-800/50 text-slate-800 dark:text-slate-200'
                       }`}
                     >
-                      <td className="p-2 border-r border-slate-200 dark:border-slate-800/60 text-center text-slate-500 select-none font-medium">
+                      <td className="p-2 border-r border-slate-200 dark:border-slate-800/60 text-center text-slate-500 select-none font-medium align-top">
                         {index + 1}
                       </td>
                       {columns.map((col) => {
                         const val = r[col];
+                        const isErrorCol = col.toLowerCase() === 'error';
+                        const shouldWrap = wrapText || isErrorCol;
+
                         return (
-                          <td key={col} className="px-3 py-2 border-r border-slate-200 dark:border-slate-800/60 whitespace-nowrap overflow-hidden text-ellipsis max-w-md select-text">
+                          <td 
+                            key={col} 
+                            className={`px-3 py-2 border-r border-slate-200 dark:border-slate-800/60 select-text ${
+                              shouldWrap
+                                ? 'whitespace-pre-wrap break-words leading-relaxed'
+                                : 'whitespace-nowrap overflow-hidden text-ellipsis max-w-md'
+                            } ${isErrorCol ? 'bg-rose-50/40 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 font-mono' : ''}`}
+                            title={val ? String(val) : undefined}
+                          >
                             {val === null || val === undefined ? (
                               <span className="text-slate-400 dark:text-slate-500 italic select-none font-mono">NULL</span>
                             ) : typeof val === 'boolean' ? (
                               <span className="text-slate-700 dark:text-slate-300 font-medium">{val ? 'TRUE' : 'FALSE'}</span>
                             ) : typeof val === 'object' ? (
-                              <span className="truncate block font-mono text-slate-700 dark:text-slate-300">{JSON.stringify(val)}</span>
+                              <span className={`font-mono text-slate-700 dark:text-slate-300 ${shouldWrap ? 'whitespace-pre-wrap break-words' : 'truncate block'}`}>
+                                {JSON.stringify(val, null, shouldWrap ? 2 : undefined)}
+                              </span>
+                            ) : isErrorCol ? (
+                              <div className="flex items-start space-x-2 text-rose-700 dark:text-rose-300">
+                                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                                <span className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed select-text flex-1">
+                                  {String(val)}
+                                </span>
+                              </div>
+                            ) : shouldWrap ? (
+                              <span className="whitespace-pre-wrap break-words block text-slate-800 dark:text-slate-200 leading-relaxed font-mono">{String(val)}</span>
                             ) : (
-                              <span className="truncate block text-slate-800 dark:text-slate-200">{String(val)}</span>
+                              <span className="truncate block text-slate-800 dark:text-slate-200 font-mono">{String(val)}</span>
                             )}
                           </td>
                         );

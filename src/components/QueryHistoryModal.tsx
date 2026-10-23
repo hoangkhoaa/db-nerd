@@ -197,7 +197,7 @@ export const QueryHistoryModal = () => {
                   {/* SQL Preview Box - Full Query with comfortable reading height when expanded */}
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className={`bg-slate-50 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800/80 rounded-xl p-3 font-mono text-[12px] text-slate-800 dark:text-slate-200 whitespace-pre-wrap select-text leading-relaxed ${
+                    className={`bg-slate-50 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800/80 rounded-xl p-3 font-mono text-[12px] text-slate-800 dark:text-slate-200 whitespace-pre-wrap break-words select-text leading-relaxed ${
                       !isExpanded ? 'max-h-16 overflow-hidden relative cursor-pointer' : 'max-h-96 overflow-y-auto'
                     }`}
                   >
