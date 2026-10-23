@@ -84,7 +84,7 @@ export const Titlebar = () => {
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="drag-region h-10 bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 pl-[78px] flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
+      className="drag-region h-[34px] bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800/80 px-3 pl-[78px] flex items-center justify-between select-none z-30 flex-shrink-0 cursor-default"
     >
       {/* Left: Window Controls spacer + Sidebar Toggle + Connection Selector + SQL Capsule + Filter Toggle */}
       <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0">
@@ -113,7 +113,7 @@ export const Titlebar = () => {
             showWave={false} 
           />
           <Database className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
-          <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none inline-block text-slate-800 dark:text-slate-200">{activeConnection.name}</span>
+          <span className="font-mono text-[11px] font-bold truncate max-w-[110px] leading-none text-slate-800 dark:text-slate-200">{activeConnection.name}</span>
         </button>
 
         {/* SQL Query Console Capsule (TablePlus Style) */}
