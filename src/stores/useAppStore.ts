@@ -22,7 +22,7 @@ interface AppState {
 
   sqlTabStates: Record<string, SqlTabState>;
   setSqlTabQuery: (tabId: string, query: string) => void;
-  runSqlQuery: (tabId: string, customQuery?: string) => Promise<void>;
+  runSqlQuery: (tabId: string, customQuery?: string, meta?: { isSelection?: boolean; statementIndex?: number; totalStatements?: number }) => Promise<void>;
 
   liveTables: Record<string, { name: string; count: string }[]>;
   fetchLiveTables: (conn?: ConnectionProfile) => Promise<void>;
@@ -889,9 +889,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  runSqlQuery: async (tabId, customQuery) => {
+  runSqlQuery: async (tabId, customQuery, meta) => {
     const currentState = get().sqlTabStates[tabId];
     const query = customQuery || currentState?.query || '';
+    const fullEditorQuery = currentState?.query || query;
     const activeConn = get().activeConnection;
 
     set((state) => ({
@@ -905,7 +906,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             durationMs: 0,
             rowsCount: 0,
           }),
-          query,
+          query: fullEditorQuery,
+          lastExecutedQuery: query,
           isExecuting: true,
         },
       },
@@ -927,7 +929,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           ...state.sqlTabStates,
           [tabId]: {
             tabId,
-            query,
+            query: state.sqlTabStates[tabId]?.query || fullEditorQuery,
+            lastExecutedQuery: query,
             results,
             columns,
             durationMs: duration,
@@ -954,7 +957,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       if (isSuccess) {
-        get().showToast(`⚡ Query executed in ${duration}ms (${results.length} rows)`);
+        if (meta?.isSelection) {
+          get().showToast(`⚡ Executed selection in ${duration}ms (${results.length} rows)`);
+        } else if (meta?.totalStatements && meta.totalStatements > 1 && meta.statementIndex !== undefined) {
+          get().showToast(`⚡ Executed query #${meta.statementIndex + 1} of ${meta.totalStatements} (at pointer) in ${duration}ms (${results.length} rows)`);
+        } else {
+          get().showToast(`⚡ Query executed in ${duration}ms (${results.length} rows)`);
+        }
       } else {
         get().showToast(`❌ Query error: ${res.error || 'Execution failed'}`);
       }
@@ -964,7 +973,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         sqlTabStates: {
           ...state.sqlTabStates,
           [tabId]: {
-            ...(state.sqlTabStates[tabId] || { tabId, query, results: [], columns: [], durationMs: 0, rowsCount: 0 }),
+            ...(state.sqlTabStates[tabId] || { tabId, query: fullEditorQuery, results: [], columns: [], durationMs: 0, rowsCount: 0 }),
+            lastExecutedQuery: query,
             results: [{ error: errMsg }],
             columns: ['error'],
             isExecuting: false,

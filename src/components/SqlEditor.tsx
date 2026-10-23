@@ -21,6 +21,7 @@ import { TableContextMenu } from './TableContextMenu';
 import { ColumnTypeIcon } from './ColumnTypeIcon';
 import { BorderChase } from './BorderChase';
 import { format as formatSql } from 'sql-formatter';
+import { getQueryToExecute } from '../utils/sqlParser';
 import {
   ContextMenuContainer,
   ContextMenuItem,
@@ -163,6 +164,7 @@ export const SqlEditor: React.FC = () => {
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set([501]));
   const [inspectingRow, setInspectingRow] = useState<any | null>(null);
   const [wrapText, setWrapText] = useState<boolean>(true);
+  const [hasSelection, setHasSelection] = useState<boolean>(false);
 
   const handleRun = () => {
     if (activeConnection?.connectionStatus === 'failed') {
@@ -170,10 +172,25 @@ export const SqlEditor: React.FC = () => {
       return;
     }
     if (!viewRef.current) return;
-    const currentCode = viewRef.current.state.doc.toString();
-    runSqlQuery(activeTabId, currentCode);
-    showToast(`⚡ Query executed in 1.4ms!`);
+    const view = viewRef.current;
+    const currentCode = view.state.doc.toString();
+    const { from, to } = view.state.selection.main;
+
+    const target = getQueryToExecute(currentCode, from, to);
+    if (!target.query.trim()) {
+      showToast('⚠️ No SQL statement to execute');
+      return;
+    }
+
+    runSqlQuery(activeTabId, target.query, {
+      isSelection: target.isSelection,
+      statementIndex: target.statementIndex,
+      totalStatements: target.totalStatements,
+    });
   };
+
+  const handleRunRef = useRef(handleRun);
+  handleRunRef.current = handleRun;
 
   const handleFormat = () => {
     if (!viewRef.current) return;
@@ -261,6 +278,9 @@ export const SqlEditor: React.FC = () => {
     }
   };
 
+  const handleFormatRef = useRef(handleFormat);
+  handleFormatRef.current = handleFormat;
+
   // Initialize CodeMirror 6 with SQL language, schema completion, and syntax highlighting
   useEffect(() => {
     if (!editorRef.current) return;
@@ -299,19 +319,23 @@ export const SqlEditor: React.FC = () => {
           if (update.docChanged) {
             setSqlTabQuery(activeTabId, update.state.doc.toString());
           }
+          if (update.selectionSet || update.docChanged) {
+            const { from, to } = update.state.selection.main;
+            setHasSelection(from !== to);
+          }
         }),
         keymap.of([
           {
             key: 'Mod-Enter',
             run: () => {
-              handleRun();
+              handleRunRef.current();
               return true;
             },
           },
           {
             key: 'Mod-r',
             run: () => {
-              handleRun();
+              handleRunRef.current();
               return true;
             },
           },
@@ -339,14 +363,14 @@ export const SqlEditor: React.FC = () => {
           {
             key: 'Alt-Shift-f',
             run: () => {
-              handleFormat();
+              handleFormatRef.current();
               return true;
             },
           },
           {
             key: 'Mod-Shift-f',
             run: () => {
-              handleFormat();
+              handleFormatRef.current();
               return true;
             },
           },
@@ -393,14 +417,18 @@ export const SqlEditor: React.FC = () => {
           ) : (
             <button
               onClick={handleRun}
+              onMouseDown={(e) => e.preventDefault()}
               disabled={tabState.isExecuting}
               className="relative overflow-hidden h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer leading-none"
+              title={hasSelection ? "Run Selected Query (⌘↵ / ⌘R)" : "Run Current Query at Pointer (⌘↵ / ⌘R)"}
             >
               {tabState.isExecuting && (
                 <BorderChase color="emerald" dual={true} speed="fast" borderWidth={2} glow={true} />
               )}
               <Play className={`w-3.5 h-3.5 fill-current shrink-0 ${tabState.isExecuting ? 'animate-pulse text-white' : ''}`} />
-              <span className="leading-none">{tabState.isExecuting ? 'Executing...' : 'Run Query'}</span>
+              <span className="leading-none">
+                {tabState.isExecuting ? 'Executing...' : hasSelection ? 'Run Selection' : 'Run Query'}
+              </span>
               <kbd className="px-1.5 py-0.5 bg-black/20 rounded text-[9px] font-mono text-white font-extrabold leading-none">⌘↵</kbd>
             </button>
           )}
@@ -494,6 +522,14 @@ export const SqlEditor: React.FC = () => {
                 <span className="font-bold text-slate-800 dark:text-slate-200">Query Results</span>
                 <span className="text-[10px] text-slate-500 font-mono">({results.length} records)</span>
               </>
+            )}
+            {tabState.lastExecutedQuery && (
+              <span
+                className="hidden md:inline-flex items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[280px] bg-slate-200/60 dark:bg-slate-800/60 px-1.5 py-0.5 rounded border border-slate-300/40 dark:border-slate-700/40 select-text"
+                title={`Executed SQL:\n${tabState.lastExecutedQuery}`}
+              >
+                {tabState.lastExecutedQuery.replace(/\s+/g, ' ')}
+              </span>
             )}
           </div>
           <div className="flex items-center space-x-2 text-[11px] text-slate-400">
@@ -787,17 +823,12 @@ export const SqlEditor: React.FC = () => {
               setEditorContextPos(null);
             }}
           />
-          {viewRef.current && viewRef.current.state.selection.main.from !== viewRef.current.state.selection.main.to && (
+          {hasSelection && (
             <ContextMenuItem
               icon={<Play className="w-3.5 h-3.5 text-sky-400" />}
               label="Run Selected Query"
               onClick={() => {
-                const sel = viewRef.current!.state.sliceDoc(
-                  viewRef.current!.state.selection.main.from,
-                  viewRef.current!.state.selection.main.to
-                );
-                runSqlQuery(activeTabId, sel);
-                showToast(`⚡ Selected query executed in 1.4ms!`);
+                handleRun();
                 setEditorContextPos(null);
               }}
             />

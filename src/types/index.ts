@@ -103,6 +103,7 @@ export interface TabItem {
 export interface SqlTabState {
   tabId: string;
   query: string;
+  lastExecutedQuery?: string;
   results: any[];
   columns: string[];
   durationMs: number;
