@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { HeartbeatDot } from './HeartbeatDot';
 import { BorderChase } from './BorderChase';
+import { ConnectorIcon } from './ConnectorIcon';
+import appIcon from '../assets/app-icon.png';
 
 export const DefaultWorkspaceView: React.FC = () => {
   const {
@@ -18,6 +20,8 @@ export const DefaultWorkspaceView: React.FC = () => {
     isConnecting,
     triggerConnectingAnimation,
   } = useAppStore();
+
+  const [imgError, setImgError] = React.useState(false);
 
   const isPostgres = activeConnection.engine === 'postgres';
   const isMysql = activeConnection.engine === 'mysql';
@@ -72,11 +76,18 @@ export const DefaultWorkspaceView: React.FC = () => {
               <BorderChase color="sky" dual={true} speed="fast" borderWidth={2.5} glow={true} />
             )}
 
-            <img
-              src="/app-icon.png"
-              alt="DBNerd Mascot"
-              className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
-            />
+            {!imgError ? (
+              <img
+                src={appIcon}
+                alt="DBNerd Mascot"
+                className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center rounded-2xl bg-slate-100/80 dark:bg-slate-800/50">
+                <ConnectorIcon engine={activeConnection.engine} size="xl" className="w-20 h-20" />
+              </div>
+            )}
           </div>
 
           {/* Engine Badge */}
