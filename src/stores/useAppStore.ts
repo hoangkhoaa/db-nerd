@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, SqlQueryResultItem, ConnectionSession, ThemeMode, AppThemeId, UserSettings, FunctionItem, HeartbeatMetrics } from '../types';
+import { ConnectionProfile, ConnectionGroup, GridRow, ProcessItem, QueryHistoryItem, TabItem, SqlTabState, SqlQueryResultItem, ConnectionSession, ThemeMode, AppThemeId, UserSettings, FunctionItem, HeartbeatMetrics, SafetyMode, SafetyConfirmationRequest } from '../types';
 import { STOCK_ITEMS_ROWS, WAREHOUSES_ROWS, getTablesForConnection } from '../data/schemas';
 import { executeRealQuery, getRealTables, getRealFunctions, testRealConnection } from '../services/dbService';
 import { heartbeatService } from '../services/heartbeatService';
 import { getThemeDefinition } from '../themes/themeRegistry';
 import { splitSqlStatements } from '../utils/sqlParser';
+import { isReadOnlySql } from '../utils/sqlSafety';
 
 interface AppState {
   tabs: TabItem[];
@@ -103,6 +104,17 @@ interface AppState {
 
   isSqlDiffModalOpen: boolean;
   setSqlDiffModalOpen: (open: boolean) => void;
+
+  safetyConfirmation: SafetyConfirmationRequest | null;
+  setConnectionSafeMode: (connId: string, mode: SafetyMode) => void;
+  requestSafetyConfirmation: (req: {
+    sqlText: string;
+    title?: string;
+    actionLabel?: string;
+    isCommit?: boolean;
+  }) => Promise<boolean>;
+  confirmSafetyAction: (passwordInput?: string) => { success: boolean; error?: string };
+  cancelSafetyAction: () => void;
 
   isTransactionOpen: boolean;
   setTransactionOpen: (open: boolean) => void;
@@ -557,6 +569,7 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     warehouse: 'COMPUTE_WH',
     active: false,
     latencyMs: 24.5,
+    safeMode: 'alert-2',
   },
   {
     id: 'conn-5',
@@ -579,6 +592,7 @@ const INITIAL_CONNECTIONS: ConnectionProfile[] = [
     sshKeyPath: 'id_rsa',
     active: false,
     latencyMs: 14.2,
+    safeMode: 'alert-2',
   },
 ];
 
@@ -653,6 +667,7 @@ const INITIAL_SESSIONS: Record<string, ConnectionSession> = {
   'conn-1': createDefaultSessionForConnection(INITIAL_CONNECTIONS[0]),
   'conn-4': createDefaultSessionForConnection(INITIAL_CONNECTIONS[1]),
   'conn-stock': createDefaultSessionForConnection(INITIAL_CONNECTIONS.find((c) => c.id === 'conn-stock') || INITIAL_CONNECTIONS[0]),
+  'conn-5': createDefaultSessionForConnection(INITIAL_CONNECTIONS.find((c) => c.id === 'conn-5') || INITIAL_CONNECTIONS[0]),
 };
 
 const getInitialSettings = (): UserSettings => {
@@ -1082,6 +1097,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const statementsToRun = rawStatements.filter((s) => s.trimmedText && s.trimmedText !== ';');
+    if (statementsToRun.length === 0) {
+      get().showToast('⚠️ No executable SQL statement found');
+      return;
+    }
+
+    // Safety verification check: prompt warning or password if mode requires it
+    const fullExecutedSql = statementsToRun.map((s) => s.trimmedText).join(';\n');
+    const approved = await get().requestSafetyConfirmation({
+      sqlText: fullExecutedSql,
+      title: 'Authorize Query Execution',
+      actionLabel: 'Execute Query (↵)',
+    });
+    if (!approved) {
+      get().showToast('🛑 Query execution cancelled by user');
+      return;
+    }
 
     if (statementsToRun.length === 0) {
       get().showToast('⚠️ No SQL statement to execute');
@@ -2000,6 +2031,113 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSqlDiffModalOpen: false,
   setSqlDiffModalOpen: (open) => set({ isSqlDiffModalOpen: open }),
 
+  safetyConfirmation: null,
+
+  setConnectionSafeMode: (connId, mode) => {
+    set((state) => {
+      const nextConns = state.connections.map((c) =>
+        c.id === connId ? { ...c, safeMode: mode } : c
+      );
+      const nextActive =
+        state.activeConnection.id === connId
+          ? { ...state.activeConnection, safeMode: mode }
+          : state.activeConnection;
+      return {
+        connections: nextConns,
+        activeConnection: nextActive,
+      };
+    });
+    const label =
+      mode === 'silent'
+        ? 'Silent Mode (No warnings)'
+        : mode === 'alert-1'
+        ? 'Alert Mode 1 (Warn on all queries)'
+        : mode === 'alert-2'
+        ? 'Alert Mode 2 (Warn on write queries)'
+        : mode === 'safe-1'
+        ? 'Safe Mode 1 (Password required for all queries)'
+        : 'Safe Mode 2 (Password required for write queries)';
+    get().showToast(`🛡️ Safety Level set to ${label}`);
+  },
+
+  requestSafetyConfirmation: ({ sqlText, title, actionLabel, isCommit }) => {
+    const { activeConnection } = get();
+    const mode = activeConnection.safeMode || (activeConnection.env === 'prod' ? 'alert-2' : 'silent');
+
+    if (mode === 'silent') {
+      return Promise.resolve(true);
+    }
+
+    const isReadOnly = isReadOnlySql(sqlText);
+
+    // Alert Mode 2 or Safe Mode 2: only prompt if NOT read-only (or if it's committing a transaction)
+    if ((mode === 'alert-2' || mode === 'safe-2') && isReadOnly && !isCommit) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise<boolean>((resolve) => {
+      const isSafe = mode.startsWith('safe');
+      const req: SafetyConfirmationRequest = {
+        id: `safety-${Date.now()}`,
+        mode: isSafe ? 'safe' : 'alert',
+        safeModeLevel: mode,
+        title: title || (isSafe ? 'Safe Mode Authorization' : 'Alert Mode Confirmation'),
+        sqlText,
+        connectionName: activeConnection.name,
+        environment: activeConnection.env,
+        actionLabel,
+        isCommit,
+        resolve,
+      };
+      set({ safetyConfirmation: req });
+    });
+  },
+
+  confirmSafetyAction: (passwordInput) => {
+    const { safetyConfirmation, activeConnection } = get();
+    if (!safetyConfirmation) return { success: false, error: 'No active confirmation' };
+
+    if (safetyConfirmation.mode === 'safe') {
+      const trimmed = (passwordInput || '').trim();
+      const actualPass = (activeConnection.password || '').trim();
+
+      let isValid = false;
+      if (actualPass && actualPass !== '••••••••••••') {
+        if (trimmed === actualPass || trimmed.toUpperCase() === 'CONFIRM') {
+          isValid = true;
+        }
+      } else {
+        if (
+          trimmed.toUpperCase() === 'CONFIRM' ||
+          trimmed.toUpperCase() === 'PROD' ||
+          (activeConnection.username && trimmed.toLowerCase() === activeConnection.username.toLowerCase()) ||
+          trimmed.length >= 4
+        ) {
+          isValid = true;
+        }
+      }
+
+      if (!isValid) {
+        return {
+          success: false,
+          error: 'Incorrect password. Enter database password or "CONFIRM".',
+        };
+      }
+    }
+
+    safetyConfirmation.resolve(true);
+    set({ safetyConfirmation: null });
+    return { success: true };
+  },
+
+  cancelSafetyAction: () => {
+    const { safetyConfirmation } = get();
+    if (safetyConfirmation) {
+      safetyConfirmation.resolve(false);
+      set({ safetyConfirmation: null });
+    }
+  },
+
   isTransactionOpen: false,
   setTransactionOpen: (open) => set({ isTransactionOpen: open }),
 
@@ -2010,10 +2148,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   deletedTables: {},
 
   truncateTable: async (tableName: string) => {
-    const { activeConnection, selectedTable } = get();
+    const { activeConnection, selectedTable, requestSafetyConfirmation } = get();
+    const quote = activeConnection.engine === 'mysql' ? '`' : '"';
+    const query = `TRUNCATE TABLE ${quote}${tableName}${quote};`;
+    const approved = await requestSafetyConfirmation({
+      sqlText: query,
+      title: `Confirm TRUNCATE Table "${tableName}"`,
+      actionLabel: 'Truncate Table (↵)',
+    });
+    if (!approved) return;
+
     try {
-      const quote = activeConnection.engine === 'mysql' ? '`' : '"';
-      await executeRealQuery(activeConnection, `TRUNCATE TABLE ${quote}${tableName}${quote};`);
+      await executeRealQuery(activeConnection, query);
     } catch (e) {
       console.warn('Real truncate failed:', e);
     }
@@ -2048,12 +2194,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   dropTable: async (tableName: string) => {
-    const { activeConnection, selectedTable, tabs, closeTab, showToast } = get();
+    const { activeConnection, selectedTable, tabs, closeTab, showToast, requestSafetyConfirmation } = get();
     const connId = activeConnection.id;
+    const quote = activeConnection.engine === 'mysql' ? '`' : '"';
+    const query = `DROP TABLE IF EXISTS ${quote}${tableName}${quote};`;
+
+    const approved = await requestSafetyConfirmation({
+      sqlText: query,
+      title: `Confirm DROP Table "${tableName}"`,
+      actionLabel: 'Drop Table (↵)',
+    });
+    if (!approved) return;
 
     try {
-      const quote = activeConnection.engine === 'mysql' ? '`' : '"';
-      await executeRealQuery(activeConnection, `DROP TABLE IF EXISTS ${quote}${tableName}${quote};`);
+      await executeRealQuery(activeConnection, query);
     } catch (e) {
       console.warn('Real drop failed:', e);
     }

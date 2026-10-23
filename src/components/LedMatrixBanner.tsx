@@ -18,6 +18,7 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     resolvedTheme,
     sqlTabStates,
     activeTabId,
+    tabs,
   } = useAppStore();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -199,6 +200,8 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
     }
   };
 
+  const activeTabTitle = tabs.find((t) => t.id === activeTabId)?.title;
+
   return (
     <div className="flex items-center space-x-1.5 pointer-events-auto shrink-0 select-none">
       {/* TablePlus Iconic LED Dot-Matrix Capsule */}
@@ -210,7 +213,7 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
           isFailed
             ? 'bg-[#c53030] dark:bg-[#c53030] border-red-400 text-white hover:bg-[#b02b2b]'
             : env === 'prod'
-            ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-500/60 hover:border-rose-300 dark:hover:border-rose-400'
+            ? 'bg-[#c53030] dark:bg-[#c53030] border-red-500/80 text-white hover:bg-[#b02b2b] shadow-sm'
             : env === 'staging'
             ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-500/60 hover:border-amber-300 dark:hover:border-amber-400'
             : 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/60 hover:border-emerald-300 dark:hover:border-emerald-400'
@@ -235,7 +238,7 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
           <div
             className={`absolute inset-0 pointer-events-none ${
               env === 'prod'
-                ? 'bg-gradient-to-r from-rose-50/90 via-rose-100/40 to-rose-50/90 dark:from-red-950/80 dark:via-rose-950/40 dark:to-red-950/80'
+                ? 'bg-gradient-to-r from-red-700/80 via-red-600/40 to-red-700/80 dark:from-[#b91c1c]/80 dark:via-[#991b1b]/50 dark:to-[#b91c1c]/80'
                 : env === 'staging'
                 ? 'bg-gradient-to-r from-amber-50/90 via-amber-100/40 to-amber-50/90 dark:from-amber-950/80 dark:via-yellow-950/40 dark:to-amber-950/80'
                 : 'bg-gradient-to-r from-emerald-50/90 via-emerald-100/40 to-emerald-50/90 dark:from-emerald-950/80 dark:via-teal-950/40 dark:to-emerald-950/80'
@@ -283,27 +286,41 @@ export const LedMatrixBanner: React.FC<LedMatrixBannerProps> = ({ onOpenDatabase
             </div>
           </div>
         ) : (
-          <div className="relative z-10 flex items-center justify-between w-full space-x-3 text-slate-800 dark:text-white leading-none dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
+          <div className={`relative z-10 flex items-center justify-between w-full space-x-3 leading-none ${
+            env === 'prod' ? 'text-white [text-shadow:_0_1px_2px_rgba(0,0,0,0.6)]' : 'text-slate-800 dark:text-white dark:[text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]'
+          }`}>
             {/* TablePlus Standard Formatted Connection Banner */}
             <div className="flex items-center space-x-1.5 truncate text-[11px]">
-              <span className="font-extrabold tracking-wider text-slate-900 dark:text-white">{envTag}</span>
+              <span className={`font-extrabold tracking-wider ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{envTag}</span>
               <span className="opacity-40">|</span>
               <span className="shrink-0">{engineLabel}</span>
               <span className="opacity-40">:</span>
               <span className="shrink-0">TLSv1.3</span>
               <span className="opacity-40">:</span>
-              <span className="truncate max-w-[130px] font-bold text-slate-900 dark:text-slate-100">{activeConnection.name}</span>
+              {activeConnection.useSsh && (
+                <>
+                  <span className="shrink-0 font-bold">SSH</span>
+                  <span className="opacity-40">:</span>
+                </>
+              )}
+              <span className={`truncate max-w-[130px] font-bold ${env === 'prod' ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>{activeConnection.name}</span>
               <span className="opacity-40">:</span>
-              <span className="underline decoration-slate-400/50 dark:decoration-white/50 underline-offset-2 truncate max-w-[110px]">
+              <span className={`underline underline-offset-2 truncate max-w-[110px] ${env === 'prod' ? 'decoration-white/60 text-white' : 'decoration-slate-400/50 dark:decoration-white/50'}`}>
                 {activeConnection.database || 'postgres'}
               </span>
               <span className="opacity-40">:</span>
-              <span className="truncate max-w-[120px] text-slate-600 dark:text-slate-300">public.{selectedTable}</span>
+              <span className={`truncate max-w-[120px] ${env === 'prod' ? 'text-rose-100 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
+                {activeTabTitle || `public.${selectedTable}`}
+              </span>
             </div>
 
             {/* Right Speed Meter */}
             <div className="flex items-center space-x-1.5 shrink-0 pl-2">
-              <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-white/90 bg-white/80 dark:bg-black/35 px-1.5 py-0.5 rounded leading-none border border-slate-200 dark:border-white/10 shadow-2xs">
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded leading-none shadow-2xs border ${
+                env === 'prod'
+                  ? 'text-white bg-black/30 border-white/20'
+                  : 'text-slate-700 dark:text-white/90 bg-white/80 dark:bg-black/35 border-slate-200 dark:border-white/10'
+              }`}>
                 {speedDisplay}
               </span>
             </div>

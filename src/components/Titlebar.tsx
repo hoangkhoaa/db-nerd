@@ -17,6 +17,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { HeartbeatDot } from './HeartbeatDot';
 import { LedMatrixBanner } from './LedMatrixBanner';
 import { BorderChase } from './BorderChase';
+import { SafetyModeSelector } from './SafetyModeSelector';
 
 export const Titlebar = () => {
   const {
@@ -40,11 +41,28 @@ export const Titlebar = () => {
     reloadData,
     setSettingsModalOpen,
     sqlTabStates,
+    getPendingSQL,
+    requestSafetyConfirmation,
+    showToast,
   } = useAppStore();
 
   const isAnyQueryRunning = Object.values(sqlTabStates).some((s) => Boolean((s as any).isExecuting || (s as any).isRunning));
 
   const handleCommit = async () => {
+    const sqlText = getPendingSQL();
+    if (!sqlText || sqlText.startsWith('--')) {
+      showToast('⚠️ No pending changes in active transaction');
+      return;
+    }
+
+    const approved = await requestSafetyConfirmation({
+      sqlText,
+      title: 'Confirm Transaction Commit',
+      actionLabel: 'Commit Changes (⌘S)',
+      isCommit: true,
+    });
+    if (!approved) return;
+
     const res = await commitTransaction();
     if (res.count > 0) {
       alert(`✅ Transaction Committed Successfully!\n\nExecuted ${res.count} change(s)! All locks released.`);
@@ -100,6 +118,9 @@ export const Titlebar = () => {
         >
           {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
         </button>
+
+        {/* Safety Mode Selector Capsule (TablePlus Style) */}
+        <SafetyModeSelector />
 
         {/* Connection Switcher Pill */}
         <button

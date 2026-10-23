@@ -22,6 +22,21 @@ export type DatabaseEngine =
   | 'vertica'
   | (string & {});
 export type EnvironmentTag = 'prod' | 'staging' | 'local';
+export type SafetyMode = 'silent' | 'alert-1' | 'alert-2' | 'safe-1' | 'safe-2';
+
+export interface SafetyConfirmationRequest {
+  id: string;
+  mode: 'alert' | 'safe';
+  safeModeLevel: SafetyMode;
+  title: string;
+  description?: string;
+  sqlText: string;
+  connectionName: string;
+  environment: EnvironmentTag;
+  actionLabel?: string;
+  isCommit?: boolean;
+  resolve: (approved: boolean) => void;
+}
 export type ThemeMode = 'dark' | 'light' | 'auto';
 export type AppThemeId =
   | 'default-dark'
@@ -80,6 +95,7 @@ export interface ConnectionProfile {
   latencyMs: number;
   connectionStatus?: 'connected' | 'connecting' | 'failed';
   lastError?: string;
+  safeMode?: SafetyMode;
 }
 
 export interface HeartbeatMetrics {

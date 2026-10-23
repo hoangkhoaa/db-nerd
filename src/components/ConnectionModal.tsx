@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Server,
   Shield,
+  ShieldCheck,
   GripVertical,
   Play,
   Pencil,
@@ -140,6 +141,7 @@ export const ConnectionModal = () => {
     warehouse: '',
     active: false,
     latencyMs: 1.0,
+    safeMode: 'silent',
   });
 
   const [isTesting, setIsTesting] = useState(false);
@@ -173,6 +175,7 @@ export const ConnectionModal = () => {
           warehouse: conn.warehouse || '',
           active: conn.active,
           latencyMs: conn.latencyMs,
+          safeMode: conn.safeMode || (conn.env === 'prod' ? 'alert-2' : 'silent'),
         });
       }
     }
@@ -1169,6 +1172,28 @@ export const ConnectionModal = () => {
                   className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 font-mono text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors shadow-2xs"
                 />
               </div>
+            </div>
+
+            {/* TablePlus Safety Level Selector */}
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 font-semibold select-none text-xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Safety Mode / Protection Level</span>
+                </label>
+                <span className="text-[10px] text-slate-400 font-mono">TablePlus Standard</span>
+              </div>
+              <select
+                value={formData.safeMode || (formData.env === 'prod' ? 'alert-2' : 'silent')}
+                onChange={(e) => setFormData({ ...formData, safeMode: e.target.value as any })}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500 shadow-2xs font-sans"
+              >
+                <option value="silent">🔓 Silent Mode — Send queries without warnings</option>
+                <option value="alert-1">🟡 Alert Mode 1 — Warn before sending queries</option>
+                <option value="alert-2">⭕ Alert Mode 2 — Warn except SELECT/EXPLAIN/SHOW</option>
+                <option value="safe-1">🔴 Safe Mode 1 — Prompt password before sending queries</option>
+                <option value="safe-2">⭕ Safe Mode 2 — Prompt password except SELECT/EXPLAIN/SHOW</option>
+              </select>
             </div>
 
             {/* TablePlus-grade SSH Bastion Tunnel (Zero-Trust Jump Host) Option */}

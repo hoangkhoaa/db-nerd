@@ -21,6 +21,7 @@ import { BottomPanel } from './components/BottomPanel';
 import { HeartbeatDot } from './components/HeartbeatDot';
 import { DisconnectedBanner } from './components/DisconnectedBanner';
 import { DisconnectedModal } from './components/DisconnectedModal';
+import { SafetyVerificationModal } from './components/SafetyVerificationModal';
 import { heartbeatService } from './services/heartbeatService';
 import { Table, Terminal, Activity, FileCode, RotateCcw, Check, Columns, Plus, X, ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, CopyPlus, Edit3, Copy, Code } from 'lucide-react';
 import {
@@ -790,6 +791,7 @@ export function App() {
       <SqlDiffModal />
       <SettingsModal />
       <DisconnectedModal />
+      <SafetyVerificationModal />
 
     </div>
   );
