@@ -203,8 +203,11 @@ export function App() {
 
     applyTheme();
 
+    const urlView = urlParams.get('view');
     const urlTab = urlParams.get('tab');
-    if (urlTab) {
+    if (urlView === 'default' || urlTab === 'empty') {
+      useAppStore.getState().closeAllTabs();
+    } else if (urlTab) {
       const stateTabs = useAppStore.getState().tabs;
       const found = stateTabs.find(
         (t) =>
